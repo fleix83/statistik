@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Helpdesk Statistik - Datenbankstruktur mit Beispieldaten</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            background: white;
+            color: black;
+            padding: 40px;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+            border-bottom: 3px solid black;
+            padding-bottom: 10px;
+        }
+        
+        .subtitle {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 40px;
+        }
+        
+        h2 {
+            font-size: 20px;
+            margin-top: 40px;
+            margin-bottom: 20px;
+            background: #f0f0f0;
+            padding: 10px;
+            border-left: 4px solid black;
+        }
+        
+        h3 {
+            font-size: 16px;
+            margin-top: 30px;
+            margin-bottom: 15px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+            border: 2px solid black;
+        }
+        
+        th {
+            background: #e0e0e0;
+            padding: 12px;
+            text-align: left;
+            border: 1px solid black;
+            font-weight: bold;
+            font-size: 13px;
+        }
+        
+        td {
+            padding: 10px 12px;
+            border: 1px solid #ccc;
+            font-size: 13px;
+        }
+        
+        tr:nth-child(even) {
+            background: #f9f9f9;
+        }
+        
+        .table-name {
+            font-family: 'Courier New', monospace;
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        
+        .pk {
+            background: #ffeb3b;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 11px;
+            font-weight: bold;
+        }
+        
+        .fk {
+            background: #bbdefb;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 11px;
+            font-weight: bold;
+        }
+        
+        .code {
+            font-family: 'Courier New', monospace;
+            background: #f5f5f5;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 12px;
+        }
+        
+        .note {
+            background: #fff9c4;
+            border-left: 4px solid #fbc02d;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        
+        .note-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .example-box {
+            background: #f5f5f5;
+            border: 1px solid #ccc;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .arrow {
+            text-align: center;
+            font-size: 24px;
+            margin: 10px 0;
+        }
+        
+        .highlight {
+            background: #ffeb3b;
+            padding: 2px 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Helpdesk Statistik - Datenbankstruktur</h1>
+        <div class="subtitle">Multi-Select Schema mit Beispieldaten</div>
+        
+        <!-- ============================================================ -->
+        <!-- TABLE 1: USERS -->
+        <!-- ============================================================ -->
+        <h2>Tabelle 1: users</h2>
+        <div class="table-name">users</div>
+        <table>
+            <thead>
+                <tr>
+                    <th><span class="pk">PK</span> id</th>
+                    <th>username</th>
+                    <th>password_hash</th>
+                    <th>role</th>
+                    <th>created_at</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>1</td>
+                    <td>Tosca</td>
+                    <td>$2y$10$abcd1234...</td>
+                    <td>user</td>
+                    <td>2025-01-15 10:00:00</td>
+                </tr>
+                <tr>
+                    <td>2</td>
+                    <td>Silvie</td>
+                    <td>$2y$10$efgh5678...</td>
+                    <td>user</td>
+                    <td>2025-01-15 10:05:00</td>
+                </tr>
+                <tr>
+                    <td>3</td>
+                    <td>Chantal</td>
+                    <td>$2y$10$ijkl9012...</td>
+                    <td>user</td>
+                    <td>2025-01-15 10:10:00</td>
+                </tr>
+                <tr>
+                    <td>4</td>
+                    <td>Admin</td>
+                    <td>$2y$10$mnop3456...</td>
+                    <td>admin</td>
+                    <td>2025-01-15 09:00:00</td>
+                </tr>
+            </tbody>
+        </table>
+        
+        <!-- ============================================================ -->
+        <!-- TABLE 2: OPTION_DEFINITIONS -->
+        <!-- ============================================================ -->
+        <h2>Tabelle 2: option_definitions</h2>
+        <div class="table-name">option_definitions</div>
+        <p>Diese Tabelle definiert, welche Optionen in den Dropdowns erscheinen.</p>
+        <table>
+            <thead>
+                <tr>
+                    <th><span class="pk">PK</span> id</th>
+                    <th>section</th>
+                    <th>label</th>
+                    <th>sort_order</th>
+                    <th>is_active</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>1</td>
+                    <td>kontaktart</td>
+                    <td>Besuch</td>
+                    <td>0</td>
+                    <td>TRUE</td>
+                </tr>
+                <tr>
+                    <td>2</td>
+                    <td>kontaktart</td>
+                    <td>Telefon</td>
+                    <td>1</td>
+                    <td>TRUE</td>
+                </tr>
+                <tr>
+                    <td>3</td>
+                    <td>kontaktart</td>
+                    <td>Mail</td>
+                    <td>2</td>
+                    <td>TRUE</td>
+                </tr>
+                <tr>
+                    <td>4</td>
+                    <td>kontaktart</td>
+                    <td>Passant/in</td>
+                    <td>3</td>
+                    <td>TRUE</td>
+                </tr>
+                <tr>
+                    <td>5</td>
+                    <td>person</td>
+                    <td>Mann</td>
+                    <td>0</td>
+                    <td>TRUE</td>
+                </tr>
+                <tr>
+                    <td>6</td>
+                    <td>person</td>
+                    <td>Frau</td>
+                    <td>1</td>
+                    <td>TRUE</td>
+                </tr>
+                <tr>
+                    <td>7</td>
+                    <td>person</td>
+                    <td>unter 55</td>
+                    <td>2</td>
+                    <td>TRUE</td>
+                </tr>
+                <tr>
+                    <td>8</td>
+                    <td>person</td>
+                    <td>über 55</td>
+                    <td>3</td>
+                    <td>TRUE</td>
+                </tr>
+                <tr>
+                    <td>9</td>
+                    <td>person</td>
+                    <td>selbst betroffen</td>
+                    <td>4</td>
+                    <td>TRUE</td>
+                </tr>
+                <tr>
+                    <td>10</td>
+                    <td>thema</td>
+                    <td>Bildung</td>
+                    <td>0</td>
+                    <td>TRUE</td>
+                </tr>
+                <tr>
+                    <td>11</td>
+                    <td>thema</td>
+                    <td>Arbeit</td>
+                    <td>1</td>
+                    <td>TRUE</td>
+                </tr>
+                <tr>
+                    <td>12</td>
+                    <td>thema</td>
+                    <td>Gesundheit</td>
+                    <td>2</td>
+                    <td>TRUE</td>
+                </tr>
+                <tr>
+                    <td>13</td>
+                    <td>thema</td>
+                    <td>Wohnen</td>
+                    <td>3</td>
+                    <td>TRUE</td>
+                </tr>
+                <tr>
+                    <td>14</td>
+                    <td>thema</td>
+                    <td>Finanzen</td>
+                    <td>4</td>
+                    <td>TRUE</td>
+                </tr>
+                <tr>
+                    <td>15</td>
+                    <td>zeitfenster</td>
+                    <td>11:30 - 12:00</td>
+                    <td>0</td>
+                    <td>TRUE</td>
+                </tr>
+                <tr>
+                    <td>16</td>
+                    <td>zeitfenster</td>
+                    <td>12:00 - 13:00</td>
+                    <td>1</td>
+                    <td>TRUE</td>
+                </tr>
+                <tr>
+                    <td>17</td>
+                    <td>zeitfenster</td>
+                    <td>14:00 - 15:00</td>
+                    <td>2</td>
+                    <td>TRUE</td>
+                </tr>
+                <tr>
+                    <td>18</td>
+                    <td>referenz</td>
+                    <td>Internet</td>
+                    <td>0</td>
+                    <td>TRUE</td>
+                </tr>
+                <tr>
+                    <td>19</td>
+                    <td>referenz</td>
+                    <td>Empfehlung Freunde</td>
+                    <td>1</td>
+                    <td>TRUE</td>
+                </tr>
+                <tr>
+                    <td colspan="5" style="text-align: center; color: #666;">... weitere Optionen ...</td>
+                </tr>
+            </tbody>
+        </table>
+        
+        <!-- ============================================================ -->
+        <!-- TABLE 3: STATS_ENTRIES -->
+        <!-- ============================================================ -->
+        <h2>Tabelle 3: stats_entries</h2>
+        <div class="table-name">stats_entries</div>
+        <p>Jede Zeile = ein erfasster Fall</p>
+        <table>
+            <thead>
+                <tr>
+                    <th><span class="pk">PK</span> id</th>
+                    <th><span class="fk">FK</span> user_id</th>
+                    <th>created_at</th>
+                    <th>reference_remarks</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>499</td>
+                    <td>1 → Tosca</td>
+                    <td>2025-03-19 12:30:00</td>
+                    <td>NULL</td>
+                </tr>
+                <tr>
+                    <td>500</td>
+                    <td>2 → Silvie</td>
+                    <td>2025-03-19 13:15:00</td>
+                    <td>durch Bibliothek</td>
+                </tr>
+                <tr>
+                    <td>501</td>
+                    <td>2 → Silvie</td>
+                    <td>2025-03-19 14:00:00</td>
+                    <td>NULL</td>
+                </tr>
+            </tbody>
+        </table>
+        
+        <!-- ============================================================ -->
+        <!-- TABLE 4: STATS_ENTRY_VALUES -->
+        <!-- ============================================================ -->
+        <h2>Tabelle 4: stats_entry_values</h2>
+        <div class="table-name">stats_entry_values</div>
+        <p><strong>Die Kern-Tabelle für Multi-Select!</strong> Jede angekreuzte Option wird eine eigene Zeile.</p>
+        <table>
+            <thead>
+                <tr>
+                    <th><span class="pk">PK</span> id</th>
+                    <th><span class="fk">FK</span> entry_id</th>
+                    <th>section</th>
+                    <th>value_text</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Entry 499: Besuch, Mann, Frau, unter 55, selbst betroffen, Bildung, Migrationshintergrund, 12:00-13:00 -->
+                <tr style="background: #e3f2fd;">
+                    <td>1</td>
+                    <td>499</td>
+                    <td>kontaktart</td>
+                    <td>Besuch</td>
+                </tr>
+                <tr style="background: #e3f2fd;">
+                    <td>2</td>
+                    <td>499</td>
+                    <td>person</td>
+                    <td>Mann</td>
+                </tr>
+                <tr style="background: #e3f2fd;">
+                    <td>3</td>
+                    <td>499</td>
+                    <td>person</td>
+                    <td>Frau</td>
+                </tr>
+                <tr style="background: #e3f2fd;">
+                    <td>4</td>
+                    <td>499</td>
+                    <td>person</td>
+                    <td>unter 55</td>
+                </tr>
+                <tr style="background: #e3f2fd;">
+                    <td>5</td>
+                    <td>499</td>
+                    <td>person</td>
+                    <td>selbst betroffen</td>
+                </tr>
+                <tr style="background: #e3f2fd;">
+                    <td>6</td>
+                    <td>499</td>
+                    <td>thema</td>
+                    <td>Bildung</td>
+                </tr>
+                <tr style="background: #e3f2fd;">
+                    <td>7</td>
+                    <td>499</td>
+                    <td>thema</td>
+                    <td>Migrationshintergrund</td>
+                </tr>
+                <tr style="background: #e3f2fd;">
+                    <td>8</td>
+                    <td>499</td>
+                    <td>zeitfenster</td>
+                    <td>12:00 - 13:00</td>
+                </tr>
+                
+                <!-- Entry 500: Besuch, Frau, unter 55, selbst betroffen, Finanzen, 14:00-15:00 -->
+                <tr style="background: #fff3e0;">
+                    <td>9</td>
+                    <td>500</td>
+                    <td>kontaktart</td>
+                    <td>Besuch</td>
+                </tr>
+                <tr style="background: #fff3e0;">
+                    <td>10</td>
+                    <td>500</td>
+                    <td>person</td>
+                    <td>Frau</td>
+                </tr>
+                <tr style="background: #fff3e0;">
+                    <td>11</td>
+                    <td>500</td>
+                    <td>person</td>
+                    <td>unter 55</td>
+                </tr>
+                <tr style="background: #fff3e0;">
+                    <td>12</td>
+                    <td>500</td>
+                    <td>person</td>
+                    <td>selbst betroffen</td>
+                </tr>
+                <tr style="background: #fff3e0;">
+                    <td>13</td>
+                    <td>500</td>
+                    <td>thema</td>
+                    <td>Finanzen</td>
+                </tr>
+                <tr style="background: #fff3e0;">
+                    <td>14</td>
+                    <td>500</td>
+                    <td>zeitfenster</td>
+                    <td>14:00 - 15:00</td>
+                </tr>
+                <tr style="background: #fff3e0;">
+                    <td>15</td>
+                    <td>500</td>
+                    <td>referenz</td>
+                    <td>Andere</td>
+                </tr>
+                
+                <!-- Entry 501: Mail, Mann, unter 55, selbst betroffen, Austausch und Freizeit, Allgemeine Hilfeleistungen, Internet, 14:00-15:00 -->
+                <tr style="background: #f3e5f5;">
+                    <td>16</td>
+                    <td>501</td>
+                    <td>kontaktart</td>
+                    <td>Mail</td>
+                </tr>
+                <tr style="background: #f3e5f5;">
+                    <td>17</td>
+                    <td>501</td>
+                    <td>person</td>
+                    <td>Mann</td>
+                </tr>
+                <tr style="background: #f3e5f5;">
+                    <td>18</td>
+                    <td>501</td>
+                    <td>person</td>
+                    <td>unter 55</td>
+                </tr>
+                <tr style="background: #f3e5f5;">
+                    <td>19</td>
+                    <td>501</td>
+                    <td>person</td>
+                    <td>selbst betroffen</td>
+                </tr>
+                <tr style="background: #f3e5f5;">
+                    <td>20</td>
+                    <td>501</td>
+                    <td>thema</td>
+                    <td>Austausch und Freizeit</td>
+                </tr>
+                <tr style="background: #f3e5f5;">
+                    <td>21</td>
+                    <td>501</td>
+                    <td>thema</td>
+                    <td>Allgemeine Hilfeleistungen</td>
+                </tr>
+                <tr style="background: #f3e5f5;">
+                    <td>22</td>
+                    <td>501</td>
+                    <td>referenz</td>
+                    <td>Internet</td>
+                </tr>
+                <tr style="background: #f3e5f5;">
+                    <td>23</td>
+                    <td>501</td>
+                    <td>zeitfenster</td>
+                    <td>14:00 - 15:00</td>
+                </tr>
+            </tbody>
+        </table>
+        
+        <div class="note">
+            <div class="note-title">Wichtig:</div>
+            Jede Farbe = ein Eintrag (entry_id 499, 500, 501)<br>
+            Entry 499 hat <span class="highlight">8 Zeilen</span> weil 8 Optionen angekreuzt wurden<br>
+            Entry 500 hat <span class="highlight">7 Zeilen</span><br>
+            Entry 501 hat <span class="highlight">8 Zeilen</span>
+        </div>
+        
+        <!-- ============================================================ -->
+        <!-- VISUAL EXAMPLE -->
+        <!-- ============================================================ -->
+        <h2>Visuelles Beispiel: Wie Entry #499 gespeichert wird</h2>
+        
+        <div class="example-box">
+            <h3>CSV Zeile 2 (Entry #499):</h3>
+            <p><strong>User:</strong> Tosca<br>
+            <strong>Datum:</strong> 19.03.25<br>
+            <strong>Angekreuzt:</strong> Besuch=WAHR, Mann=WAHR, Frau=WAHR, unter 55=WAHR, selbst betroffen=WAHR, Bildung=WAHR, Migrationshintergrund=WAHR, 12:00-13:00=WAHR</p>
+        </div>
+        
+        <div class="arrow">⬇</div>
+        
+        <div class="example-box">
+            <h3>Wird zu 1 Zeile in stats_entries:</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>id</th>
+                        <th>user_id</th>
+                        <th>created_at</th>
+                        <th>reference_remarks</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>499</td>
+                        <td>1</td>
+                        <td>2025-03-19 12:30:00</td>
+                        <td>NULL</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="arrow">+</div>
+        
+        <div class="example-box">
+            <h3>Und 8 Zeilen in stats_entry_values:</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>id</th>
+                        <th>entry_id</th>
+                        <th>section</th>
+                        <th>value_text</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td>1</td><td>499</td><td>kontaktart</td><td>Besuch</td></tr>
+                    <tr><td>2</td><td>499</td><td>person</td><td>Mann</td></tr>
+                    <tr><td>3</td><td>499</td><td>person</td><td>Frau</td></tr>
+                    <tr><td>4</td><td>499</td><td>person</td><td>unter 55</td></tr>
+                    <tr><td>5</td><td>499</td><td>person</td><td>selbst betroffen</td></tr>
+                    <tr><td>6</td><td>499</td><td>thema</td><td>Bildung</td></tr>
+                    <tr><td>7</td><td>499</td><td>thema</td><td>Migrationshintergrund</td></tr>
+                    <tr><td>8</td><td>499</td><td>zeitfenster</td><td>12:00 - 13:00</td></tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- ============================================================ -->
+        <!-- ADMIN EXAMPLE -->
+        <!-- ============================================================ -->
+        <h2>Beispiel: Admin fügt neue Option "Reisen" hinzu</h2>
+        
+        <div class="example-box">
+            <h3>Schritt 1: Admin klickt "Neue Option" im Backend</h3>
+            <p>Section: <span class="code">thema</span><br>
+            Label: <span class="code">Reisen</span></p>
+        </div>
+        
+        <div class="arrow">⬇</div>
+        
+        <div class="example-box">
+            <h3>Schritt 2: Eine neue Zeile wird in option_definitions eingefügt:</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>id</th>
+                        <th>section</th>
+                        <th>label</th>
+                        <th>sort_order</th>
+                        <th>is_active</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr style="background: #c8e6c9;">
+                        <td>50</td>
+                        <td>thema</td>
+                        <td>Reisen</td>
+                        <td>20</td>
+                        <td>TRUE</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="arrow">⬇</div>
+        
+        <div class="example-box">
+            <h3>Schritt 3: Frontend lädt Optionen neu</h3>
+            <p>Dropdown "Thema" zeigt jetzt auch: <span class="code">Reisen</span></p>
+        </div>
+        
+        <div class="arrow">⬇</div>
+        
+        <div class="example-box">
+            <h3>Schritt 4: User wählt "Reisen" und speichert</h3>
+            <p>Neue Zeile in stats_entry_values:</p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>id</th>
+                        <th>entry_id</th>
+                        <th>section</th>
+                        <th>value_text</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr style="background: #c8e6c9;">
+                        <td>524</td>
+                        <td>502</td>
+                        <td>thema</td>
+                        <td>Reisen</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="note">
+            <div class="note-title">Wichtig:</div>
+            Kein Schema-Update nötig! Keine Code-Änderung! Kein Deployment!<br>
+            Die neue Option ist sofort verfügbar und wird wie alle anderen gespeichert.
+        </div>
+        
+        <!-- ============================================================ -->
+        <!-- RELATIONSHIPS -->
+        <!-- ============================================================ -->
+        <h2>Beziehungen zwischen Tabellen</h2>
+        
+        <div class="example-box">
+            <h3>1. users → stats_entries (1:N)</h3>
+            <p>Ein User (z.B. Tosca) kann viele Einträge erfassen.</p>
+            <p><span class="code">stats_entries.user_id</span> → <span class="code">users.id</span></p>
+        </div>
+        
+        <div class="example-box">
+            <h3>2. stats_entries → stats_entry_values (1:N)</h3>
+            <p>Ein Eintrag (z.B. #499) hat mehrere Werte (8 Zeilen für die 8 angekreuzten Optionen).</p>
+            <p><span class="code">stats_entry_values.entry_id</span> → <span class="code">stats_entries.id</span></p>
+        </div>
+        
+        <div class="example-box">
+            <h3>3. option_definitions ↔ stats_entry_values (Lose Kopplung)</h3>
+            <p><strong>Wichtig: KEIN Foreign Key!</strong></p>
+            <p>stats_entry_values speichert den <strong>Text-Wert</strong> (z.B. "Bildung"), nicht die ID.</p>
+            <p>Vorteil: Historische Daten bleiben intakt, auch wenn Optionen gelöscht werden.</p>
+        </div>
+        
+        <!-- ============================================================ -->
+        <!-- QUERY EXAMPLES -->
+        <!-- ============================================================ -->
+        <h2>SQL Abfragen - Beispiele</h2>
+        
+        <div class="example-box">
+            <h3>Alle Werte für Entry #499 anzeigen:</h3>
+            <pre style="background: white; padding: 10px; border: 1px solid #ccc; overflow-x: auto;">
+SELECT section, value_text
+FROM stats_entry_values
+WHERE entry_id = 499;</pre>
+            
+            <p><strong>Ergebnis:</strong></p>
+            <table>
+                <tr><th>section</th><th>value_text</th></tr>
+                <tr><td>kontaktart</td><td>Besuch</td></tr>
+                <tr><td>person</td><td>Mann</td></tr>
+                <tr><td>person</td><td>Frau</td></tr>
+                <tr><td>person</td><td>unter 55</td></tr>
+                <tr><td>person</td><td>selbst betroffen</td></tr>
+                <tr><td>thema</td><td>Bildung</td></tr>
+                <tr><td>thema</td><td>Migrationshintergrund</td></tr>
+                <tr><td>zeitfenster</td><td>12:00 - 13:00</td></tr>
+            </table>
+        </div>
+        
+        <div class="example-box">
+            <h3>Wie oft wurde "Bildung" gewählt?</h3>
+            <pre style="background: white; padding: 10px; border: 1px solid #ccc; overflow-x: auto;">
+SELECT COUNT(DISTINCT entry_id) as anzahl
+FROM stats_entry_values
+WHERE section = 'thema' AND value_text = 'Bildung';</pre>
+            
+            <p><strong>Ergebnis:</strong> anzahl = 342</p>
+        </div>
+        
+        <div class="example-box">
+            <h3>Alle Themen mit Häufigkeit:</h3>
+            <pre style="background: white; padding: 10px; border: 1px solid #ccc; overflow-x: auto;">
+SELECT value_text, COUNT(DISTINCT entry_id) as anzahl
+FROM stats_entry_values
+WHERE section = 'thema'
+GROUP BY value_text
+ORDER BY anzahl DESC;</pre>
+            
+            <p><strong>Ergebnis:</strong></p>
+            <table>
+                <tr><th>value_text</th><th>anzahl</th></tr>
+                <tr><td>Bildung</td><td>342</td></tr>
+                <tr><td>Arbeit</td><td>289</td></tr>
+                <tr><td>Gesundheit</td><td>256</td></tr>
+                <tr><td>Wohnen</td><td>198</td></tr>
+                <tr><td>Finanzen</td><td>167</td></tr>
+            </table>
+        </div>
+        
+        <div class="example-box">
+            <h3>Kompletter Eintrag mit allen Selektionen (für CSV Export):</h3>
+            <pre style="background: white; padding: 10px; border: 1px solid #ccc; overflow-x: auto;">
+SELECT 
+    se.id,
+    se.created_at,
+    u.username,
+    GROUP_CONCAT(
+        CASE WHEN sev.section = 'kontaktart' 
+        THEN sev.value_text END SEPARATOR '; '
+    ) as kontaktart,
+    GROUP_CONCAT(
+        CASE WHEN sev.section = 'person' 
+        THEN sev.value_text END SEPARATOR '; '
+    ) as person,
+    GROUP_CONCAT(
+        CASE WHEN sev.section = 'thema' 
+        THEN sev.value_text END SEPARATOR '; '
+    ) as themen
+FROM stats_entries se
+JOIN users u ON se.user_id = u.id
+LEFT JOIN stats_entry_values sev ON se.id = sev.entry_id
+WHERE se.id = 499
+GROUP BY se.id;</pre>
+            
+            <p><strong>Ergebnis:</strong></p>
+            <table>
+                <tr>
+                    <th>id</th>
+                    <th>created_at</th>
+                    <th>username</th>
+                    <th>kontaktart</th>
+                    <th>person</th>
+                    <th>themen</th>
+                </tr>
+                <tr>
+                    <td>499</td>
+                    <td>2025-03-19</td>
+                    <td>Tosca</td>
+                    <td>Besuch</td>
+                    <td>Frau; Mann; selbst betroffen; unter 55</td>
+                    <td>Bildung; Migrationshintergrund</td>
+                </tr>
+            </table>
+        </div>
+        
+    </div>
+</body>
+</html>

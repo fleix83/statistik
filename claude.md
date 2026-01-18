@@ -28,3 +28,59 @@ Four main tables with "loose coupling" approach:
 2. **option_definitions** - dropdown configuration
 3. **stats_entries** - main data
 4. **stats_entry_values** - junction table for multi-select relationships (stores text values, not FK references)
+
+## App Structure
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                        HELPDESK STATISTIK                       │
+├─────────────────┬─────────────────────┬─────────────────────────┤
+│    FRONTEND     │       EDITOR        │       ANALYTICS         │
+│   (Users)       │      (Admins)       │        (Admins)         │
+├─────────────────┼─────────────────────┼─────────────────────────┤
+│ Data Entry      │ Manage Options      │ Visualize Data          │
+│                 │ Manage Users        │ Compare Periods         │
+└────────┬────────┴──────────┬──────────┴────────────┬────────────┘
+         │                   │                       │
+         ▼                   ▼                       ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                         PHP API                                 │
+├─────────────────────────────────────────────────────────────────┤
+│                      MySQL Database                             │
+│  ┌───────┐ ┌──────────────────┐ ┌─────────────┐ ┌─────────────┐│
+│  │ users │ │option_definitions│ │stats_entries│ │entry_values ││
+│  └───────┘ └──────────────────┘ └─────────────┘ └─────────────┘│
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### 1. Frontend (Users)
+**Purpose:** Statistical data entry for helpdesk consultations
+- No login required - user selects their name from dropdown per entry
+- Multi-select form for all categories (Kontaktart, Person, Thema, Zeitfenster, Referenz)
+- Submit consultation records
+
+### 2. Editor (Admins)
+**Purpose:** Manage dropdown options and user accounts
+- Add, edit, reorder, deactivate dropdown options
+- Create/manage user accounts and roles
+- Changes reflect immediately in Frontend
+
+### 3. Analytics (Admins)
+**Purpose:** Analyze and visualize consultation data
+- Dashboard with key metrics
+- Charts: small multiples, connected dot plots, diverging bars
+- Filter by date range, section, values
+- Export to CSV
+
+### Data Flow
+```
+User → Frontend (Entry) → stats_entries + stats_entry_values
+Admin → Editor → option_definitions + users
+Admin → Analytics ← Query aggregated data
+```
+
+### User Roles
+| Role | Frontend | Editor | Analytics |
+|------|----------|--------|-----------|
+| user | ✓ | ✗ | ✗ |
+| admin | ✓ | ✓ | ✓ |
