@@ -54,23 +54,17 @@ function onReset() {
 </script>
 
 <template>
-    <div class="editor-header">
-        <div class="header-left">
-            <div class="title-row">
-                <i class="pi pi-cog"></i>
-                <h1>Editor</h1>
-            </div>
-            <div class="status-row">
-                <Tag
-                    v-if="hasPendingChanges"
-                    value="Unveröffentlichte Änderungen"
-                    severity="warn"
-                    icon="pi pi-exclamation-circle"
-                />
-                <span v-else-if="formattedLastPublished" class="last-published">
-                    Zuletzt veröffentlicht: {{ formattedLastPublished }}
-                </span>
-            </div>
+    <div class="header-controls">
+        <div class="status-info">
+            <Tag
+                v-if="hasPendingChanges"
+                value="Unveröffentlichte Änderungen"
+                severity="warn"
+                icon="pi pi-exclamation-circle"
+            />
+            <span v-else-if="formattedLastPublished" class="last-published">
+                Zuletzt veröffentlicht: {{ formattedLastPublished }}
+            </span>
         </div>
 
         <div class="header-actions">
@@ -79,6 +73,7 @@ function onReset() {
                 icon="pi pi-refresh"
                 severity="secondary"
                 outlined
+                size="small"
                 :loading="resetting"
                 @click="onReset"
                 v-tooltip.bottom="'Auf Standardwerte zurücksetzen'"
@@ -89,12 +84,14 @@ function onReset() {
                 icon="pi pi-times"
                 severity="danger"
                 outlined
+                size="small"
                 :loading="discarding"
                 @click="onDiscard"
             />
             <Button
                 label="Veröffentlichen"
                 icon="pi pi-check"
+                size="small"
                 :disabled="!hasPendingChanges"
                 :loading="publishing"
                 @click="onPublish"
@@ -104,63 +101,31 @@ function onReset() {
 </template>
 
 <style scoped>
-.editor-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    padding: 1rem 1.5rem;
-    background: var(--surface-card);
-    border-bottom: 1px solid var(--surface-border);
-    margin-bottom: 1.5rem;
-    border-radius: 8px;
-}
-
-.header-left {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-}
-
-.title-row {
+.header-controls {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
+    gap: 16px;
 }
 
-.title-row i {
-    font-size: 1.5rem;
-    color: var(--primary-500);
-}
-
-.title-row h1 {
-    margin: 0;
-    font-size: 1.5rem;
-    font-weight: 600;
-}
-
-.status-row {
-    min-height: 1.5rem;
+.status-info {
+    min-height: 24px;
 }
 
 .last-published {
-    color: var(--text-color-secondary);
-    font-size: 0.875rem;
+    color: #999;
+    font-size: 13px;
 }
 
 .header-actions {
     display: flex;
-    gap: 0.5rem;
+    gap: 8px;
 }
 
 @media (max-width: 768px) {
-    .editor-header {
+    .header-controls {
         flex-direction: column;
-        gap: 1rem;
-    }
-
-    .header-actions {
-        width: 100%;
-        justify-content: flex-end;
+        align-items: flex-end;
+        gap: 8px;
     }
 }
 </style>

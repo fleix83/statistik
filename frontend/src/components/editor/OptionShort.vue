@@ -14,7 +14,7 @@ const props = defineProps({
     }
 })
 
-const emit = defineEmits(['update', 'delete', 'editKeywords'])
+const emit = defineEmits(['update', 'delete'])
 
 // Inline editing state
 const isEditing = ref(false)
@@ -24,7 +24,6 @@ const inputRef = ref(null)
 // Computed
 const isActive = computed(() => props.option.is_active)
 const isMarkedForDelete = computed(() => props.option.draft_action === 'delete')
-const keywords = computed(() => props.option.keywords || [])
 
 // Methods
 function startEditing() {
@@ -60,20 +59,15 @@ function onKeydown(event) {
 function toggleActive() {
     emit('update', props.option.id, { is_active: !isActive.value })
 }
-
-function onEditKeywords() {
-    emit('editKeywords', props.option)
-}
 </script>
 
 <template>
     <div
-        class="option-thema drag-handle"
+        class="option-short drag-handle"
         :class="{
             'is-inactive': !isActive,
             'is-marked-delete': isMarkedForDelete
         }"
-        @dblclick="onEditKeywords"
     >
         <!-- Label (editable) -->
         <div class="option-label" @click.stop="startEditing">
@@ -94,17 +88,6 @@ function onEditKeywords() {
             </template>
         </div>
 
-        <!-- Keywords displayed inline -->
-        <div class="keywords-inline" v-if="keywords.length > 0" @click.stop="onEditKeywords">
-            <span
-                v-for="keyword in keywords"
-                :key="keyword"
-                class="keyword-tag"
-            >
-                {{ keyword }}
-            </span>
-        </div>
-
         <!-- Toggle -->
         <CustomToggle
             :modelValue="isActive"
@@ -116,51 +99,52 @@ function onEditKeywords() {
 </template>
 
 <style scoped>
-.option-thema {
-    display: inline-flex;
-    min-height: 66px;
-    padding: 20px 28px 20px 35px;
-    justify-content: flex-start;
+.option-short {
+    display: flex;
+    width: 193px;
+    height: 30px;
+    padding: 21px 20px;
+    justify-content: space-between;
     align-items: center;
-    gap: 10px;
-    border-radius: 7px;
-    border: 1px solid #B7B7B7;
+    border-radius: 5px;
+    border: 0.714px solid #B7B7B7;
     background: #FFF;
     cursor: grab;
     transition: all 0.2s;
-    width: 100%;
-    box-sizing: border-box;
+    box-sizing: content-box;
 }
 
-.option-thema:hover {
+.option-short:hover {
     border-color: #999;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
-.option-thema:active {
+.option-short:active {
     cursor: grabbing;
 }
 
-.option-thema.is-inactive {
+.option-short.is-inactive {
     opacity: 0.6;
 }
 
-.option-thema.is-marked-delete {
+.option-short.is-marked-delete {
     background: #FEE;
     border-color: #E5A;
     opacity: 0.7;
 }
 
 .option-label {
-    flex-shrink: 0;
+    flex: 1;
+    min-width: 0;
     cursor: text;
 }
 
 .label-text {
-    font-size: 16px;
-    font-weight: 500;
+    font-size: 14px;
     color: #1B1B1B;
     white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .label-text.strikethrough {
@@ -169,37 +153,13 @@ function onEditKeywords() {
 }
 
 .edit-input {
-    width: auto;
-    min-width: 80px;
+    width: 100%;
+    font-size: 14px;
+    padding: 2px 4px;
 }
 
 .edit-input :deep(.p-inputtext) {
-    padding: 4px 8px;
-    font-size: 16px;
-    font-weight: 500;
-}
-
-.keywords-inline {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 8px;
-    flex: 1;
-    cursor: pointer;
-}
-
-.keyword-tag {
-    display: inline-flex;
-    align-items: center;
-    padding: 6px 12px;
-    background: #F5F5F5;
-    border-radius: 4px;
-    font-size: 13px;
-    color: #666;
-    border: 1px solid #E0E0E0;
-}
-
-.keyword-tag:hover {
-    background: #EBEBEB;
+    padding: 2px 4px;
+    font-size: 14px;
 }
 </style>

@@ -15,9 +15,8 @@ import Select from 'primevue/select'
 
 import EditorHeader from '../components/editor/EditorHeader.vue'
 import SectionCard from '../components/editor/SectionCard.vue'
-import OptionItem from '../components/editor/OptionItem.vue'
+import OptionShort from '../components/editor/OptionShort.vue'
 import OptionItemThema from '../components/editor/OptionItemThema.vue'
-import AddOptionButton from '../components/editor/AddOptionButton.vue'
 import KeywordEditor from '../components/editor/KeywordEditor.vue'
 
 import { useEditorDraft } from '../composables/useEditorDraft'
@@ -58,25 +57,19 @@ const resetting = ref(false)
 const keywordEditorVisible = ref(false)
 const keywordEditorOption = ref(null)
 
-// Section labels for display
-const sectionLabels = {
-    kontaktart: 'Kontaktart',
-    person: 'Person',
-    dauer: 'Dauer',
-    thema: 'Thema',
-    zeitfenster: 'Zeitfenster',
-    referenz: 'Referenz'
-}
-
 const roles = [
     { label: 'Benutzer', value: 'user' },
     { label: 'Admin', value: 'admin' }
 ]
 
-// Computed getters for each section
-const kontaktartOptions = computed(() => optionsBySection.value['kontaktart'] || [])
-const personOptions = computed(() => optionsBySection.value['person'] || [])
-const dauerOptions = computed(() => optionsBySection.value['dauer'] || [])
+// Computed: merge kontaktart, person, dauer into one "Person" section
+const personSectionOptions = computed(() => {
+    const kontaktart = optionsBySection.value['kontaktart'] || []
+    const person = optionsBySection.value['person'] || []
+    const dauer = optionsBySection.value['dauer'] || []
+    return [...kontaktart, ...person, ...dauer]
+})
+
 const themaOptions = computed(() => optionsBySection.value['thema'] || [])
 const zeitfensterOptions = computed(() => optionsBySection.value['zeitfenster'] || [])
 const referenzOptions = computed(() => optionsBySection.value['referenz'] || [])
@@ -118,26 +111,12 @@ async function loadUsers() {
     }
 }
 
-// Options CRUD
-async function onAddOption(section, label) {
-    try {
-        await createOption(section, label)
-        toast.add({
-            severity: 'success',
-            summary: 'Erstellt',
-            detail: 'Option wurde als Entwurf erstellt',
-            life: 3000
-        })
-    } catch (error) {
-        toast.add({
-            severity: 'error',
-            summary: 'Fehler',
-            detail: error.response?.data?.error || 'Erstellen fehlgeschlagen',
-            life: 3000
-        })
-    }
+// Determine which actual section an option belongs to based on its section property
+function getActualSection(option) {
+    return option.section || 'kontaktart'
 }
 
+// Options CRUD
 async function onUpdateOption(id, data) {
     try {
         await updateOption(id, data)
@@ -173,6 +152,39 @@ async function onDeleteOption(id) {
 async function onReorderSection(section, items) {
     try {
         await reorderSection(section, items)
+    } catch (error) {
+        toast.add({
+            severity: 'error',
+            summary: 'Fehler',
+            detail: 'Neuordnung fehlgeschlagen',
+            life: 3000
+        })
+    }
+}
+
+// Handle reorder for the combined Person section
+async function onReorderPersonSection(section, items) {
+    // Group items back by their actual section
+    const grouped = {
+        kontaktart: [],
+        person: [],
+        dauer: []
+    }
+
+    for (const item of items) {
+        const actualSection = item.section || 'kontaktart'
+        if (grouped[actualSection]) {
+            grouped[actualSection].push(item)
+        }
+    }
+
+    // Update each section's sort order
+    try {
+        for (const [sec, secItems] of Object.entries(grouped)) {
+            if (secItems.length > 0) {
+                await reorderSection(sec, secItems)
+            }
+        }
     } catch (error) {
         toast.add({
             severity: 'error',
@@ -362,104 +374,59 @@ function confirmDeleteUser(user) {
         @save="onSaveKeywords"
     />
 
-    <div class="editor">
-        <EditorHeader
-            :hasPendingChanges="hasPendingChanges"
-            :lastPublishedAt="publishState.last_published_at"
-            :publishing="publishing"
-            :discarding="discarding"
-            :resetting="resetting"
-            @publish="onPublish"
-            @discard="onDiscard"
-            @reset="onReset"
-        />
+    <div class="editor-page">
+        <div class="editor-header">
+            <h1 class="page-title">Editor</h1>
+            <EditorHeader
+                :hasPendingChanges="hasPendingChanges"
+                :lastPublishedAt="publishState.last_published_at"
+                :publishing="publishing"
+                :discarding="discarding"
+                :resetting="resetting"
+                @publish="onPublish"
+                @discard="onDiscard"
+                @reset="onReset"
+            />
+        </div>
 
-        <TabView>
+        <TabView class="editor-tabs">
             <!-- Options Tab -->
             <TabPanel header="Dropdown-Optionen">
-                <div class="options-grid" v-if="!loading">
-                    <!-- Left Column: Person Section (kontaktart + person + dauer) -->
-                    <div class="options-column">
-                        <h3 class="column-title">Person</h3>
-
-                        <!-- Kontaktart -->
-                        <SectionCard
-                            title="Kontaktart"
-                            section="kontaktart"
-                            :options="kontaktartOptions"
-                            @reorder="onReorderSection"
-                        >
-                            <template #item="{ element }">
-                                <OptionItem
-                                    :option="element"
-                                    section="kontaktart"
-                                    @update="onUpdateOption"
-                                    @delete="onDeleteOption"
-                                />
-                            </template>
-                            <template #footer>
-                                <AddOptionButton
-                                    section="kontaktart"
-                                    @add="onAddOption"
-                                />
-                            </template>
-                        </SectionCard>
-
-                        <!-- Person -->
+                <!-- Debug info -->
+                <div class="debug-info" style="padding: 10px; background: #fff3cd; margin-bottom: 16px; border-radius: 4px; font-size: 12px;">
+                    Person: {{ personSectionOptions.length }} |
+                    Thema: {{ themaOptions.length }} |
+                    Zeitfenster: {{ zeitfensterOptions.length }} |
+                    Referenz: {{ referenzOptions.length }} |
+                    Loading: {{ loading }}
+                </div>
+                <div class="options-layout" v-if="!loading">
+                    <!-- Left Column -->
+                    <div class="options-column-left">
+                        <!-- Person Section (combined kontaktart + person + dauer) -->
                         <SectionCard
                             title="Person"
-                            section="person"
-                            :options="personOptions"
-                            @reorder="onReorderSection"
+                            section="person-combined"
+                            :options="personSectionOptions"
+                            layout="grid"
+                            @reorder="onReorderPersonSection"
                         >
                             <template #item="{ element }">
-                                <OptionItem
+                                <OptionShort
                                     :option="element"
-                                    section="person"
+                                    :section="element.section"
                                     @update="onUpdateOption"
                                     @delete="onDeleteOption"
                                 />
                             </template>
-                            <template #footer>
-                                <AddOptionButton
-                                    section="person"
-                                    @add="onAddOption"
-                                />
-                            </template>
                         </SectionCard>
 
-                        <!-- Dauer -->
-                        <SectionCard
-                            title="Dauer"
-                            section="dauer"
-                            :options="dauerOptions"
-                            @reorder="onReorderSection"
-                        >
-                            <template #item="{ element }">
-                                <OptionItem
-                                    :option="element"
-                                    section="dauer"
-                                    @update="onUpdateOption"
-                                    @delete="onDeleteOption"
-                                />
-                            </template>
-                            <template #footer>
-                                <AddOptionButton
-                                    section="dauer"
-                                    @add="onAddOption"
-                                />
-                            </template>
-                        </SectionCard>
-                    </div>
-
-                    <!-- Middle Column: Thema -->
-                    <div class="options-column thema-column">
-                        <h3 class="column-title">Thema</h3>
-
+                        <!-- Thema Section -->
                         <SectionCard
                             title="Thema"
                             section="thema"
                             :options="themaOptions"
+                            layout="list"
                             @reorder="onReorderSection"
                         >
                             <template #item="{ element }">
@@ -471,61 +438,43 @@ function confirmDeleteUser(user) {
                                     @editKeywords="onEditKeywords"
                                 />
                             </template>
-                            <template #footer>
-                                <AddOptionButton
-                                    section="thema"
-                                    @add="onAddOption"
-                                />
-                            </template>
                         </SectionCard>
                     </div>
 
-                    <!-- Right Column: Zeitfenster + Referenz -->
-                    <div class="options-column">
-                        <h3 class="column-title">Zeit & Referenz</h3>
-
-                        <!-- Zeitfenster -->
+                    <!-- Right Column -->
+                    <div class="options-column-right">
+                        <!-- Zeitfenster Section -->
                         <SectionCard
                             title="Zeitfenster"
                             section="zeitfenster"
                             :options="zeitfensterOptions"
+                            layout="list"
                             @reorder="onReorderSection"
                         >
                             <template #item="{ element }">
-                                <OptionItem
+                                <OptionShort
                                     :option="element"
                                     section="zeitfenster"
                                     @update="onUpdateOption"
                                     @delete="onDeleteOption"
-                                />
-                            </template>
-                            <template #footer>
-                                <AddOptionButton
-                                    section="zeitfenster"
-                                    @add="onAddOption"
                                 />
                             </template>
                         </SectionCard>
 
-                        <!-- Referenz -->
+                        <!-- Referenz Section -->
                         <SectionCard
                             title="Referenz"
                             section="referenz"
                             :options="referenzOptions"
+                            layout="list"
                             @reorder="onReorderSection"
                         >
                             <template #item="{ element }">
-                                <OptionItem
+                                <OptionShort
                                     :option="element"
                                     section="referenz"
                                     @update="onUpdateOption"
                                     @delete="onDeleteOption"
-                                />
-                            </template>
-                            <template #footer>
-                                <AddOptionButton
-                                    section="referenz"
-                                    @add="onAddOption"
                                 />
                             </template>
                         </SectionCard>
@@ -600,33 +549,53 @@ function confirmDeleteUser(user) {
 </template>
 
 <style scoped>
-.editor {
-    max-width: 1400px;
-    margin: 0 auto;
-    padding: 1rem;
+.editor-page {
+    min-height: 100vh;
+    background: #F5F3EF;
+    padding: 24px 40px;
 }
 
-.options-grid {
+.editor-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+}
+
+.page-title {
+    font-size: 16px;
+    font-weight: 400;
+    color: #666;
+    margin: 0;
+}
+
+.editor-tabs {
+    background: transparent;
+}
+
+.editor-tabs :deep(.p-tabview-panels) {
+    background: transparent;
+    padding: 0;
+}
+
+.editor-tabs :deep(.p-tabview-nav) {
+    background: transparent;
+    border: none;
+    margin-bottom: 24px;
+}
+
+.options-layout {
     display: grid;
-    grid-template-columns: 1fr 1.5fr 1fr;
-    gap: 1.5rem;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    align-items: start;
 }
 
-.options-column {
-    min-width: 0;
-}
-
-.thema-column {
-    /* Thema column is wider */
-}
-
-.column-title {
-    font-size: 1rem;
-    font-weight: 600;
-    color: var(--text-color-secondary);
-    margin-bottom: 1rem;
-    padding-bottom: 0.5rem;
-    border-bottom: 2px solid var(--surface-200);
+.options-column-left,
+.options-column-right {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
 }
 
 .loading-state {
@@ -636,7 +605,7 @@ function confirmDeleteUser(user) {
     justify-content: center;
     gap: 1rem;
     padding: 3rem;
-    color: var(--text-color-secondary);
+    color: #666;
 }
 
 .field {
@@ -649,23 +618,9 @@ function confirmDeleteUser(user) {
     font-weight: 500;
 }
 
-@media (max-width: 1200px) {
-    .options-grid {
-        grid-template-columns: 1fr 1fr;
-    }
-
-    .thema-column {
-        grid-column: span 2;
-    }
-}
-
-@media (max-width: 768px) {
-    .options-grid {
+@media (max-width: 1024px) {
+    .options-layout {
         grid-template-columns: 1fr;
-    }
-
-    .thema-column {
-        grid-column: span 1;
     }
 }
 </style>
