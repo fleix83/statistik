@@ -1,5 +1,8 @@
 # Helpdesk Statistics Application
 
+## Rules
+- Always use Context7 MCP when I need library/API documentation, code generation, setup or configuration steps without me having to explicitly ask.
+
 ## Purpose & Context
 Felix is developing a web-based helpdesk statistics application for a German counseling center, migrating from their current FileMaker system to a cost-effective LAMP stack solution (MySQL, PHP, Vue.js). As product manager, he's overseeing the technical architecture and data migration strategy. The application tracks visitor statistics across multiple categories including contact methods (Besuch, Telefon, Mail), demographics, consultation topics (Bildung, Arbeit, Finanzen, Gesundheit, Migration Integration), time windows, and referral sources. The system needs to handle complex multi-select data where users can check multiple options per category simultaneously, while preserving historical data integrity from existing CSV files containing thousands of entries. Key requirements include administrative flexibility to modify dropdown options without code changes, smooth data migration from legacy systems, and analytics capabilities for backoffice users to compare trends across different time periods.
 

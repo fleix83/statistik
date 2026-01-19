@@ -197,10 +197,10 @@ INSERT INTO option_definitions (section, label, sort_order) VALUES
 -- SEED DATA: DEFAULT ADMIN USER
 -- ============================================================================
 -- Password: 'admin123' (change immediately after first login!)
--- Hash generated with: password_hash('admin123', PASSWORD_DEFAULT)
+-- Hash generated with: php -r "echo password_hash('admin123', PASSWORD_DEFAULT);"
 -- ============================================================================
 INSERT INTO users (username, password_hash, role) VALUES
-    ('admin', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin');
+    ('admin', '$2y$12$Irqjk28s4AkdJEaXcYL2DeKuGORJE6NKoj1eelFwqo/Pbw6pS3sGO', 'admin');
 
 -- ============================================================================
 -- VERIFICATION QUERIES
