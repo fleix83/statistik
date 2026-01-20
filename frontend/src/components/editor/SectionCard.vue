@@ -39,7 +39,13 @@ function onDragEnd() {
 
 <template>
     <div class="section-container">
-        <h4 class="section-title">{{ title }}</h4>
+        <div class="section-header">
+            <h4 class="section-title">{{ title }}</h4>
+            <button class="add-option-btn" @click="emit('add', section)">
+                <span class="add-icon">+</span>
+                <span class="add-text">Option hinzufügen</span>
+            </button>
+        </div>
 
         <div
             class="options-container"
@@ -62,11 +68,56 @@ function onDragEnd() {
     padding: 24px 28px;
 }
 
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
 .section-title {
     font-size: 14px;
     font-weight: 400;
     color: #666;
-    margin: 0 0 16px 0;
+    margin: 0;
+}
+
+.add-option-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px 6px 8px;
+    border: none;
+    background: #FFF;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 13px;
+    color: #666;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    transition: all 0.2s;
+}
+
+.add-option-btn:hover {
+    background: #F8F8F8;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+}
+
+.add-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    background: #FFF;
+    border: 1px solid #DDD;
+    border-radius: 50%;
+    font-size: 16px;
+    font-weight: 300;
+    color: #666;
+}
+
+.add-text {
+    font-weight: 400;
 }
 
 .options-container {

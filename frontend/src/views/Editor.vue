@@ -57,6 +57,15 @@ const resetting = ref(false)
 const keywordEditorVisible = ref(false)
 const keywordEditorOption = ref(null)
 
+// Add option dialog state (for Person section choice)
+const addOptionDialogVisible = ref(false)
+const addOptionSelectedSection = ref('person')
+const personSectionChoices = [
+    { label: 'Kontaktart', value: 'kontaktart' },
+    { label: 'Person', value: 'person' },
+    { label: 'Dauer', value: 'dauer' }
+]
+
 const roles = [
     { label: 'Benutzer', value: 'user' },
     { label: 'Admin', value: 'admin' }
@@ -134,9 +143,9 @@ async function onDeleteOption(id) {
     try {
         await deleteOption(id)
         toast.add({
-            severity: 'info',
-            summary: 'Markiert',
-            detail: 'Option zum Löschen markiert',
+            severity: 'success',
+            summary: 'Gelöscht',
+            detail: 'Option wurde gelöscht',
             life: 3000
         })
     } catch (error) {
@@ -193,6 +202,52 @@ async function onReorderPersonSection(section, items) {
             life: 3000
         })
     }
+}
+
+// Add new option to a section
+async function onAddOption(section) {
+    // For the combined person section, show dialog to choose subsection
+    if (section === 'person-combined') {
+        addOptionSelectedSection.value = 'person'
+        addOptionDialogVisible.value = true
+        return
+    }
+
+    // For other sections, add directly
+    await doCreateOption(section)
+}
+
+// Actually create the option (called directly or from dialog)
+async function doCreateOption(dbSection) {
+    try {
+        // Set sort_order to put new option first in the list
+        const currentOptions = optionsBySection.value[dbSection] || []
+        const minSortOrder = currentOptions.length > 0
+            ? Math.min(...currentOptions.map(o => o.sort_order))
+            : 0
+        const sortOrder = minSortOrder - 1
+
+        await createOption(dbSection, 'Neue Option', sortOrder)
+        toast.add({
+            severity: 'success',
+            summary: 'Erstellt',
+            detail: 'Neue Option hinzugefügt',
+            life: 3000
+        })
+    } catch (error) {
+        toast.add({
+            severity: 'error',
+            summary: 'Fehler',
+            detail: 'Option konnte nicht erstellt werden',
+            life: 3000
+        })
+    }
+}
+
+// Confirm adding option from dialog
+async function confirmAddPersonOption() {
+    addOptionDialogVisible.value = false
+    await doCreateOption(addOptionSelectedSection.value)
 }
 
 // Keywords
@@ -410,6 +465,7 @@ function confirmDeleteUser(user) {
                             :options="personSectionOptions"
                             layout="grid"
                             @reorder="onReorderPersonSection"
+                            @add="onAddOption"
                         >
                             <template #item="{ element }">
                                 <OptionShort
@@ -428,6 +484,7 @@ function confirmDeleteUser(user) {
                             :options="themaOptions"
                             layout="list"
                             @reorder="onReorderSection"
+                            @add="onAddOption"
                         >
                             <template #item="{ element }">
                                 <OptionItemThema
@@ -450,6 +507,7 @@ function confirmDeleteUser(user) {
                             :options="zeitfensterOptions"
                             layout="list"
                             @reorder="onReorderSection"
+                            @add="onAddOption"
                         >
                             <template #item="{ element }">
                                 <OptionShort
@@ -468,6 +526,7 @@ function confirmDeleteUser(user) {
                             :options="referenzOptions"
                             layout="list"
                             @reorder="onReorderSection"
+                            @add="onAddOption"
                         >
                             <template #item="{ element }">
                                 <OptionShort
@@ -543,6 +602,27 @@ function confirmDeleteUser(user) {
             <template #footer>
                 <Button label="Abbrechen" severity="secondary" @click="userDialog = false" />
                 <Button label="Speichern" @click="saveUser" />
+            </template>
+        </Dialog>
+
+        <!-- Add Option Dialog (for Person section) -->
+        <Dialog v-model:visible="addOptionDialogVisible" header="Option hinzufügen" modal style="width: 350px">
+            <div class="flex flex-column gap-3 pt-3">
+                <div class="field">
+                    <label for="section-choice">Kategorie wählen</label>
+                    <Select
+                        id="section-choice"
+                        v-model="addOptionSelectedSection"
+                        :options="personSectionChoices"
+                        optionLabel="label"
+                        optionValue="value"
+                        class="w-full"
+                    />
+                </div>
+            </div>
+            <template #footer>
+                <Button label="Abbrechen" severity="secondary" @click="addOptionDialogVisible = false" />
+                <Button label="Hinzufügen" @click="confirmAddPersonOption" />
             </template>
         </Dialog>
     </div>

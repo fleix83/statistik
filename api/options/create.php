@@ -1,6 +1,6 @@
 <?php
 /**
- * Options: Create new option (writes to draft table)
+ * Options: Create new option (writes directly to option_definitions)
  * POST /options/create.php
  */
 
@@ -39,50 +39,42 @@ $keywords = array_values($keywords);
 
 $db = getDB();
 
-// Check for duplicate in published options
+// Check for duplicate in option_definitions
 $stmt = $db->prepare('SELECT id FROM option_definitions WHERE section = ? AND label = ?');
 $stmt->execute([$section, $label]);
 if ($stmt->fetch()) {
     errorResponse('Eine Option mit diesem Namen existiert bereits in dieser Kategorie');
 }
 
-// Check for duplicate in draft creates
-$stmt = $db->prepare('SELECT id FROM option_definitions_draft WHERE section = ? AND label = ? AND action = ?');
-$stmt->execute([$section, $label, 'create']);
-if ($stmt->fetch()) {
-    errorResponse('Diese Option wurde bereits als Entwurf erstellt');
-}
-
-$db->beginTransaction();
-
 try {
-    // Insert into draft table
-    $stmt = $db->prepare('
-        INSERT INTO option_definitions_draft (original_id, section, label, sort_order, is_active, keywords, action)
-        VALUES (NULL, ?, ?, ?, 1, ?, ?)
-    ');
+    // Insert directly into option_definitions table
     $keywordsJson = !empty($keywords) ? json_encode($keywords) : null;
-    $stmt->execute([$section, $label, $sortOrder, $keywordsJson, 'create']);
 
-    $draftId = $db->lastInsertId();
+    $stmt = $db->prepare('
+        INSERT INTO option_definitions (section, label, sort_order, is_active, keywords)
+        VALUES (?, ?, ?, 1, ?)
+    ');
+    $result = $stmt->execute([$section, $label, $sortOrder, $keywordsJson]);
 
-    // Update publish state
-    $db->exec('UPDATE publish_state SET has_pending_changes = TRUE WHERE id = 1');
+    if (!$result) {
+        errorResponse('Insert failed: ' . implode(', ', $stmt->errorInfo()), 500);
+    }
 
-    $db->commit();
+    $newId = $db->lastInsertId();
+
+    if (!$newId) {
+        errorResponse('No ID returned after insert', 500);
+    }
 
     jsonResponse([
-        'id' => 'new_' . $draftId,
+        'id' => (int)$newId,
         'section' => $section,
         'label' => $label,
         'sort_order' => $sortOrder,
         'is_active' => true,
-        'keywords' => $keywords,
-        'draft_action' => 'create',
-        'draft_id' => $draftId
+        'keywords' => $keywords
     ], 201);
 
 } catch (Exception $e) {
-    $db->rollBack();
     errorResponse('Erstellen fehlgeschlagen: ' . $e->getMessage(), 500);
 }

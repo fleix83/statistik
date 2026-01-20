@@ -67,55 +67,86 @@ function onEditKeywords() {
 </script>
 
 <template>
-    <div
-        class="option-thema drag-handle"
-        :class="{
-            'is-inactive': !isActive,
-            'is-marked-delete': isMarkedForDelete
-        }"
-        @dblclick="onEditKeywords"
-    >
-        <!-- Label (editable) -->
-        <div class="option-label" @click.stop="startEditing">
-            <template v-if="isEditing">
-                <InputText
-                    ref="inputRef"
-                    v-model="editLabel"
-                    class="edit-input"
-                    @blur="saveEdit"
-                    @keydown="onKeydown"
-                    @click.stop
-                />
-            </template>
-            <template v-else>
-                <span class="label-text" :class="{ 'strikethrough': isMarkedForDelete }">
-                    {{ option.label }}
+    <div class="option-wrapper">
+        <div
+            class="option-thema drag-handle"
+            :class="{
+                'is-inactive': !isActive,
+                'is-marked-delete': isMarkedForDelete
+            }"
+            @dblclick="onEditKeywords"
+        >
+            <!-- Label (editable) -->
+            <div class="option-label" @click.stop="startEditing">
+                <template v-if="isEditing">
+                    <InputText
+                        ref="inputRef"
+                        v-model="editLabel"
+                        class="edit-input"
+                        @blur="saveEdit"
+                        @keydown="onKeydown"
+                        @click.stop
+                    />
+                </template>
+                <template v-else>
+                    <span class="label-text" :class="{ 'strikethrough': isMarkedForDelete }">
+                        {{ option.label }}
+                    </span>
+                </template>
+            </div>
+
+            <!-- Keywords displayed inline -->
+            <div class="keywords-inline" v-if="keywords.length > 0" @click.stop="onEditKeywords">
+                <span
+                    v-for="keyword in keywords"
+                    :key="keyword"
+                    class="keyword-tag"
+                >
+                    {{ keyword }}
                 </span>
-            </template>
+            </div>
+
+            <!-- Toggle -->
+            <CustomToggle
+                :modelValue="isActive"
+                @update:modelValue="toggleActive"
+                :disabled="isMarkedForDelete"
+                @click.stop
+            />
         </div>
 
-        <!-- Keywords displayed inline -->
-        <div class="keywords-inline" v-if="keywords.length > 0" @click.stop="onEditKeywords">
-            <span
-                v-for="keyword in keywords"
-                :key="keyword"
-                class="keyword-tag"
-            >
-                {{ keyword }}
-            </span>
-        </div>
-
-        <!-- Toggle -->
-        <CustomToggle
-            :modelValue="isActive"
-            @update:modelValue="toggleActive"
-            :disabled="isMarkedForDelete"
-            @click.stop
-        />
+        <!-- Delete link for deactivated options -->
+        <a
+            v-if="!isActive && !isMarkedForDelete"
+            href="#"
+            class="delete-link"
+            @click.prevent="emit('delete', option.id)"
+        >
+            Option löschen
+        </a>
     </div>
 </template>
 
 <style scoped>
+.option-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+    width: 100%;
+}
+
+.delete-link {
+    font-size: 12px;
+    color: #D32F2F;
+    text-decoration: none;
+    padding-left: 4px;
+}
+
+.delete-link:hover {
+    text-decoration: underline;
+}
+
 .option-thema {
     display: inline-flex;
     min-height: 66px;

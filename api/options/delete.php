@@ -53,7 +53,7 @@ if ($id <= 0) {
 }
 
 // Check if option exists
-$stmt = $db->prepare('SELECT id, section, label, sort_order, is_active FROM option_definitions WHERE id = ?');
+$stmt = $db->prepare('SELECT id, section, label FROM option_definitions WHERE id = ?');
 $stmt->execute([$id]);
 $option = $stmt->fetch();
 
@@ -61,49 +61,29 @@ if (!$option) {
     errorResponse('Option not found', 404);
 }
 
-// Check if option is still active - only allow delete of deactivated options
-if ($option['is_active']) {
-    errorResponse('Option muss zuerst deaktiviert werden');
-}
-
 $db->beginTransaction();
 
 try {
-    // Check if there's already a draft for this option
-    $stmt = $db->prepare('SELECT id, action FROM option_definitions_draft WHERE original_id = ?');
+    // Remove any existing draft entries for this option
+    $stmt = $db->prepare('DELETE FROM option_definitions_draft WHERE original_id = ?');
     $stmt->execute([$id]);
-    $existingDraft = $stmt->fetch();
 
-    if ($existingDraft) {
-        // Update existing draft to delete action
-        $stmt = $db->prepare('UPDATE option_definitions_draft SET action = ? WHERE id = ?');
-        $stmt->execute(['delete', $existingDraft['id']]);
-    } else {
-        // Create new delete draft
-        $stmt = $db->prepare('
-            INSERT INTO option_definitions_draft
-            (original_id, section, label, sort_order, is_active, keywords, action)
-            VALUES (?, ?, ?, ?, ?, NULL, ?)
-        ');
-        $stmt->execute([
-            $id,
-            $option['section'],
-            $option['label'],
-            $option['sort_order'],
-            0,
-            'delete'
-        ]);
+    // Hard delete from the main table
+    $stmt = $db->prepare('DELETE FROM option_definitions WHERE id = ?');
+    $stmt->execute([$id]);
+
+    // Check if there are still pending changes
+    $stmt = $db->query('SELECT COUNT(*) as count FROM option_definitions_draft');
+    $count = $stmt->fetch()['count'];
+    if ($count == 0) {
+        $db->exec('UPDATE publish_state SET has_pending_changes = FALSE WHERE id = 1');
     }
-
-    // Update publish state
-    $db->exec('UPDATE publish_state SET has_pending_changes = TRUE WHERE id = 1');
 
     $db->commit();
 
     jsonResponse([
         'success' => true,
-        'message' => 'Option zum Löschen markiert. Veröffentlichen Sie die Änderungen, um sie anzuwenden.',
-        'draft_action' => 'delete'
+        'message' => 'Option wurde gelöscht'
     ]);
 
 } catch (Exception $e) {
