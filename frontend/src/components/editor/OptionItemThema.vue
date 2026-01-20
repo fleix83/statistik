@@ -122,7 +122,7 @@ function onEditKeywords() {
             class="delete-link"
             @click.prevent="emit('delete', option.id)"
         >
-            Option löschen
+            Feld löschen
         </a>
     </div>
 </template>

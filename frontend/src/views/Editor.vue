@@ -97,7 +97,7 @@ async function loadDraftData() {
         toast.add({
             severity: 'error',
             summary: 'Fehler',
-            detail: 'Optionen konnten nicht geladen werden',
+            detail: 'Felder konnten nicht geladen werden',
             life: 3000
         })
     }
@@ -145,7 +145,7 @@ async function onDeleteOption(id) {
         toast.add({
             severity: 'success',
             summary: 'Gelöscht',
-            detail: 'Option wurde gelöscht',
+            detail: 'Feld wurde gelöscht',
             life: 3000
         })
     } catch (error) {
@@ -227,18 +227,18 @@ async function doCreateOption(dbSection) {
             : 0
         const sortOrder = minSortOrder - 1
 
-        await createOption(dbSection, 'Neue Option', sortOrder)
+        await createOption(dbSection, 'Neues Feld', sortOrder)
         toast.add({
             severity: 'success',
             summary: 'Erstellt',
-            detail: 'Neue Option hinzugefügt',
+            detail: 'Neues Feld hinzugefügt',
             life: 3000
         })
     } catch (error) {
         toast.add({
             severity: 'error',
             summary: 'Fehler',
-            detail: 'Option konnte nicht erstellt werden',
+            detail: 'Feld konnte nicht erstellt werden',
             life: 3000
         })
     }
@@ -341,7 +341,7 @@ async function onDiscard() {
 
 async function onReset() {
     confirm.require({
-        message: 'Alle Optionen auf Standardwerte zurücksetzen? Die Änderungen müssen danach noch veröffentlicht werden.',
+        message: 'Alle Felder auf Standardwerte zurücksetzen? Die Änderungen müssen danach noch veröffentlicht werden.',
         header: 'Auf Standard zurücksetzen',
         icon: 'pi pi-refresh',
         acceptLabel: 'Zurücksetzen',
@@ -446,7 +446,7 @@ function confirmDeleteUser(user) {
 
         <TabView class="editor-tabs">
             <!-- Options Tab -->
-            <TabPanel header="Dropdown-Optionen">
+            <TabPanel header="Dropdown-Felder">
                 <!-- Debug info -->
                 <div class="debug-info" style="padding: 10px; background: #fff3cd; margin-bottom: 16px; border-radius: 4px; font-size: 12px;">
                     Person: {{ personSectionOptions.length }} |
@@ -542,7 +542,7 @@ function confirmDeleteUser(user) {
 
                 <div v-else class="loading-state">
                     <i class="pi pi-spin pi-spinner" style="font-size: 2rem"></i>
-                    <span>Lade Optionen...</span>
+                    <span>Lade Felder...</span>
                 </div>
             </TabPanel>
 
@@ -606,7 +606,7 @@ function confirmDeleteUser(user) {
         </Dialog>
 
         <!-- Add Option Dialog (for Person section) -->
-        <Dialog v-model:visible="addOptionDialogVisible" header="Option hinzufügen" modal style="width: 350px">
+        <Dialog v-model:visible="addOptionDialogVisible" header="Feld hinzufügen" modal style="width: 350px">
             <div class="flex flex-column gap-3 pt-3">
                 <div class="field">
                     <label for="section-choice">Kategorie wählen</label>

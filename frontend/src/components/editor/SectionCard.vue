@@ -43,7 +43,7 @@ function onDragEnd() {
             <h4 class="section-title">{{ title }}</h4>
             <button class="add-option-btn" @click="emit('add', section)">
                 <span class="add-icon">+</span>
-                <span class="add-text">Option hinzufügen</span>
+                <span class="add-text">Feld hinzufügen</span>
             </button>
         </div>
 
