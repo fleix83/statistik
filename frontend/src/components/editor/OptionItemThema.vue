@@ -24,6 +24,7 @@ const inputRef = ref(null)
 // Computed
 const isActive = computed(() => props.option.is_active)
 const isMarkedForDelete = computed(() => props.option.draft_action === 'delete')
+const isNew = computed(() => props.option.label === 'Neues Feld')
 const keywords = computed(() => props.option.keywords || [])
 
 // Methods
@@ -72,7 +73,8 @@ function onEditKeywords() {
             class="option-thema drag-handle"
             :class="{
                 'is-inactive': !isActive,
-                'is-marked-delete': isMarkedForDelete
+                'is-marked-delete': isMarkedForDelete,
+                'is-new': isNew
             }"
             @dblclick="onEditKeywords"
         >
@@ -182,6 +184,10 @@ function onEditKeywords() {
     background: #FEE;
     border-color: #E5A;
     opacity: 0.7;
+}
+
+.option-thema.is-new .label-text {
+    color: #ff6262;
 }
 
 .option-label {

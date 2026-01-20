@@ -1,5 +1,5 @@
 <script setup>
-import { ref, watch, computed } from 'vue'
+import { ref, watch } from 'vue'
 import { VueDraggableNext as draggable } from 'vue-draggable-next'
 
 const props = defineProps({
@@ -24,13 +24,13 @@ const props = defineProps({
 
 const emit = defineEmits(['reorder', 'add'])
 
-// Local copy of options for draggable - use computed to always reflect latest props
-const localOptions = computed({
-    get: () => props.options || [],
-    set: (newVal) => {
-        emit('reorder', props.section, newVal)
-    }
-})
+// Local copy of options for draggable - must be a ref for v-model
+const localOptions = ref([...(props.options || [])])
+
+// Sync when props change
+watch(() => props.options, (newOptions) => {
+    localOptions.value = [...(newOptions || [])]
+}, { deep: true })
 
 function onDragEnd() {
     emit('reorder', props.section, localOptions.value)
@@ -47,15 +47,19 @@ function onDragEnd() {
             </button>
         </div>
 
-        <div
+        <draggable
+            v-model="localOptions"
+            handle=".drag-handle"
+            ghost-class="ghost-item"
+            :animation="200"
             class="options-container"
             :class="{ 'layout-grid': layout === 'grid', 'layout-list': layout === 'list' }"
+            @end="onDragEnd"
         >
-            <!-- Direct v-for rendering for debugging -->
-            <template v-for="element in localOptions" :key="element.id">
+            <div v-for="element in localOptions" :key="element.id" class="draggable-item drag-handle">
                 <slot name="item" :element="element" :section="section" />
-            </template>
-        </div>
+            </div>
+        </draggable>
 
         <slot name="footer" :section="section" />
     </div>

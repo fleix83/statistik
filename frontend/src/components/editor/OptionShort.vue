@@ -24,6 +24,7 @@ const inputRef = ref(null)
 // Computed
 const isActive = computed(() => props.option.is_active)
 const isMarkedForDelete = computed(() => props.option.draft_action === 'delete')
+const isNew = computed(() => props.option.label === 'Neues Feld')
 
 // Methods
 function startEditing() {
@@ -67,7 +68,8 @@ function toggleActive() {
             class="option-short drag-handle"
             :class="{
                 'is-inactive': !isActive,
-                'is-marked-delete': isMarkedForDelete
+                'is-marked-delete': isMarkedForDelete,
+                'is-new': isNew
             }"
         >
             <!-- Label (editable) -->
@@ -163,6 +165,10 @@ function toggleActive() {
     background: #FEE;
     border-color: #E5A;
     opacity: 0.7;
+}
+
+.option-short.is-new .label-text {
+    color: #ff6262;
 }
 
 .option-label {
