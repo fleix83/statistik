@@ -106,13 +106,15 @@ function onEditKeywords() {
                 </span>
             </div>
 
-            <!-- Toggle -->
-            <CustomToggle
-                :modelValue="isActive"
-                @update:modelValue="toggleActive"
-                :disabled="isMarkedForDelete"
-                @click.stop
-            />
+            <!-- Toggle (always right-aligned) -->
+            <div class="toggle-wrapper">
+                <CustomToggle
+                    :modelValue="isActive"
+                    @update:modelValue="toggleActive"
+                    :disabled="isMarkedForDelete"
+                    @click.stop
+                />
+            </div>
         </div>
 
         <!-- Delete link for deactivated options -->
@@ -153,7 +155,7 @@ function onEditKeywords() {
     padding: 14px 28px 14px 35px;
     justify-content: flex-start;
     align-items: center;
-    gap: 10px;
+    gap: 32px;
     border-radius: 7px;
     border: 1px solid #B7B7B7;
     background: #FFF;
@@ -219,15 +221,19 @@ function onEditKeywords() {
     cursor: pointer;
 }
 
+.toggle-wrapper {
+    margin-left: auto;
+    flex-shrink: 0;
+}
+
 .keyword-tag {
     display: inline-flex;
     align-items: center;
     padding: 6px 12px;
-    background: #F5F5F5;
-    border-radius: 4px;
+    background: #e7e7e7;
+    border-radius: 2px;
     font-size: 13px;
-    color: #666;
-    border: 1px solid #E0E0E0;
+    color: #000000;
 }
 
 .keyword-tag:hover {
