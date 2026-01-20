@@ -235,117 +235,115 @@ function formatKeywordsTooltip(label) {
                 </div>
             </div>
 
-            <!-- Two Column Layout -->
-            <div class="columns">
-                <!-- Left Column -->
-                <div class="column-left">
-                    <!-- Kontaktart -->
-                    <div class="section-block bg-person">
-                        <div class="checkbox-row no-border">
-                            <div
-                                v-for="opt in optionsBySection.kontaktart"
-                                :key="opt"
-                                class="checkbox-item"
-                            >
-                                <Checkbox
-                                    :inputId="'kontakt-' + opt"
-                                    :value="opt"
-                                    v-model="formData.kontaktart"
-                                />
-                                <label :for="'kontakt-' + opt">{{ opt }}</label>
+            <!-- Cards Grid - Two Columns -->
+            <div class="cards-grid">
+                <!-- Left Column: Person + Thema -->
+                <div class="cards-column">
+                    <!-- Card 1: Person -->
+                    <div class="card card-person">
+                        <h3 class="card-title">Person</h3>
+                        <div class="card-content">
+                            <!-- Kontaktart -->
+                            <div class="checkbox-row">
+                                <div
+                                    v-for="opt in optionsBySection.kontaktart"
+                                    :key="opt"
+                                    class="checkbox-item"
+                                >
+                                    <Checkbox
+                                        :inputId="'kontakt-' + opt"
+                                        :value="opt"
+                                        v-model="formData.kontaktart"
+                                    />
+                                    <label :for="'kontakt-' + opt">{{ opt }}</label>
+                                </div>
+                            </div>
+
+                            <!-- Geschlecht -->
+                            <div class="checkbox-row">
+                                <template v-for="opt in optionsBySection.person" :key="opt">
+                                    <div
+                                        v-if="['Frau', 'Mann'].includes(opt)"
+                                        class="checkbox-item"
+                                    >
+                                        <Checkbox
+                                            :inputId="'person-' + opt"
+                                            :value="opt"
+                                            v-model="formData.person"
+                                        />
+                                        <label :for="'person-' + opt">{{ opt }}</label>
+                                    </div>
+                                </template>
+                            </div>
+
+                            <!-- Alter -->
+                            <div class="checkbox-row">
+                                <template v-for="opt in optionsBySection.person" :key="opt">
+                                    <div
+                                        v-if="['unter 55', 'über 55', 'über 80'].includes(opt)"
+                                        class="checkbox-item"
+                                    >
+                                        <Checkbox
+                                            :inputId="'alter-' + opt"
+                                            :value="opt"
+                                            v-model="formData.person"
+                                        />
+                                        <label :for="'alter-' + opt">{{ opt }}</label>
+                                    </div>
+                                </template>
+                            </div>
+
+                            <!-- Betroffenheit -->
+                            <div class="checkbox-row">
+                                <template v-for="opt in optionsBySection.person" :key="opt">
+                                    <div
+                                        v-if="['selbst betroffen', 'Angehörige Nachbarn und andere', 'Institution'].includes(opt)"
+                                        class="checkbox-item"
+                                    >
+                                        <Checkbox
+                                            :inputId="'betroffen-' + opt"
+                                            :value="opt"
+                                            v-model="formData.person"
+                                        />
+                                        <label :for="'betroffen-' + opt">{{ opt }}</label>
+                                    </div>
+                                </template>
+                            </div>
+
+                            <!-- Dauer -->
+                            <div class="checkbox-row">
+                                <div
+                                    v-for="opt in optionsBySection.dauer"
+                                    :key="opt"
+                                    class="checkbox-item"
+                                >
+                                    <Checkbox
+                                        :inputId="'dauer-' + opt"
+                                        :value="opt"
+                                        v-model="formData.dauer"
+                                    />
+                                    <label :for="'dauer-' + opt">{{ opt }}</label>
+                                </div>
+                            </div>
+
+                            <!-- Migrationshintergrund -->
+                            <div class="checkbox-row no-border" v-if="optionsBySection.thema.includes('Migrationshintergrund')">
+                                <div class="checkbox-item">
+                                    <Checkbox
+                                        inputId="migration"
+                                        value="Migrationshintergrund"
+                                        v-model="formData.thema"
+                                    />
+                                    <label for="migration">Migrationshintergrund</label>
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Person -->
-                    <div class="section-block bg-person">
-                        <!-- Geschlecht -->
-                        <div class="checkbox-row">
-                            <template v-for="opt in optionsBySection.person" :key="opt">
-                                <div
-                                    v-if="['Frau', 'Mann'].includes(opt)"
-                                    class="checkbox-item"
-                                >
-                                    <Checkbox
-                                        :inputId="'person-' + opt"
-                                        :value="opt"
-                                        v-model="formData.person"
-                                    />
-                                    <label :for="'person-' + opt">{{ opt }}</label>
-                                </div>
-                            </template>
-                        </div>
-
-                        <!-- Alter -->
-                        <div class="checkbox-row">
-                            <template v-for="opt in optionsBySection.person" :key="opt">
-                                <div
-                                    v-if="['unter 55', 'über 55', 'über 80'].includes(opt)"
-                                    class="checkbox-item"
-                                >
-                                    <Checkbox
-                                        :inputId="'alter-' + opt"
-                                        :value="opt"
-                                        v-model="formData.person"
-                                    />
-                                    <label :for="'alter-' + opt">{{ opt }}</label>
-                                </div>
-                            </template>
-                        </div>
-
-                        <!-- Betroffenheit -->
-                        <div class="checkbox-row no-border">
-                            <template v-for="opt in optionsBySection.person" :key="opt">
-                                <div
-                                    v-if="['selbst betroffen', 'Angehörige Nachbarn und andere', 'Institution'].includes(opt)"
-                                    class="checkbox-item"
-                                >
-                                    <Checkbox
-                                        :inputId="'betroffen-' + opt"
-                                        :value="opt"
-                                        v-model="formData.person"
-                                    />
-                                    <label :for="'betroffen-' + opt">{{ opt }}</label>
-                                </div>
-                            </template>
-                        </div>
-                    </div>
-
-                    <!-- Dauer -->
-                    <div class="section-block bg-person">
-                        <div class="checkbox-row no-border">
-                            <div
-                                v-for="opt in optionsBySection.dauer"
-                                :key="opt"
-                                class="checkbox-item"
-                            >
-                                <Checkbox
-                                    :inputId="'dauer-' + opt"
-                                    :value="opt"
-                                    v-model="formData.dauer"
-                                />
-                                <label :for="'dauer-' + opt">{{ opt }}</label>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Migrationshintergrund -->
-                    <div class="section-block bg-person" v-if="optionsBySection.thema.includes('Migrationshintergrund')">
-                        <div class="checkbox-row no-border">
-                            <div class="checkbox-item">
-                                <Checkbox
-                                    inputId="migration"
-                                    value="Migrationshintergrund"
-                                    v-model="formData.thema"
-                                />
-                                <label for="migration">Migrationshintergrund</label>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Thema List -->
-                    <div class="section-block bg-thema">
-                        <div class="thema-section">
+                    <!-- Card 2: Thema -->
+                    <div class="card card-thema">
+                        <h3 class="card-title">Thema</h3>
+                        <div class="card-content">
                             <template v-for="opt in optionsBySection.thema" :key="opt">
                                 <div
                                     v-if="opt !== 'Migrationshintergrund'"
@@ -381,11 +379,12 @@ function formatKeywordsTooltip(label) {
                     </div>
                 </div>
 
-                <!-- Right Column - Zeitfenster + Referenz -->
-                <div class="column-right">
-                    <!-- Zeitfenster -->
-                    <div class="section-block bg-zeitfenster">
-                        <div class="zeitfenster-section">
+                <!-- Right Column: Zeitfenster + Referenz -->
+                <div class="cards-column">
+                    <!-- Card 3: Zeitfenster -->
+                    <div class="card card-zeitfenster">
+                        <h3 class="card-title">Zeitfenster</h3>
+                        <div class="card-content">
                             <div
                                 v-for="opt in optionsBySection.zeitfenster"
                                 :key="opt"
@@ -401,34 +400,37 @@ function formatKeywordsTooltip(label) {
                         </div>
                     </div>
 
-                    <!-- Referenz -->
-                    <div class="section-block bg-referenz">
-                        <h4 class="section-title">Auf uns aufmerksam gemacht durch:</h4>
-                        <div
-                            v-for="opt in optionsBySection.referenz"
-                            :key="opt"
-                            class="checkbox-item referenz-item"
-                        >
-                            <Checkbox
-                                :inputId="'ref-' + opt"
-                                :value="opt"
-                                v-model="formData.referenz"
-                            />
-                            <label :for="'ref-' + opt">{{ opt }}</label>
-                        </div>
-                        <div class="andere-row">
-                            <Checkbox
-                                inputId="ref-andere"
-                                :binary="true"
-                                :modelValue="referenzAndere.length > 0"
-                                disabled
-                            />
-                            <label for="andere-input">andere:</label>
-                            <InputText
-                                id="andere-input"
-                                v-model="referenzAndere"
-                                class="andere-input"
-                            />
+                    <!-- Card 4: Referenz -->
+                    <div class="card card-referenz">
+                        <h3 class="card-title">Referenz</h3>
+                        <p class="card-subtitle">Auf uns aufmerksam gemacht durch:</p>
+                        <div class="card-content">
+                            <div
+                                v-for="opt in optionsBySection.referenz"
+                                :key="opt"
+                                class="checkbox-item referenz-item"
+                            >
+                                <Checkbox
+                                    :inputId="'ref-' + opt"
+                                    :value="opt"
+                                    v-model="formData.referenz"
+                                />
+                                <label :for="'ref-' + opt">{{ opt }}</label>
+                            </div>
+                            <div class="andere-row">
+                                <Checkbox
+                                    inputId="ref-andere"
+                                    :binary="true"
+                                    :modelValue="referenzAndere.length > 0"
+                                    disabled
+                                />
+                                <label for="andere-input">andere:</label>
+                                <InputText
+                                    id="andere-input"
+                                    v-model="referenzAndere"
+                                    class="andere-input"
+                                />
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -542,43 +544,63 @@ function formatKeywordsTooltip(label) {
     min-width: 200px;
 }
 
-/* Two Columns */
-.columns {
+/* Cards Grid - Two columns layout */
+.cards-grid {
     display: grid;
-    grid-template-columns: 1fr 280px;
+    grid-template-columns: 3fr 2fr;
+    gap: 1rem;
+    align-items: start;
+}
+
+.cards-column {
+    display: flex;
+    flex-direction: column;
     gap: 1rem;
 }
 
-/* Section Block */
-.section-block {
+/* Card Base Styles */
+.card {
     border: 1px solid var(--surface-border);
-    border-radius: 6px;
-    padding: 0.75rem 1rem;
-    margin-bottom: 0.75rem;
+    border-radius: 8px;
+    padding: 1rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
-/* Subtle background colors for each logical block */
-.section-block.bg-person {
-    background-color: rgba(99, 102, 241, 0.05);
-}
-
-.section-block.bg-thema {
-    background-color: rgba(34, 197, 94, 0.05);
-}
-
-.section-block.bg-zeitfenster {
-    background-color: rgba(234, 179, 8, 0.05);
-}
-
-.section-block.bg-referenz {
-    background-color: rgba(6, 182, 212, 0.05);
-}
-
-.section-title {
-    font-size: 0.9rem;
+.card-title {
+    font-size: 0.95rem;
     font-weight: 600;
     margin: 0 0 0.75rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--surface-border);
     color: var(--text-color);
+}
+
+.card-subtitle {
+    font-size: 0.8rem;
+    color: var(--text-color-secondary);
+    margin: -0.5rem 0 0.75rem;
+}
+
+.card-content {
+    display: flex;
+    flex-direction: column;
+}
+
+/* Card color accents */
+.card-person {
+    background-color: rgba(99, 102, 241, 0.04);
+}
+
+.card-thema {
+    background-color: rgba(34, 197, 94, 0.04);
+}
+
+.card-zeitfenster {
+    background-color: rgba(234, 179, 8, 0.04);
+}
+
+.card-referenz {
+    background-color: rgba(6, 182, 212, 0.04);
 }
 
 /* Checkbox Styling */
@@ -644,24 +666,14 @@ function formatKeywordsTooltip(label) {
     flex-shrink: 0;
 }
 
-/* Right Column */
-.column-right {
-    display: flex;
-    flex-direction: column;
-}
-
-/* Zeitfenster Section */
-.zeitfenster-section {
-    margin: 0;
-}
-
+/* Zeitfenster items */
 .zeitfenster-item {
-    padding: 0.4rem 0;
+    padding: 0.3rem 0;
 }
 
-/* Referenz Section */
+/* Referenz items */
 .referenz-item {
-    padding: 0.35rem 0;
+    padding: 0.3rem 0;
 }
 
 .andere-row {
@@ -702,9 +714,13 @@ function formatKeywordsTooltip(label) {
 }
 
 /* Responsive */
-@media (max-width: 768px) {
-    .columns {
+@media (max-width: 900px) {
+    .cards-grid {
         grid-template-columns: 1fr;
+    }
+
+    .cards-column {
+        gap: 0.75rem;
     }
 
     .footer-buttons {
