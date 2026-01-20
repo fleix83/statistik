@@ -150,7 +150,7 @@ function onEditKeywords() {
 .option-thema {
     display: inline-flex;
     min-height: 66px;
-    padding: 20px 28px 20px 35px;
+    padding: 14px 28px 14px 35px;
     justify-content: flex-start;
     align-items: center;
     gap: 10px;

@@ -95,7 +95,7 @@ function isActive(item) {
 }
 
 body {
-    font-family: var(--font-family);
+    font-family: 'Source Sans 3', var(--font-family), sans-serif;
     background: var(--surface-ground);
     color: var(--text-color);
     min-height: 100vh;

@@ -133,7 +133,7 @@ function toggleActive() {
     display: flex;
     width: 193px;
     height: 30px;
-    padding: 21px 20px;
+    padding: 14px 20px;
     justify-content: space-between;
     align-items: center;
     border-radius: 5px;
