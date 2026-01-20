@@ -88,17 +88,25 @@ function isActive(item) {
 </template>
 
 <style>
+:root {
+    --font-family: 'Source Sans Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
 * {
     box-sizing: border-box;
     margin: 0;
     padding: 0;
 }
 
-body {
-    font-family: 'Source Sans 3', var(--font-family), sans-serif;
+html, body, #app {
+    font-family: 'Source Sans Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     background: var(--surface-ground);
     color: var(--text-color);
     min-height: 100vh;
+}
+
+button, input, select, textarea {
+    font-family: inherit;
 }
 
 .app-layout {
