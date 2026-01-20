@@ -131,11 +131,13 @@ function toggleActive() {
 
 .option-short {
     display: flex;
-    width: 193px;
+    min-width: 193px;
+    width: fit-content;
     height: 30px;
     padding: 14px 20px;
     justify-content: space-between;
     align-items: center;
+    gap: 16px;
     border-radius: 5px;
     border: 0.714px solid #B7B7B7;
     background: #FFF;
@@ -173,8 +175,6 @@ function toggleActive() {
     font-size: 14px;
     color: #1B1B1B;
     white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
 }
 
 .label-text.strikethrough {
