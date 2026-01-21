@@ -73,7 +73,17 @@ export const users = {
 // Analytics
 export const analytics = {
     aggregate: (params) => api.get('/analytics/aggregate.php', { params }),
-    compare: (params) => api.get('/analytics/compare.php', { params }),
+    filters: () => api.get('/analytics/filters.php'),
+    timeseries: (params) => api.get('/analytics/timeseries.php', { params }),
+    totals: (params) => api.get('/analytics/totals.php', { params }),
+    compare: (periods, section, values) => {
+        const params = {
+            periods: JSON.stringify(periods),
+            section,
+            values: values.join(',')
+        }
+        return api.get('/analytics/compare.php', { params })
+    },
     export: (params) => api.get('/analytics/export.php', { params, responseType: 'blob' })
 }
 

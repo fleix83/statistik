@@ -327,7 +327,7 @@ function formatKeywordsTooltip(label) {
                             </div>
 
                             <!-- Migrationshintergrund -->
-                            <div class="checkbox-row no-border" v-if="optionsBySection.thema.includes('Migrationshintergrund')">
+                            <div class="checkbox-row no-border">
                                 <div class="checkbox-item">
                                     <Checkbox
                                         inputId="migration"

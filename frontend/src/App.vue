@@ -132,6 +132,7 @@ button, input, select, textarea {
 .menu-item {
     display: flex;
     align-items: center;
+    gap: 0.5rem;
     padding: 0.75rem 1rem;
     text-decoration: none;
     color: var(--text-color);
