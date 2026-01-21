@@ -54,10 +54,10 @@ watch(chartData, () => {
 })
 
 // Color palette
-const primaryColor = '#6366f1'
+const primaryColor = '#55b76b'
 const comparisonColor = '#94a3b8' // Muted gray for comparison
 const colors = [
-    '#6366f1', '#22c55e', '#f59e0b', '#ef4444',
+    '#55b76b', '#6366f1', '#f59e0b', '#ef4444',
     '#8b5cf6', '#06b6d4', '#ec4899', '#84cc16',
     '#f97316', '#14b8a6', '#a855f7', '#0ea5e9'
 ]
@@ -68,6 +68,7 @@ const colorsBg = colors.map(c => c + '20')
 const barChartData = computed(() => {
     if (!chartData.value) return null
 
+    // Single period aggregate mode
     if (chartData.value.mode === 'aggregate') {
         return {
             labels: chartData.value.items.map(d => d.label),
@@ -80,6 +81,19 @@ const barChartData = computed(() => {
         }
     }
 
+    // Multiple periods comparison mode - grouped bars
+    if (chartData.value.mode === 'aggregate-compare') {
+        return {
+            labels: chartData.value.labels,
+            datasets: chartData.value.datasets.map((ds, i) => ({
+                label: ds.label,
+                data: ds.data,
+                backgroundColor: ds.isComparison ? comparisonColor : primaryColor,
+                borderRadius: 4
+            }))
+        }
+    }
+
     return null
 })
 
@@ -87,7 +101,10 @@ const barChartOptions = computed(() => ({
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
-        legend: { display: false },
+        legend: {
+            display: chartData.value?.mode === 'aggregate-compare',
+            position: 'top'
+        },
         tooltip: {
             callbacks: {
                 label: (context) => {
@@ -278,6 +295,17 @@ const tableData = computed(() => {
         }))
     }
 
+    if (chartData.value.mode === 'aggregate-compare') {
+        // Period comparison breakdown
+        return chartData.value.labels.map((label, i) => {
+            const row = { label }
+            chartData.value.datasets.forEach(ds => {
+                row[ds.label] = ds.data[i]
+            })
+            return row
+        })
+    }
+
     if (chartData.value.mode === 'totals') {
         // Monthly breakdown for totals
         return chartData.value.labels.map((label, i) => {
@@ -395,7 +423,7 @@ const canShowPie = computed(() => {
                     :rows="10"
                     class="data-table"
                 >
-                    <Column field="label" :header="chartData?.mode === 'totals' ? 'Monat' : 'Wert'" sortable />
+                    <Column field="label" :header="chartData?.mode === 'totals' ? xAxisLabel : 'Wert'" sortable />
 
                     <!-- Single period columns (aggregate) -->
                     <template v-if="chartData?.mode === 'aggregate'">
@@ -405,6 +433,17 @@ const canShowPie = computed(() => {
                                 {{ data.percentage }}%
                             </template>
                         </Column>
+                    </template>
+
+                    <!-- Period comparison columns (aggregate-compare) -->
+                    <template v-else-if="chartData?.mode === 'aggregate-compare'">
+                        <Column
+                            v-for="ds in chartData.datasets"
+                            :key="ds.label"
+                            :field="ds.label"
+                            :header="ds.label"
+                            sortable
+                        />
                     </template>
 
                     <!-- Totals mode columns -->

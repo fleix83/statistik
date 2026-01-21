@@ -211,38 +211,75 @@ export function useAnalyticsState() {
             const filters = buildFilters()
             const filtersJson = Object.keys(filters).length > 0 ? JSON.stringify(filters) : undefined
 
-            // Bar and Pie charts always use aggregate data
+            // Bar and Pie charts use aggregate data
             if (chartType.value === 'bar' || chartType.value === 'pie') {
-                const params = {
-                    section: activeSection.value,
-                    start_date: formatDateForApi(primaryPeriod.start),
-                    end_date: formatDateForApi(primaryPeriod.end),
-                    filters: filtersJson
+                // Fetch aggregate data for all periods (for grouped bar comparison)
+                const periodDatasets = []
+                let allLabels = new Set()
+
+                for (const period of periods.value) {
+                    const params = {
+                        section: activeSection.value,
+                        start_date: formatDateForApi(period.start),
+                        end_date: formatDateForApi(period.end),
+                        filters: filtersJson
+                    }
+
+                    const response = await analytics.aggregate(params)
+
+                    // Filter to selected values if any
+                    let items = response.data.items
+                    if (activeValues.value.length > 0) {
+                        items = items.filter(item =>
+                            activeValues.value.includes(item.label)
+                        )
+                    }
+
+                    // Collect all labels
+                    items.forEach(item => allLabels.add(item.label))
+
+                    periodDatasets.push({
+                        label: period.label,
+                        items: items,
+                        total: response.data.total,
+                        isComparison: period.isComparison
+                    })
                 }
 
-                const response = await analytics.aggregate(params)
+                // Convert labels to array and sort
+                const labels = Array.from(allLabels)
 
-                // Filter to selected values if any
-                let items = response.data.items
-                if (activeValues.value.length > 0) {
-                    items = items.filter(item =>
-                        activeValues.value.includes(item.label)
-                    )
-                }
-
-                chartData.value = {
-                    mode: 'aggregate',
-                    items: items,
-                    total: response.data.total
+                // For single period or pie chart, use simple mode
+                if (periods.value.length === 1 || chartType.value === 'pie') {
+                    chartData.value = {
+                        mode: 'aggregate',
+                        items: periodDatasets[0].items,
+                        total: periodDatasets[0].total
+                    }
+                } else {
+                    // Multiple periods - use grouped bar mode
+                    chartData.value = {
+                        mode: 'aggregate-compare',
+                        labels: labels,
+                        datasets: periodDatasets.map(ds => ({
+                            label: ds.label,
+                            data: labels.map(lbl => {
+                                const item = ds.items.find(i => i.label === lbl)
+                                return item ? item.count : 0
+                            }),
+                            isComparison: ds.isComparison
+                        })),
+                        total: periodDatasets[0].total
+                    }
                 }
 
                 summaryData.value = {
-                    total: response.data.total,
-                    periods: [{
-                        label: primaryPeriod.label,
-                        total: response.data.total,
-                        isComparison: false
-                    }]
+                    total: periodDatasets[0].total,
+                    periods: periodDatasets.map(ds => ({
+                        label: ds.label,
+                        total: ds.total,
+                        isComparison: ds.isComparison
+                    }))
                 }
             } else if (chartType.value === 'line') {
                 // Line chart mode
