@@ -86,7 +86,6 @@ const barChartData = computed(() => {
 const barChartOptions = computed(() => ({
     responsive: true,
     maintainAspectRatio: false,
-    indexAxis: 'y',
     plugins: {
         legend: { display: false },
         tooltip: {
@@ -99,8 +98,18 @@ const barChartOptions = computed(() => ({
         }
     },
     scales: {
-        x: { beginAtZero: true },
-        y: { beginAtZero: true }
+        x: {
+            title: {
+                display: false
+            }
+        },
+        y: {
+            beginAtZero: true,
+            title: {
+                display: true,
+                text: 'Besuche'
+            }
+        }
     }
 }))
 
@@ -110,11 +119,15 @@ const lineChartData = computed(() => {
 
     // Totals mode - year comparison with shaded comparison line
     if (chartData.value.mode === 'totals') {
+        // Handle empty datasets
+        if (!chartData.value.datasets || chartData.value.datasets.length === 0) {
+            return null
+        }
         return {
-            labels: chartData.value.labels,
+            labels: chartData.value.labels || [],
             datasets: chartData.value.datasets.map((ds, i) => ({
-                label: ds.label,
-                data: ds.data,
+                label: `${ds.label} (${(ds.total || 0).toLocaleString('de-CH')})`,
+                data: ds.data || [],
                 borderColor: ds.isComparison ? comparisonColor : primaryColor,
                 backgroundColor: ds.isComparison ? comparisonColor + '10' : primaryColor + '20',
                 fill: !ds.isComparison, // Only fill the primary line
@@ -130,11 +143,14 @@ const lineChartData = computed(() => {
 
     // Timeseries mode - specific values over time
     if (chartData.value.mode === 'timeseries') {
+        if (!chartData.value.datasets || chartData.value.datasets.length === 0) {
+            return null
+        }
         return {
-            labels: chartData.value.labels,
+            labels: chartData.value.labels || [],
             datasets: chartData.value.datasets.map((ds, i) => ({
                 label: ds.label,
-                data: ds.data,
+                data: ds.data || [],
                 borderColor: colors[i % colors.length],
                 backgroundColor: colorsBg[i % colorsBg.length],
                 fill: true,
@@ -145,7 +161,34 @@ const lineChartData = computed(() => {
         }
     }
 
+    // Aggregate mode - show as line chart (fallback when switching from bar/pie)
+    if (chartData.value.mode === 'aggregate' && chartData.value.items) {
+        return {
+            labels: chartData.value.items.map(d => d.label),
+            datasets: [{
+                label: `Total (${(chartData.value.total || 0).toLocaleString('de-CH')})`,
+                data: chartData.value.items.map(d => d.count),
+                borderColor: primaryColor,
+                backgroundColor: primaryColor + '20',
+                fill: true,
+                tension: 0.3,
+                pointRadius: 4,
+                pointHoverRadius: 6,
+                borderWidth: 3
+            }]
+        }
+    }
+
     return null
+})
+
+// X-axis label based on granularity
+const xAxisLabel = computed(() => {
+    if (chartData.value?.mode !== 'totals') return 'Datum'
+    const gran = chartData.value?.granularity
+    if (gran === 'day') return 'Tag'
+    if (gran === 'week') return 'Woche'
+    return 'Monat'
 })
 
 const lineChartOptions = computed(() => ({
@@ -166,7 +209,7 @@ const lineChartOptions = computed(() => ({
             type: 'category',
             title: {
                 display: true,
-                text: chartData.value?.mode === 'totals' ? 'Monat' : 'Datum'
+                text: xAxisLabel.value
             }
         },
         y: {

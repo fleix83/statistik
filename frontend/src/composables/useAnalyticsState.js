@@ -238,7 +238,8 @@ export function useAnalyticsState() {
                     total: response.data.total,
                     periods: [{
                         label: primaryPeriod.label,
-                        total: response.data.total
+                        total: response.data.total,
+                        isComparison: false
                     }]
                 }
             } else if (chartType.value === 'line') {
@@ -247,21 +248,33 @@ export function useAnalyticsState() {
                     // Show total entries over time (default view)
                     const datasets = []
                     let allLabels = []
+                    let granularityUsed = 'month'
 
                     // Fetch totals for each period
                     for (const period of periods.value) {
                         const params = {
                             start_date: formatDateForApi(period.start),
                             end_date: formatDateForApi(period.end),
-                            granularity: 'month',
+                            granularity: 'auto',
                             filters: filtersJson
                         }
                         const response = await analytics.totals(params)
+                        granularityUsed = response.data.granularity
 
-                        // Use month names for labels (strip year for comparison)
+                        // Format labels based on granularity
                         const labels = response.data.labels.map(l => {
-                            const parts = l.split('-')
-                            return parts[1] // Just month number
+                            if (granularityUsed === 'day') {
+                                // Format: 2025-01-15 → 15.01.
+                                const parts = l.split('-')
+                                return `${parts[2]}.${parts[1]}.`
+                            } else if (granularityUsed === 'week') {
+                                // Format: 2025-W03 → KW03
+                                return l.replace(/^\d{4}-W/, 'KW')
+                            } else {
+                                // Format: 2025-01 → month number for comparison
+                                const parts = l.split('-')
+                                return parts[1]
+                            }
                         })
 
                         if (allLabels.length === 0) {
@@ -276,13 +289,15 @@ export function useAnalyticsState() {
                         })
                     }
 
-                    // Convert month numbers to names
-                    const monthNames = ['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez']
-                    allLabels = allLabels.map(m => monthNames[parseInt(m) - 1] || m)
+                    // Convert month numbers to names (only for monthly granularity)
+                    if (granularityUsed === 'month') {
+                        const monthNames = ['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez']
+                        allLabels = allLabels.map(m => monthNames[parseInt(m) - 1] || m)
+                    }
 
                     chartData.value = {
                         mode: 'totals',
-                        granularity: 'month',
+                        granularity: granularityUsed,
                         labels: allLabels,
                         datasets: datasets
                     }
@@ -320,7 +335,8 @@ export function useAnalyticsState() {
                         periods: [{
                             label: primaryPeriod.label,
                             total: response.data.datasets.reduce((sum, ds) =>
-                                sum + ds.data.reduce((a, b) => a + b, 0), 0)
+                                sum + ds.data.reduce((a, b) => a + b, 0), 0),
+                            isComparison: false
                         }]
                     }
                 }
@@ -338,6 +354,11 @@ export function useAnalyticsState() {
     watch(chartType, () => {
         fetchData()
     })
+
+    // Watch for period changes to refetch data automatically
+    watch(periods, () => {
+        debouncedFetch()
+    }, { deep: true })
 
     // Watch for active section changes to refetch data
     watch(activeSection, () => {

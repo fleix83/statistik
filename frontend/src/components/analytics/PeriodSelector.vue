@@ -76,6 +76,7 @@ function getDateRange(period) {
                     dateFormat="dd.mm.yy"
                     placeholder="Zeitraum wählen"
                     showIcon
+                    hideOnRangeSelection
                     class="w-full period-date-picker"
                 />
             </div>
