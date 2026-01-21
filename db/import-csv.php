@@ -6,7 +6,8 @@
 // Run once, then delete for security
 // ============================================================================
 
-require_once 'db.php'; // Your PDO connection
+require_once __DIR__ . '/../api/config/database.php';
+$pdo = getDB();
 
 // Configuration
 $csv_file = 'statistik_2025.csv';
@@ -60,7 +61,8 @@ $column_mapping = [
     ],
     'person' => [
         'Mann', 'Frau', 'unter 55', 'über 55', 'über 80',
-        'selbst betroffen', 'Angehörige Nachbarn und andere', 'Institution'
+        'selbst betroffen', 'Angehörige Nachbarn und andere', 'Institution',
+        'Migrationshintergrund'
     ],
     'tageszeit' => [
         'Vormittag', 'Nachmittag'
@@ -69,7 +71,7 @@ $column_mapping = [
         'länger als 20 Minuten'
     ],
     'thema' => [
-        'Bildung', 'Arbeit', 'Migrationshintergrund', 'Finanzen',
+        'Bildung', 'Arbeit', 'Finanzen',
         'Frauen Männer jung und alt', 'Gesundheit', 'Wohnen',
         'Austausch und Freizeit', 'Migration und Integration',
         'Notlagen', 'Allgemeine Hilfeleistungen', 'Recht'
@@ -155,10 +157,17 @@ $stats = [
 // Process data rows
 while (($row = fgetcsv($handle)) !== false) {
     $stats['total_rows']++;
-    
+
+    // Skip rows with empty or invalid ID
+    $entry_id = trim($row[$header_index['ID']] ?? '');
+    if (empty($entry_id) || !is_numeric($entry_id)) {
+        $stats['skipped']++;
+        continue;
+    }
+
     try {
         $pdo->beginTransaction();
-        
+
         // Parse date from DD.MM.YY format
         $date_str = $row[$header_index['Erfassungsdatum']];
         $date_parts = explode('.', $date_str);
@@ -187,13 +196,11 @@ while (($row = fgetcsv($handle)) !== false) {
             VALUES (:id, :user_id, :created_at, :remarks)
         ");
         $stmt->execute([
-            'id' => $row[$header_index['ID']],
+            'id' => $entry_id,
             'user_id' => $user_id,
             'created_at' => $created_at,
             'remarks' => $remarks
         ]);
-        
-        $entry_id = $row[$header_index['ID']];
         
         // Insert values for each checked field
         $stmt_value = $pdo->prepare("
