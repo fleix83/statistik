@@ -26,3 +26,7 @@ npm-debug.log*
 
 # API local config
 api/config/database.local.php
+
+# Legacy data imports
+db/statistik_2025.csv
+statistik legacy data/
