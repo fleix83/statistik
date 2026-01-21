@@ -148,6 +148,8 @@ export function useAnalyticsState() {
         const index = current.indexOf(value)
         if (index === -1) {
             current.push(value)
+            // Auto-set active section when selecting a parameter
+            activeSection.value = section
         } else {
             current.splice(index, 1)
         }

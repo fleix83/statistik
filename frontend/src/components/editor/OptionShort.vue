@@ -143,18 +143,22 @@ function toggleActive() {
     border-radius: 5px;
     border: 0.714px solid #B7B7B7;
     background: #FFF;
-    cursor: grab;
     transition: all 0.2s;
     box-sizing: content-box;
 }
 
 .option-short:hover {
+    background: #fff5a79e;
     border-color: #999;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    cursor: move;
 }
 
-.option-short:active {
-    cursor: grabbing;
+.option-short:active,
+.option-short.sortable-chosen,
+.option-short.sortable-ghost {
+    background: #fff5a79e;
+    cursor: move;
 }
 
 .option-short.is-inactive {
@@ -165,6 +169,10 @@ function toggleActive() {
     background: #FEE;
     border-color: #E5A;
     opacity: 0.7;
+}
+
+.option-short.is-new {
+    background: #ffc7c7;
 }
 
 .option-short.is-new .label-text {

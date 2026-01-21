@@ -142,6 +142,15 @@ function onDragEnd() {
 
 .ghost-item {
     opacity: 0.5;
-    background: #E8E8E8;
+}
+
+.ghost-item :deep(.option-short),
+.ghost-item :deep(.option-thema) {
+    background: #fff5a79e;
+}
+
+.draggable-item.sortable-chosen :deep(.option-short),
+.draggable-item.sortable-chosen :deep(.option-thema) {
+    background: #fff5a79e;
 }
 </style>

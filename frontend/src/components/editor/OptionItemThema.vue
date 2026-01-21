@@ -164,19 +164,23 @@ function onEditKeywords() {
     border-radius: 7px;
     border: 1px solid #B7B7B7;
     background: #FFF;
-    cursor: grab;
     transition: all 0.2s;
     width: 100%;
     box-sizing: border-box;
 }
 
 .option-thema:hover {
+    background: #fff5a79e;
     border-color: #999;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    cursor: move;
 }
 
-.option-thema:active {
-    cursor: grabbing;
+.option-thema:active,
+.option-thema.sortable-chosen,
+.option-thema.sortable-ghost {
+    background: #fff5a79e;
+    cursor: move;
 }
 
 .option-thema.is-inactive {
@@ -187,6 +191,10 @@ function onEditKeywords() {
     background: #FEE;
     border-color: #E5A;
     opacity: 0.7;
+}
+
+.option-thema.is-new {
+    background: #ffc7c7;
 }
 
 .option-thema.is-new .label-text {

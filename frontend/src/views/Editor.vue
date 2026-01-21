@@ -446,14 +446,16 @@ function confirmDeleteUser(user) {
 
         <TabView class="editor-tabs">
             <!-- Options Tab -->
-            <TabPanel header="Dropdown-Felder">
-                <!-- Debug info -->
-                <div class="debug-info" style="padding: 10px; background: #fff3cd; margin-bottom: 16px; border-radius: 4px; font-size: 12px;">
-                    Person: {{ personSectionOptions.length }} |
-                    Thema: {{ themaOptions.length }} |
-                    Zeitfenster: {{ zeitfensterOptions.length }} |
-                    Referenz: {{ referenzOptions.length }} |
-                    Loading: {{ loading }}
+            <TabPanel header="Felder">
+                <div class="tab-content-container">
+                    <!-- Debug info -->
+                    <div class="debug-info">
+                        Person: {{ personSectionOptions.length }} |
+                        Thema: {{ themaOptions.length }} |
+                        Zeitfenster: {{ zeitfensterOptions.length }} |
+                        Referenz: {{ referenzOptions.length }} |
+                        Loading: {{ loading }}
+                    </div>
                 </div>
                 <div class="options-layout" v-if="!loading">
                     <!-- Left Column -->
@@ -640,6 +642,9 @@ function confirmDeleteUser(user) {
     justify-content: space-between;
     align-items: center;
     margin-bottom: 24px;
+    max-width: 1300px;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 .page-title {
@@ -658,24 +663,53 @@ function confirmDeleteUser(user) {
     padding: 0;
 }
 
+.editor-tabs :deep(.p-tabview-tablist-container),
+.editor-tabs :deep(.p-tabview-nav-container) {
+    max-width: 1300px;
+    margin: 0 auto;
+}
+
+.editor-tabs :deep(.p-tabview-tablist),
 .editor-tabs :deep(.p-tabview-nav) {
     background: transparent;
     border: none;
     margin-bottom: 24px;
 }
 
-.options-layout {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 24px;
-    align-items: start;
+.tab-content-container {
+    max-width: 1300px;
+    margin: 0 auto;
 }
 
-.options-column-left,
+.debug-info {
+    padding: 10px;
+    background: #fff3cd;
+    margin-bottom: 16px;
+    border-radius: 4px;
+    font-size: 12px;
+}
+
+.options-layout {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 24px;
+    align-items: start;
+    max-width: 1300px;
+    margin: 0 auto;
+}
+
+.options-column-left {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
 .options-column-right {
     display: flex;
     flex-direction: column;
     gap: 24px;
+    min-width: 372px;
+    max-width: 473px;
 }
 
 .loading-state {
