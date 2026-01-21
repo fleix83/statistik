@@ -107,6 +107,9 @@ function onEditKeywords() {
                     {{ keyword }}
                 </span>
             </div>
+            <div class="keywords-placeholder" v-else @click.stop="onEditKeywords">
+                Bitte mit Keywords differenzieren
+            </div>
 
             <!-- Toggle (always right-aligned) -->
             <div class="toggle-wrapper">
@@ -225,6 +228,14 @@ function onEditKeywords() {
     gap: 8px;
     flex: 1;
     cursor: pointer;
+}
+
+.keywords-placeholder {
+    flex: 1;
+    font-style: italic;
+    color: #8c8c8c;
+    cursor: pointer;
+    font-size: 14px;
 }
 
 .toggle-wrapper {
