@@ -638,9 +638,9 @@ function handleClickOutside(event) {
 @import url('https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap');
 
 .data-entry {
-    max-width: 1000px;
+    max-width: 1200px;
     margin: 0 auto;
-    padding: 1rem;
+    padding: 1rem 50px;
     background: #f8f7f5;
     min-height: 100vh;
     border-radius: 30px;
@@ -745,7 +745,7 @@ function handleClickOutside(event) {
 .card {
     border: 1px solid var(--surface-border);
     border-radius: 8px;
-    padding: 1rem;
+    padding: 1.4rem;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
