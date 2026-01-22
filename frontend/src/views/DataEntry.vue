@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useToast } from 'primevue/usetoast'
 import Button from 'primevue/button'
 import Select from 'primevue/select'
@@ -40,6 +40,9 @@ const optionsBySection = ref({
 // Full thema options with keywords for tooltips
 const themaOptionsWithKeywords = ref([])
 
+// Track which thema has expanded keywords
+const expandedThema = ref(null)
+
 const loading = ref(false)
 const submitting = ref(false)
 
@@ -55,6 +58,11 @@ const currentYear = computed(() => new Date().getFullYear())
 
 onMounted(async () => {
     await loadData()
+    document.addEventListener('click', handleClickOutside)
+})
+
+onUnmounted(() => {
+    document.removeEventListener('click', handleClickOutside)
 })
 
 async function loadData() {
@@ -185,10 +193,30 @@ function getKeywordsForThema(label) {
     return opt?.keywords || []
 }
 
-function formatKeywordsTooltip(label) {
-    const keywords = getKeywordsForThema(label)
-    if (keywords.length === 0) return null
-    return keywords.join(', ')
+function getFirstThreeKeywords(label) {
+    return getKeywordsForThema(label).slice(0, 3)
+}
+
+function hasMoreKeywords(label) {
+    return getKeywordsForThema(label).length > 3
+}
+
+function toggleExpandedKeywords(label, event) {
+    event.stopPropagation()
+    if (expandedThema.value === label) {
+        expandedThema.value = null
+    } else {
+        expandedThema.value = label
+    }
+}
+
+function handleClickOutside(event) {
+    // Check if click is outside any expanded keywords area
+    const expandedEl = document.querySelector('.keywords-expanded')
+    const mehrChip = event.target.closest('.mehr-chip')
+    if (expandedEl && !expandedEl.contains(event.target) && !mehrChip) {
+        expandedThema.value = null
+    }
 }
 </script>
 
@@ -241,7 +269,7 @@ function formatKeywordsTooltip(label) {
                 <div class="cards-column">
                     <!-- Card 1: Person -->
                     <div class="card card-person">
-                        <h3 class="card-title">Person</h3>
+                        <h3 class="card-title">Kontakt</h3>
                         <div class="card-content">
                             <!-- Kontaktart -->
                             <div class="checkbox-row">
@@ -249,6 +277,7 @@ function formatKeywordsTooltip(label) {
                                     v-for="opt in optionsBySection.kontaktart"
                                     :key="opt"
                                     class="checkbox-item"
+                                    :class="{ 'is-checked': formData.kontaktart.includes(opt) }"
                                 >
                                     <Checkbox
                                         :inputId="'kontakt-' + opt"
@@ -265,6 +294,7 @@ function formatKeywordsTooltip(label) {
                                     <div
                                         v-if="['Frau', 'Mann'].includes(opt)"
                                         class="checkbox-item"
+                                        :class="{ 'is-checked': formData.person.includes(opt) }"
                                     >
                                         <Checkbox
                                             :inputId="'person-' + opt"
@@ -282,6 +312,7 @@ function formatKeywordsTooltip(label) {
                                     <div
                                         v-if="['unter 55', 'über 55', 'über 80'].includes(opt)"
                                         class="checkbox-item"
+                                        :class="{ 'is-checked': formData.person.includes(opt) }"
                                     >
                                         <Checkbox
                                             :inputId="'alter-' + opt"
@@ -299,6 +330,7 @@ function formatKeywordsTooltip(label) {
                                     <div
                                         v-if="['selbst betroffen', 'Angehörige Nachbarn und andere', 'Institution'].includes(opt)"
                                         class="checkbox-item"
+                                        :class="{ 'is-checked': formData.person.includes(opt) }"
                                     >
                                         <Checkbox
                                             :inputId="'betroffen-' + opt"
@@ -316,6 +348,7 @@ function formatKeywordsTooltip(label) {
                                     v-for="opt in optionsBySection.dauer"
                                     :key="opt"
                                     class="checkbox-item"
+                                    :class="{ 'is-checked': formData.dauer.includes(opt) }"
                                 >
                                     <Checkbox
                                         :inputId="'dauer-' + opt"
@@ -328,7 +361,10 @@ function formatKeywordsTooltip(label) {
 
                             <!-- Migrationshintergrund -->
                             <div class="checkbox-row no-border">
-                                <div class="checkbox-item">
+                                <div
+                                    class="checkbox-item"
+                                    :class="{ 'is-checked': formData.thema.includes('Migrationshintergrund') }"
+                                >
                                     <Checkbox
                                         inputId="migration"
                                         value="Migrationshintergrund"
@@ -349,30 +385,38 @@ function formatKeywordsTooltip(label) {
                                     v-if="opt !== 'Migrationshintergrund'"
                                     class="thema-row"
                                 >
-                                    <div class="checkbox-item">
+                                    <div
+                                        class="checkbox-item thema-chip"
+                                        :class="{ 'thema-chip-expanded': expandedThema === opt, 'is-checked': formData.thema.includes(opt) }"
+                                    >
                                         <Checkbox
                                             :inputId="'thema-' + opt"
                                             :value="opt"
                                             v-model="formData.thema"
                                         />
-                                        <label :for="'thema-' + opt">{{ opt }}</label>
+                                        <div class="thema-chip-content">
+                                            <label :for="'thema-' + opt">{{ opt }}</label>
+                                            <div
+                                                v-if="getKeywordsForThema(opt).length > 0"
+                                                class="keywords-inline"
+                                            >
+                                                <span
+                                                    v-for="kw in (expandedThema === opt
+                                                        ? getKeywordsForThema(opt)
+                                                        : getFirstThreeKeywords(opt))"
+                                                    :key="kw"
+                                                    class="keyword-tag"
+                                                >{{ kw }}</span>
+                                            </div>
+                                        </div>
+                                        <span
+                                            v-if="hasMoreKeywords(opt)"
+                                            class="mehr-chip"
+                                            @click="toggleExpandedKeywords(opt, $event)"
+                                        >
+                                            {{ expandedThema === opt ? 'Weniger' : 'Mehr' }}
+                                        </span>
                                     </div>
-                                    <span
-                                        v-if="getKeywordsForThema(opt).length > 0"
-                                        class="keywords-hint"
-                                    >
-                                        {{ getKeywordsForThema(opt).join(', ') }}
-                                    </span>
-                                    <Button
-                                        v-if="getKeywordsForThema(opt).length > 0"
-                                        icon="pi pi-info-circle"
-                                        severity="secondary"
-                                        text
-                                        rounded
-                                        size="small"
-                                        class="info-btn"
-                                        v-tooltip.left="formatKeywordsTooltip(opt)"
-                                    />
                                 </div>
                             </template>
                         </div>
@@ -389,6 +433,7 @@ function formatKeywordsTooltip(label) {
                                 v-for="opt in optionsBySection.zeitfenster"
                                 :key="opt"
                                 class="checkbox-item zeitfenster-item"
+                                :class="{ 'is-checked': formData.zeitfenster.includes(opt) }"
                             >
                                 <Checkbox
                                     :inputId="'zeit-' + opt"
@@ -409,6 +454,7 @@ function formatKeywordsTooltip(label) {
                                 v-for="opt in optionsBySection.referenz"
                                 :key="opt"
                                 class="checkbox-item referenz-item"
+                                :class="{ 'is-checked': formData.referenz.includes(opt) }"
                             >
                                 <Checkbox
                                     :inputId="'ref-' + opt"
@@ -547,7 +593,7 @@ function formatKeywordsTooltip(label) {
 /* Cards Grid - Two columns layout */
 .cards-grid {
     display: grid;
-    grid-template-columns: 3fr 2fr;
+    grid-template-columns: 2fr 2fr;
     gap: 1rem;
     align-items: start;
 }
@@ -603,11 +649,11 @@ function formatKeywordsTooltip(label) {
     background-color: rgba(6, 182, 212, 0.04);
 }
 
-/* Checkbox Styling */
+/* Checkbox Row */
 .checkbox-row {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.5rem 1.5rem;
+    gap: 0.5rem;
     padding: 0.5rem 0;
     border-bottom: 1px solid var(--surface-border);
 }
@@ -617,76 +663,265 @@ function formatKeywordsTooltip(label) {
     padding-bottom: 0;
 }
 
+/* Chip/Swatch Styles */
 .checkbox-item {
     display: flex;
     align-items: center;
-    gap: 0.35rem;
+    gap: 0.4rem;
+    padding: 0.4rem 0.75rem;
+    border-radius: 6px;
+    cursor: pointer;
+    user-select: none;
+    transition: all 0.15s ease;
+    border: 1px solid transparent;
 }
 
 .checkbox-item label {
     cursor: pointer;
     user-select: none;
+    font-size: 1rem;
+    font-weight: 500;
+}
+
+/* Hide the actual checkbox visually but keep it functional */
+.checkbox-item :deep(.p-checkbox) {
+    width: 16px;
+    height: 16px;
+}
+
+.checkbox-item :deep(.p-checkbox-box) {
+    width: 16px;
+    height: 16px;
+    border-radius: 4px;
+    transition: all 0.15s ease;
+}
+
+/* === PERSON CARD CHIPS (Indigo) === */
+.card-person .checkbox-item {
+    background: rgba(99, 102, 241, 0.08);
+    border-color: rgba(99, 102, 241, 0.15);
+}
+
+.card-person .checkbox-item:hover {
+    background: rgba(99, 102, 241, 0.15);
+    border-color: rgba(99, 102, 241, 0.3);
+}
+
+.card-person .checkbox-item.is-checked {
+    background: rgba(99, 102, 241, 0.35);
+    border-color: rgba(99, 102, 241, 0.6);
+}
+
+.card-person .checkbox-item.is-checked label {
+    color: rgb(79, 70, 229);
+}
+
+.card-person :deep(.p-checkbox-checked .p-checkbox-box) {
+    background: rgb(99, 102, 241);
+    border-color: rgb(99, 102, 241);
+}
+
+/* === THEMA CARD CHIPS (Green) === */
+.card-thema .checkbox-item {
+    background: rgba(34, 197, 94, 0.08);
+    border-color: rgba(34, 197, 94, 0.15);
+}
+
+.card-thema .checkbox-item:hover {
+    background: rgba(34, 197, 94, 0.15);
+    border-color: rgba(34, 197, 94, 0.3);
+}
+
+.card-thema .checkbox-item.is-checked {
+    background: rgba(34, 197, 94, 0.35);
+    border-color: rgba(34, 197, 94, 0.6);
+}
+
+.card-thema .checkbox-item.is-checked label {
+    color: rgb(22, 163, 74);
+}
+
+.card-thema :deep(.p-checkbox-checked .p-checkbox-box) {
+    background: rgb(34, 197, 94);
+    border-color: rgb(34, 197, 94);
+}
+
+/* === ZEITFENSTER CARD CHIPS (Amber) === */
+.card-zeitfenster .checkbox-item {
+    background: rgba(234, 179, 8, 0.08);
+    border-color: rgba(234, 179, 8, 0.15);
+}
+
+.card-zeitfenster .checkbox-item:hover {
+    background: rgba(234, 179, 8, 0.15);
+    border-color: rgba(234, 179, 8, 0.3);
+}
+
+.card-zeitfenster .checkbox-item.is-checked {
+    background: rgba(234, 179, 8, 0.35);
+    border-color: rgba(234, 179, 8, 0.6);
+}
+
+.card-zeitfenster .checkbox-item.is-checked label {
+    color: rgb(180, 140, 8);
+}
+
+.card-zeitfenster :deep(.p-checkbox-checked .p-checkbox-box) {
+    background: rgb(234, 179, 8);
+    border-color: rgb(234, 179, 8);
+}
+
+/* === REFERENZ CARD CHIPS (Cyan) === */
+.card-referenz .checkbox-item {
+    background: rgba(6, 182, 212, 0.08);
+    border-color: rgba(6, 182, 212, 0.15);
+}
+
+.card-referenz .checkbox-item:hover {
+    background: rgba(6, 182, 212, 0.15);
+    border-color: rgba(6, 182, 212, 0.3);
+}
+
+.card-referenz .checkbox-item.is-checked {
+    background: rgba(6, 182, 212, 0.35);
+    border-color: rgba(6, 182, 212, 0.6);
+}
+
+.card-referenz .checkbox-item.is-checked label {
+    color: rgb(8, 145, 178);
+}
+
+.card-referenz :deep(.p-checkbox-checked .p-checkbox-box) {
+    background: rgb(6, 182, 212);
+    border-color: rgb(6, 182, 212);
 }
 
 /* Thema Section */
-.thema-section {
-    margin: 0;
-}
-
 .thema-row {
     display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0.35rem 0;
-    border-bottom: 1px solid var(--surface-border);
+    align-items: flex-start;
+    margin-bottom: 0.35rem;
 }
 
-.thema-row:last-child {
-    border-bottom: none;
+/* Thema chip with integrated keywords */
+.thema-chip {
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    transition: all 0.15s ease;
 }
 
-.thema-row .checkbox-item {
+.thema-chip-expanded {
+    background: rgba(34, 197, 94, 0.15);
+    border-color: rgba(34, 197, 94, 0.35);
+}
+
+.thema-chip :deep(.p-checkbox) {
+    margin-top: 0.1rem;
+    align-self: flex-start;
+}
+
+.thema-chip-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
     flex: 1;
     min-width: 0;
 }
 
-.keywords-hint {
-    flex: 1;
-    font-size: 0.75rem;
+.thema-chip-content label {
+    font-size: 1rem;
+    font-weight: 500;
+}
+
+.keywords-inline {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+    margin-top: 0.1rem;
+}
+
+.keyword-tag {
+    display: inline-block;
+    padding: 0.1rem 0.35rem;
+    font-size: 0.68rem;
     color: var(--text-color-secondary);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    max-width: 200px;
+    font-weight: 400;
+    background: rgba(255, 255, 255, 0.7);
+    border-radius: 3px;
 }
 
-.info-btn {
-    width: 1.5rem;
-    height: 1.5rem;
+/* Mehr/Weniger chip inside the thema chip */
+.mehr-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.15rem 0.4rem;
+    font-size: 0.65rem;
+    font-weight: 600;
+    border-radius: 4px;
+    background: #fff;
+    color: rgb(126, 58, 183);
+    border: 1px solid rgba(168, 85, 247, 0.3);
+    cursor: pointer;
+    transition: all 0.15s ease;
     flex-shrink: 0;
+    align-self: flex-start;
+    margin-top: 0.1rem;
 }
 
-/* Zeitfenster items */
-.zeitfenster-item {
-    padding: 0.3rem 0;
+.mehr-chip:hover {
+    background: rgba(168, 85, 247, 0.08);
+    border-color: rgba(168, 85, 247, 0.5);
 }
 
-/* Referenz items */
+/* Zeitfenster & Referenz vertical chip layouts */
+.card-zeitfenster .card-content,
+.card-referenz .card-content {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.zeitfenster-item,
 .referenz-item {
-    padding: 0.3rem 0;
+    /* inherits chip styles from .checkbox-item */
 }
 
 .andere-row {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    margin-top: 0.5rem;
-    padding-top: 0.5rem;
+    width: 100%;
+    margin-top: 0.25rem;
+    padding: 0.4rem 0.75rem;
+    background: rgba(6, 182, 212, 0.08);
+    border: 1px solid rgba(6, 182, 212, 0.15);
+    border-radius: 6px;
+}
+
+.andere-row:has(.andere-input:focus) {
+    border-color: rgba(6, 182, 212, 0.5);
+    background: rgba(6, 182, 212, 0.12);
+}
+
+.andere-row label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text-color);
 }
 
 .andere-input {
     flex: 1;
-    height: 2rem;
+    height: 1.75rem;
+    border: none;
+    background: transparent;
+    font-size: 0.875rem;
+}
+
+.andere-input:focus {
+    outline: none;
+    box-shadow: none;
 }
 
 /* Footer Buttons */

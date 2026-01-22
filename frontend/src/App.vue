@@ -46,7 +46,7 @@ function isActive(item) {
             <template #start>
                 <span class="app-title">
                     <i class="pi pi-chart-line mr-2"></i>
-                    Helpdesk Statistik
+                    GGG Wegweiser Statistik
                 </span>
             </template>
             <template #item="{ item }">
