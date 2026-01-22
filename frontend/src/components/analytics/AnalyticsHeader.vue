@@ -14,7 +14,8 @@ const {
 const chartTypes = [
     { value: 'bar', icon: 'pi pi-chart-bar', title: 'Balkendiagramm' },
     { value: 'line', icon: 'pi pi-chart-line', title: 'Liniendiagramm' },
-    { value: 'pie', icon: 'pi pi-chart-pie', title: 'Kreisdiagramm' }
+    { value: 'pie', icon: 'pi pi-chart-pie', title: 'Kreisdiagramm' },
+    { value: 'stream', icon: 'pi pi-wave-pulse', title: 'Streamgraph' }
 ]
 
 // Format periods as date ranges

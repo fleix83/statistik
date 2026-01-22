@@ -281,8 +281,8 @@ export function useAnalyticsState() {
                         isComparison: ds.isComparison
                     }))
                 }
-            } else if (chartType.value === 'line') {
-                // Line chart mode
+            } else if (chartType.value === 'line' || chartType.value === 'stream') {
+                // Line chart and Stream graph mode
                 if (activeValues.value.length === 0) {
                     // Show total entries over time (default view)
                     const datasets = []

@@ -20,6 +20,7 @@ import Card from 'primevue/card'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import AnalyticsHeader from './AnalyticsHeader.vue'
+import StreamGraph from './StreamGraph.vue'
 import { useAnalyticsState } from '../../composables/useAnalyticsState'
 
 // Register Chart.js components
@@ -354,6 +355,13 @@ const chartSubtitle = computed(() => {
 const canShowPie = computed(() => {
     return chartData.value?.mode === 'aggregate' && chartData.value?.items?.length > 0
 })
+
+// Check if stream graph is applicable (needs timeseries or totals with datasets)
+const canShowStream = computed(() => {
+    const mode = chartData.value?.mode
+    const hasDatasets = chartData.value?.datasets?.length > 0
+    return (mode === 'timeseries' || mode === 'totals') && hasDatasets
+})
 </script>
 
 <template>
@@ -406,6 +414,19 @@ const canShowPie = computed(() => {
                         <div v-else class="chart-notice">
                             <i class="pi pi-info-circle"></i>
                             <p>Kreisdiagramm: Bitte wählen Sie Balkendiagramm und klicken Sie "Anzeigen"</p>
+                        </div>
+                    </template>
+
+                    <!-- Stream Graph -->
+                    <template v-else-if="chartType === 'stream'">
+                        <StreamGraph
+                            v-if="canShowStream"
+                            :key="'stream-' + chartKey"
+                            :data="chartData"
+                        />
+                        <div v-else class="chart-notice">
+                            <i class="pi pi-info-circle"></i>
+                            <p>Streamgraph: Wählen Sie mehrere Werte aus einer Kategorie für die Zeitverlauf-Darstellung</p>
                         </div>
                     </template>
                 </div>
