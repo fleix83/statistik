@@ -211,8 +211,8 @@ export function useAnalyticsState() {
             const filters = buildFilters()
             const filtersJson = Object.keys(filters).length > 0 ? JSON.stringify(filters) : undefined
 
-            // Bar and Pie charts use aggregate data
-            if (chartType.value === 'bar' || chartType.value === 'pie') {
+            // Bar, Stacked, and Pie charts use aggregate data
+            if (chartType.value === 'bar' || chartType.value === 'stacked' || chartType.value === 'pie') {
                 // Fetch aggregate data for all periods (for grouped bar comparison)
                 const periodDatasets = []
                 let allLabels = new Set()
@@ -249,8 +249,24 @@ export function useAnalyticsState() {
                 // Convert labels to array and sort
                 const labels = Array.from(allLabels)
 
+                // Stacked bar chart mode - X-axis is periods, bars stacked by values
+                if (chartType.value === 'stacked') {
+                    chartData.value = {
+                        mode: 'stacked',
+                        labels: periods.value.map(p => p.label),  // Period labels on X-axis
+                        datasets: labels.map(value => ({
+                            label: value,
+                            data: periods.value.map(p => {
+                                const periodData = periodDatasets.find(d => d.label === p.label)
+                                const item = periodData?.items.find(item => item.label === value)
+                                return item?.count ?? 0
+                            })
+                        })),
+                        total: periodDatasets[0].total
+                    }
+                }
                 // For single period or pie chart, use simple mode
-                if (periods.value.length === 1 || chartType.value === 'pie') {
+                else if (periods.value.length === 1 || chartType.value === 'pie') {
                     chartData.value = {
                         mode: 'aggregate',
                         items: periodDatasets[0].items,

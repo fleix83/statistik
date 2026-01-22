@@ -282,6 +282,52 @@ const pieChartOptions = computed(() => ({
     }
 }))
 
+// Stacked bar chart data
+const stackedChartData = computed(() => {
+    if (!chartData.value || chartData.value.mode !== 'stacked') return null
+    return {
+        labels: chartData.value.labels,
+        datasets: chartData.value.datasets.map((ds, i) => ({
+            label: ds.label,
+            data: ds.data,
+            backgroundColor: colors[i % colors.length],
+            borderRadius: 4
+        }))
+    }
+})
+
+const stackedChartOptions = computed(() => ({
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+        legend: {
+            display: true,
+            position: 'top'
+        },
+        tooltip: {
+            mode: 'index',
+            intersect: false
+        }
+    },
+    scales: {
+        x: {
+            stacked: true,
+            title: {
+                display: true,
+                text: 'Periode'
+            }
+        },
+        y: {
+            stacked: true,
+            beginAtZero: true,
+            title: {
+                display: true,
+                text: 'Besuche'
+            }
+        }
+    }
+}))
+
 // Table data
 const tableData = computed(() => {
     if (!chartData.value) return []
@@ -300,6 +346,17 @@ const tableData = computed(() => {
         // Period comparison breakdown
         return chartData.value.labels.map((label, i) => {
             const row = { label }
+            chartData.value.datasets.forEach(ds => {
+                row[ds.label] = ds.data[i]
+            })
+            return row
+        })
+    }
+
+    if (chartData.value.mode === 'stacked') {
+        // Stacked chart: rows are periods, columns are values
+        return chartData.value.labels.map((periodLabel, i) => {
+            const row = { label: periodLabel }
             chartData.value.datasets.forEach(ds => {
                 row[ds.label] = ds.data[i]
             })
@@ -356,6 +413,12 @@ const canShowPie = computed(() => {
     return chartData.value?.mode === 'aggregate' && chartData.value?.items?.length > 0
 })
 
+// Check if stacked bar chart is applicable
+const canShowStacked = computed(() => {
+    return chartData.value?.mode === 'stacked' &&
+           chartData.value?.datasets?.length > 0
+})
+
 // Check if stream graph is applicable (needs timeseries or totals with datasets)
 const canShowStream = computed(() => {
     const mode = chartData.value?.mode
@@ -394,6 +457,20 @@ const canShowStream = computed(() => {
                         :data="barChartData"
                         :options="barChartOptions"
                     />
+
+                    <!-- Stacked Bar Chart -->
+                    <template v-else-if="chartType === 'stacked'">
+                        <Bar
+                            v-if="canShowStacked && stackedChartData"
+                            :key="'stacked-' + chartKey"
+                            :data="stackedChartData"
+                            :options="stackedChartOptions"
+                        />
+                        <div v-else class="chart-notice">
+                            <i class="pi pi-info-circle"></i>
+                            <p>Gestapeltes Balkendiagramm: Klicken Sie "Anzeigen" um die Daten zu laden</p>
+                        </div>
+                    </template>
 
                     <!-- Line Chart -->
                     <Line
@@ -444,7 +521,7 @@ const canShowStream = computed(() => {
                     :rows="10"
                     class="data-table"
                 >
-                    <Column field="label" :header="chartData?.mode === 'totals' ? xAxisLabel : 'Wert'" sortable />
+                    <Column field="label" :header="chartData?.mode === 'totals' ? xAxisLabel : chartData?.mode === 'stacked' ? 'Periode' : 'Wert'" sortable />
 
                     <!-- Single period columns (aggregate) -->
                     <template v-if="chartData?.mode === 'aggregate'">
@@ -458,6 +535,17 @@ const canShowStream = computed(() => {
 
                     <!-- Period comparison columns (aggregate-compare) -->
                     <template v-else-if="chartData?.mode === 'aggregate-compare'">
+                        <Column
+                            v-for="ds in chartData.datasets"
+                            :key="ds.label"
+                            :field="ds.label"
+                            :header="ds.label"
+                            sortable
+                        />
+                    </template>
+
+                    <!-- Stacked mode columns -->
+                    <template v-else-if="chartData?.mode === 'stacked'">
                         <Column
                             v-for="ds in chartData.datasets"
                             :key="ds.label"
