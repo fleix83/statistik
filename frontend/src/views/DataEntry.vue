@@ -117,12 +117,32 @@ async function loadData() {
 }
 
 async function submitEntry() {
+    // Validate user selection
     if (!selectedUser.value) {
         toast.add({
             severity: 'warn',
             summary: 'Hinweis',
             detail: 'Bitte wählen Sie einen Bearbeiter aus',
             life: 3000
+        })
+        return
+    }
+
+    // Validate all groups have at least one selection
+    const missingGroups = []
+    if (formData.value.kontaktart.length === 0) missingGroups.push('Kontaktart')
+    if (formData.value.person.length === 0) missingGroups.push('Person')
+    if (formData.value.thema.length === 0) missingGroups.push('Thema')
+    if (formData.value.zeitfenster.length === 0) missingGroups.push('Zeitfenster')
+    if (formData.value.dauer.length === 0) missingGroups.push('Dauer')
+    if (formData.value.referenz.length === 0 && !referenzAndere.value.trim()) missingGroups.push('Referenz')
+
+    if (missingGroups.length > 0) {
+        toast.add({
+            severity: 'warn',
+            summary: 'Unvollständig',
+            detail: `Bitte wählen Sie mindestens eine Option aus: ${missingGroups.join(', ')}`,
+            life: 5000
         })
         return
     }
@@ -213,8 +233,8 @@ function toggleExpandedKeywords(label, event) {
 function handleClickOutside(event) {
     // Check if click is outside any expanded keywords area
     const expandedEl = document.querySelector('.keywords-expanded')
-    const mehrChip = event.target.closest('.mehr-chip')
-    if (expandedEl && !expandedEl.contains(event.target) && !mehrChip) {
+    const expandZone = event.target.closest('.expand-zone')
+    if (expandedEl && !expandedEl.contains(event.target) && !expandZone) {
         expandedThema.value = null
     }
 }
@@ -410,13 +430,16 @@ function handleClickOutside(event) {
                                                 >{{ kw }}</span>
                                             </div>
                                         </div>
-                                        <span
+                                        <div
                                             v-if="hasMoreKeywords(opt)"
-                                            class="mehr-chip"
+                                            class="expand-zone"
                                             @click="toggleExpandedKeywords(opt, $event)"
                                         >
-                                            {{ expandedThema === opt ? 'Weniger' : 'Mehr' }}
-                                        </span>
+                                            <i
+                                                class="pi pi-chevron-down expand-icon"
+                                                :class="{ 'expanded': expandedThema === opt }"
+                                            ></i>
+                                        </div>
                                     </div>
                                 </div>
                             </template>
@@ -511,7 +534,7 @@ function handleClickOutside(event) {
 @import url('https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap');
 
 .data-entry {
-    max-width: 1200px;
+    max-width: 1000px;
     margin: 0 auto;
     padding: 1rem;
     background: #f8f7f5;
@@ -542,6 +565,7 @@ function handleClickOutside(event) {
 
 .header-title {
     text-align: right;
+    margin-right: 20px;
 }
 
 .header-title h1 {
@@ -596,7 +620,7 @@ function handleClickOutside(event) {
 /* Cards Grid - Two columns layout */
 .cards-grid {
     display: grid;
-    grid-template-columns: 2fr 2fr;
+    grid-template-columns: 2.3fr 2fr;
     gap: 1rem;
     align-items: start;
 }
@@ -616,7 +640,7 @@ function handleClickOutside(event) {
 }
 
 .card-title {
-    font-size: 0.95rem;
+    font-size: 1.2rem;
     font-weight: 600;
     margin: 0 0 0.75rem;
     padding-bottom: 0.5rem;
@@ -625,7 +649,7 @@ function handleClickOutside(event) {
 }
 
 .card-subtitle {
-    font-size: 0.8rem;
+    font-size: 1rem;
     color: var(--text-color-secondary);
     margin: -0.5rem 0 0.75rem;
 }
@@ -786,6 +810,7 @@ function handleClickOutside(event) {
 
 /* Thema chip with integrated keywords */
 .thema-chip {
+    position: relative;
     flex-direction: row;
     align-items: flex-start;
     gap: 0.5rem;
@@ -832,27 +857,33 @@ function handleClickOutside(event) {
     border-radius: 3px;
 }
 
-/* Mehr/Weniger chip inside the thema chip */
-.mehr-chip {
-    display: inline-flex;
+/* Expand zone for keywords */
+.expand-zone {
+    position: absolute;
+    top: 0;
+    right: 0;
+    display: flex;
     align-items: center;
-    padding: 0.15rem 0.4rem;
-    font-size: 0.65rem;
-    font-weight: 600;
-    border-radius: 4px;
-    background: #fff;
-    color: rgb(126, 58, 183);
-    border: 1px solid rgba(168, 85, 247, 0.3);
+    justify-content: center;
+    width: 30px;
+    height: 30px;
     cursor: pointer;
-    transition: all 0.15s ease;
-    flex-shrink: 0;
-    align-self: flex-start;
-    margin-top: 0.1rem;
+    border-radius: 0 6px 0 0;
+    transition: background 0.15s ease;
 }
 
-.mehr-chip:hover {
-    background: rgba(168, 85, 247, 0.08);
-    border-color: rgba(168, 85, 247, 0.5);
+.expand-zone:hover {
+    background: rgba(0, 0, 0, 0.05);
+}
+
+.expand-icon {
+    font-size: 1rem;
+    color: #ff0200;
+    transition: transform 0.2s ease;
+}
+
+.expand-icon.expanded {
+    transform: rotate(180deg);
 }
 
 /* Zeitfenster & Referenz vertical chip layouts */
