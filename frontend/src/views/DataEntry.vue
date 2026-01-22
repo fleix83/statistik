@@ -656,15 +656,15 @@ function handleClickOutside(event) {
 }
 
 .new-entry-btn {
-    background: #ffea95;
-    border-color: transparent;
-    color: #000;
+    background: var(--color-primary) !important;
+    border-color: transparent !important;
+    color: var(--color-primary-text) !important;
     margin-bottom: 0.75rem;
 }
 
 .new-entry-btn:hover {
-    background: #ffe066;
-    border-color: transparent;
+    background: var(--color-primary-hover) !important;
+    border-color: transparent !important;
 }
 
 .header-title {
@@ -689,7 +689,7 @@ function handleClickOutside(event) {
 /* Form Container */
 .form-container {
     padding: 1rem 0;
-    margin-top: -50px;
+    margin-top: -100px;
 }
 
 /* Top Fields */
@@ -697,7 +697,7 @@ function handleClickOutside(event) {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
-    margin-bottom: 1rem;
+    margin-bottom: 2.4rem;
     max-width: 400px;
 }
 
@@ -722,7 +722,7 @@ function handleClickOutside(event) {
 }
 
 .user-select.highlight-placeholder :deep(.p-select-label.p-placeholder) {
-    background: #ffea95;
+    background: var(--color-primary);
     padding: 0.25rem 0.5rem;
     border-radius: 4px;
 }
@@ -840,98 +840,98 @@ function handleClickOutside(event) {
 
 /* === KONTAKT CARD CHIPS (Blue) === */
 .card-person .checkbox-item {
-    background: rgb(111 172 255 / 22%);
+    background: var(--color-kontakt-light);
 }
 
 .card-person .checkbox-item:hover {
-    background: rgb(111 172 255 / 35%);
+    background: var(--color-kontakt-hover);
 }
 
 .card-person .checkbox-item.is-checked {
-    background: rgb(111 172 255 / 50%);
+    background: var(--color-kontakt-checked);
 }
 
 .card-person .checkbox-item.is-checked label {
-    color: #2563eb;
+    color: var(--color-kontakt-text);
 }
 
 .card-person :deep(.p-checkbox-checked .p-checkbox-box),
 .card-person :deep(.p-checkbox-checked:hover .p-checkbox-box),
 .card-person :deep(.p-checkbox-checked:has(.p-checkbox-input:hover) .p-checkbox-box) {
-    background: #3b82f6 !important;
-    border-color: #3b82f6 !important;
+    background: var(--color-kontakt-checkbox) !important;
+    border-color: var(--color-kontakt-checkbox) !important;
 }
 
 /* === THEMA CARD CHIPS (Red/Pink) === */
 .card-thema .checkbox-item {
-    background: rgb(255 161 161 / 83%);
+    background: var(--color-thema-light);
 }
 
 .card-thema .checkbox-item:hover {
-    background: rgb(255 140 140 / 90%);
+    background: var(--color-thema-hover);
 }
 
 .card-thema .checkbox-item.is-checked {
-    background: rgb(255 120 120 / 95%);
+    background: var(--color-thema-checked);
 }
 
 .card-thema .checkbox-item.is-checked label {
-    color: #991b1b;
+    color: var(--color-thema-text);
 }
 
 .card-thema :deep(.p-checkbox-checked .p-checkbox-box),
 .card-thema :deep(.p-checkbox-checked:hover .p-checkbox-box),
 .card-thema :deep(.p-checkbox-checked:has(.p-checkbox-input:hover) .p-checkbox-box) {
-    background: #dc2626 !important;
-    border-color: #dc2626 !important;
+    background: var(--color-thema-checkbox) !important;
+    border-color: var(--color-thema-checkbox) !important;
 }
 
 /* === ZEITFENSTER CARD CHIPS (Green) === */
 .card-zeitfenster .checkbox-item {
-    background: rgb(91 219 166 / 56%);
+    background: var(--color-zeitfenster-light);
 }
 
 .card-zeitfenster .checkbox-item:hover {
-    background: rgb(91 219 166 / 70%);
+    background: var(--color-zeitfenster-hover);
 }
 
 .card-zeitfenster .checkbox-item.is-checked {
-    background: rgb(91 219 166 / 85%);
+    background: var(--color-zeitfenster-checked);
 }
 
 .card-zeitfenster .checkbox-item.is-checked label {
-    color: #166534;
+    color: var(--color-zeitfenster-text);
 }
 
 .card-zeitfenster :deep(.p-checkbox-checked .p-checkbox-box),
 .card-zeitfenster :deep(.p-checkbox-checked:hover .p-checkbox-box),
 .card-zeitfenster :deep(.p-checkbox-checked:has(.p-checkbox-input:hover) .p-checkbox-box) {
-    background: #22c55e !important;
-    border-color: #22c55e !important;
+    background: var(--color-zeitfenster-checkbox) !important;
+    border-color: var(--color-zeitfenster-checkbox) !important;
 }
 
 /* === REFERENZ CARD CHIPS (Beige/Tan) === */
 .card-referenz .checkbox-item {
-    background: rgb(217 210 177 / 50%);
+    background: var(--color-referenz-light);
 }
 
 .card-referenz .checkbox-item:hover {
-    background: rgb(217 210 177 / 65%);
+    background: var(--color-referenz-hover);
 }
 
 .card-referenz .checkbox-item.is-checked {
-    background: rgb(217 210 177 / 80%);
+    background: var(--color-referenz-checked);
 }
 
 .card-referenz .checkbox-item.is-checked label {
-    color: #78716c;
+    color: var(--color-referenz-text);
 }
 
 .card-referenz :deep(.p-checkbox-checked .p-checkbox-box),
 .card-referenz :deep(.p-checkbox-checked:hover .p-checkbox-box),
 .card-referenz :deep(.p-checkbox-checked:has(.p-checkbox-input:hover) .p-checkbox-box) {
-    background: #a8a29e !important;
-    border-color: #a8a29e !important;
+    background: var(--color-referenz-checkbox) !important;
+    border-color: var(--color-referenz-checkbox) !important;
 }
 
 /* Thema Section */
@@ -952,7 +952,7 @@ function handleClickOutside(event) {
 }
 
 .thema-chip-expanded {
-    background: rgb(255 140 140 / 90%);
+    background: var(--color-thema-hover);
     padding: 25px 20px;
 }
 
@@ -1022,7 +1022,7 @@ function handleClickOutside(event) {
 
 .expand-icon {
     font-size: 1rem;
-    color: #ff0200;
+    color: var(--color-thema-checkbox);
     transition: transform 0.2s ease;
 }
 
@@ -1050,12 +1050,12 @@ function handleClickOutside(event) {
     width: 100%;
     margin-top: 0.5rem;
     padding: 0.4rem 0.75rem;
-    background: rgb(217 210 177 / 50%);
+    background: var(--color-referenz-light);
     border-radius: 6px;
 }
 
 .andere-row:has(.andere-input:focus) {
-    background: rgb(217 210 177 / 65%);
+    background: var(--color-referenz-hover);
 }
 
 .andere-row label {
@@ -1155,33 +1155,33 @@ function handleClickOutside(event) {
 }
 
 .message-success {
-    background: rgb(91 219 166 / 40%);
-    color: #166534;
+    background: var(--color-thema-light);
+    color: #000;
 }
 
 .message-warn {
-    background: rgb(255 200 100 / 50%);
-    color: #92400e;
+    background: var(--color-thema-light);
+    color: #000;
 }
 
 .message-error {
-    background: rgb(255 161 161 / 60%);
-    color: #991b1b;
+    background: var(--color-thema-light);
+    color: #000;
 }
 
 .save-btn-full {
     width: 100%;
-    background: #ffea95;
-    border-color: transparent;
-    color: #000;
+    background: var(--color-primary) !important;
+    border-color: transparent !important;
+    color: var(--color-primary-text) !important;
     margin-top: 0.75rem;
     padding: 0.75rem 1rem;
     font-size: 1rem;
 }
 
 .save-btn-full:hover {
-    background: #ffe066;
-    border-color: transparent;
+    background: var(--color-primary-hover) !important;
+    border-color: transparent !important;
 }
 
 

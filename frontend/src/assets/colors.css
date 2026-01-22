@@ -1,0 +1,40 @@
+/* Global Color Variables for Helpdesk Statistik */
+:root {
+    /* Primary (Yellow) */
+    --color-primary: #ffea95;
+    --color-primary-light: #fdedad;
+    --color-primary-hover: #fee47b;
+    --color-primary-text: #000;
+
+    /* Kontakt (Blue) */
+    --color-kontakt: rgb(111 172 255);
+    --color-kontakt-light: rgb(111 172 255 / 22%);
+    --color-kontakt-hover: rgb(111 172 255 / 35%);
+    --color-kontakt-checked: rgb(111 172 255 / 50%);
+    --color-kontakt-checkbox: #3b82f6;
+    --color-kontakt-text: #2563eb;
+
+    /* Thema (Red) */
+    --color-thema: rgb(255 161 161);
+    --color-thema-light: rgb(255 161 161 / 83%);
+    --color-thema-hover: rgb(255 140 140 / 90%);
+    --color-thema-checked: rgb(255 120 120 / 95%);
+    --color-thema-checkbox: #dc2626;
+    --color-thema-text: #991b1b;
+
+    /* Zeitfenster (Green) */
+    --color-zeitfenster: rgb(91 219 166);
+    --color-zeitfenster-light: rgb(91 219 166 / 56%);
+    --color-zeitfenster-hover: rgb(91 219 166 / 70%);
+    --color-zeitfenster-checked: rgb(91 219 166 / 85%);
+    --color-zeitfenster-checkbox: #22c55e;
+    --color-zeitfenster-text: #166534;
+
+    /* Referenz (Earth/Tan) */
+    --color-referenz: rgb(217 210 177);
+    --color-referenz-light: rgb(217 210 177 / 50%);
+    --color-referenz-hover: rgb(217 210 177 / 65%);
+    --color-referenz-checked: rgb(217 210 177 / 80%);
+    --color-referenz-checkbox: #a8a29e;
+    --color-referenz-text: #78716c;
+}
