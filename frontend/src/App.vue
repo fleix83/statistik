@@ -44,10 +44,7 @@ function isActive(item) {
     <div class="app-layout">
         <Menubar :model="menuItems" class="app-header">
             <template #start>
-                <span class="app-title">
-                    <i class="pi pi-chart-line mr-2"></i>
-                    GGG Wegweiser Statistik
-                </span>
+                <img src="@/assets/logo.svg" alt="Logo" class="app-logo" />
             </template>
             <template #item="{ item }">
                 <router-link
@@ -122,11 +119,11 @@ button, input, select, textarea {
     border-top: 0;
 }
 
-.app-title {
-    font-weight: 600;
-    font-size: 1.1rem;
-    color: var(--primary-color);
+.app-logo {
+    height: 2rem;
+    margin-left: 20px;
     margin-right: 2rem;
+    filter: brightness(0);
 }
 
 .menu-item {

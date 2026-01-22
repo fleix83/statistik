@@ -46,6 +46,12 @@ const expandedThema = ref(null)
 const loading = ref(false)
 const submitting = ref(false)
 
+// Message state for inline feedback
+const message = ref({ type: '', text: '' })
+
+// Highlight user select placeholder
+const highlightUserSelect = ref(false)
+
 // Formatted date for header
 const formattedDate = computed(() => {
     const days = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag']
@@ -116,34 +122,31 @@ async function loadData() {
     }
 }
 
-async function submitEntry() {
-    // Validate user selection
-    if (!selectedUser.value) {
-        toast.add({
-            severity: 'warn',
-            summary: 'Hinweis',
-            detail: 'Bitte wählen Sie einen Bearbeiter aus',
-            life: 3000
-        })
-        return
+function showMessage(type, text, duration = 5000) {
+    message.value = { type, text }
+    if (duration > 0) {
+        setTimeout(() => {
+            message.value = { type: '', text: '' }
+        }, duration)
     }
+}
 
-    // Validate all groups have at least one selection
-    const missingGroups = []
-    if (formData.value.kontaktart.length === 0) missingGroups.push('Kontaktart')
-    if (formData.value.person.length === 0) missingGroups.push('Person')
-    if (formData.value.thema.length === 0) missingGroups.push('Thema')
-    if (formData.value.zeitfenster.length === 0) missingGroups.push('Zeitfenster')
-    if (formData.value.dauer.length === 0) missingGroups.push('Dauer')
-    if (formData.value.referenz.length === 0 && !referenzAndere.value.trim()) missingGroups.push('Referenz')
+async function submitEntry() {
+    // Clear any previous message
+    message.value = { type: '', text: '' }
 
-    if (missingGroups.length > 0) {
-        toast.add({
-            severity: 'warn',
-            summary: 'Unvollständig',
-            detail: `Bitte wählen Sie mindestens eine Option aus: ${missingGroups.join(', ')}`,
-            life: 5000
-        })
+    // Validate all groups have at least one selection and user is selected
+    const hasAllSelections =
+        selectedUser.value &&
+        formData.value.kontaktart.length > 0 &&
+        formData.value.person.length > 0 &&
+        formData.value.thema.length > 0 &&
+        formData.value.zeitfenster.length > 0 &&
+        formData.value.dauer.length > 0 &&
+        (formData.value.referenz.length > 0 || referenzAndere.value.trim())
+
+    if (!hasAllSelections) {
+        showMessage('warn', 'Bitte wähle mindestens eine Option aus jeder Gruppe und deinen Namen.')
         return
     }
 
@@ -161,21 +164,10 @@ async function submitEntry() {
             values
         })
 
-        toast.add({
-            severity: 'success',
-            summary: 'Gespeichert',
-            detail: 'Eintrag wurde erfolgreich gespeichert',
-            life: 3000
-        })
-
+        showMessage('success', 'Eintrag wurde erfolgreich gespeichert')
         resetForm()
     } catch (error) {
-        toast.add({
-            severity: 'error',
-            summary: 'Fehler',
-            detail: 'Eintrag konnte nicht gespeichert werden',
-            life: 3000
-        })
+        showMessage('error', 'Eintrag konnte nicht gespeichert werden')
     } finally {
         submitting.value = false
     }
@@ -192,6 +184,8 @@ function resetForm() {
     }
     referenzAndere.value = ''
     erfassungsdatum.value = new Date()
+    message.value = { type: '', text: '' }
+    highlightUserSelect.value = true
 }
 
 function isChecked(section, value) {
@@ -279,7 +273,9 @@ function handleClickOutside(event) {
                         optionLabel="username"
                         placeholder="Auswählen"
                         class="user-select"
+                        :class="{ 'highlight-placeholder': highlightUserSelect && !selectedUser }"
                         :loading="loading"
+                        @change="highlightUserSelect = false"
                     />
                 </div>
             </div>
@@ -503,19 +499,30 @@ function handleClickOutside(event) {
                             </div>
                         </div>
                     </div>
+
+                    <!-- Message -->
+                    <div
+                        v-if="message.text"
+                        class="form-message"
+                        :class="'message-' + message.type"
+                    >
+                        {{ message.text }}
+                    </div>
+
+                    <!-- Save Button -->
+                    <Button
+                        label="Eingabe speichern"
+                        icon="pi pi-save"
+                        :loading="submitting"
+                        @click="submitEntry"
+                        class="save-btn-full"
+                    />
                 </div>
             </div>
         </div>
 
         <!-- Footer Buttons -->
         <div class="footer-buttons">
-            <Button
-                label="Eingabe speichern"
-                icon="pi pi-save"
-                :loading="submitting"
-                @click="submitEntry"
-                class="save-btn"
-            />
             <Button
                 label="Besuch letzte 7 Tage"
                 severity="secondary"
@@ -552,15 +559,15 @@ function handleClickOutside(event) {
 }
 
 .new-entry-btn {
-    background: #40E0D0;
-    border-color: #40E0D0;
+    background: #ffea95;
+    border-color: transparent;
     color: #000;
     margin-bottom: 0.75rem;
 }
 
 .new-entry-btn:hover {
-    background: #3BC9BB;
-    border-color: #3BC9BB;
+    background: #ffe066;
+    border-color: transparent;
 }
 
 .header-title {
@@ -615,6 +622,12 @@ function handleClickOutside(event) {
 .user-select {
     flex: 1;
     min-width: 200px;
+}
+
+.user-select.highlight-placeholder :deep(.p-select-label.p-placeholder) {
+    background: #ffea95;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
 }
 
 /* Cards Grid - Two columns layout */
@@ -710,7 +723,22 @@ function handleClickOutside(event) {
     width: 16px;
     height: 16px;
     border-radius: 4px;
-    transition: all 0.15s ease;
+    transition: none;
+}
+
+/* Remove all hover effects from checkboxes */
+.checkbox-item :deep(.p-checkbox:not(.p-disabled):hover .p-checkbox-box) {
+    border-color: var(--p-checkbox-border-color);
+}
+
+.checkbox-item :deep(.p-checkbox:not(.p-disabled):has(.p-checkbox-input:hover) .p-checkbox-box) {
+    border-color: var(--p-checkbox-border-color);
+}
+
+.checkbox-item :deep(.p-checkbox-checked:not(.p-disabled):hover .p-checkbox-box),
+.checkbox-item :deep(.p-checkbox-checked:not(.p-disabled):has(.p-checkbox-input:hover) .p-checkbox-box) {
+    background: inherit;
+    border-color: inherit;
 }
 
 /* === KONTAKT CARD CHIPS (Blue) === */
@@ -730,9 +758,11 @@ function handleClickOutside(event) {
     color: #2563eb;
 }
 
-.card-person :deep(.p-checkbox-checked .p-checkbox-box) {
-    background: #3b82f6;
-    border-color: #3b82f6;
+.card-person :deep(.p-checkbox-checked .p-checkbox-box),
+.card-person :deep(.p-checkbox-checked:hover .p-checkbox-box),
+.card-person :deep(.p-checkbox-checked:has(.p-checkbox-input:hover) .p-checkbox-box) {
+    background: #3b82f6 !important;
+    border-color: #3b82f6 !important;
 }
 
 /* === THEMA CARD CHIPS (Red/Pink) === */
@@ -752,9 +782,11 @@ function handleClickOutside(event) {
     color: #991b1b;
 }
 
-.card-thema :deep(.p-checkbox-checked .p-checkbox-box) {
-    background: #dc2626;
-    border-color: #dc2626;
+.card-thema :deep(.p-checkbox-checked .p-checkbox-box),
+.card-thema :deep(.p-checkbox-checked:hover .p-checkbox-box),
+.card-thema :deep(.p-checkbox-checked:has(.p-checkbox-input:hover) .p-checkbox-box) {
+    background: #dc2626 !important;
+    border-color: #dc2626 !important;
 }
 
 /* === ZEITFENSTER CARD CHIPS (Green) === */
@@ -774,9 +806,11 @@ function handleClickOutside(event) {
     color: #166534;
 }
 
-.card-zeitfenster :deep(.p-checkbox-checked .p-checkbox-box) {
-    background: #22c55e;
-    border-color: #22c55e;
+.card-zeitfenster :deep(.p-checkbox-checked .p-checkbox-box),
+.card-zeitfenster :deep(.p-checkbox-checked:hover .p-checkbox-box),
+.card-zeitfenster :deep(.p-checkbox-checked:has(.p-checkbox-input:hover) .p-checkbox-box) {
+    background: #22c55e !important;
+    border-color: #22c55e !important;
 }
 
 /* === REFERENZ CARD CHIPS (Beige/Tan) === */
@@ -796,9 +830,11 @@ function handleClickOutside(event) {
     color: #78716c;
 }
 
-.card-referenz :deep(.p-checkbox-checked .p-checkbox-box) {
-    background: #a8a29e;
-    border-color: #a8a29e;
+.card-referenz :deep(.p-checkbox-checked .p-checkbox-box),
+.card-referenz :deep(.p-checkbox-checked:hover .p-checkbox-box),
+.card-referenz :deep(.p-checkbox-checked:has(.p-checkbox-input:hover) .p-checkbox-box) {
+    background: #a8a29e !important;
+    border-color: #a8a29e !important;
 }
 
 /* Thema Section */
@@ -820,6 +856,12 @@ function handleClickOutside(event) {
 
 .thema-chip-expanded {
     background: rgb(255 140 140 / 90%);
+    padding: 25px 20px;
+}
+
+.thema-chip-expanded .keywords-inline {
+    gap: 0.7rem;
+    margin-top: 0.5rem;
 }
 
 .thema-chip :deep(.p-checkbox) {
@@ -956,6 +998,44 @@ function handleClickOutside(event) {
 .save-btn:hover {
     background: #3BC9BB;
     border-color: #3BC9BB;
+}
+
+/* Form Message */
+.form-message {
+    padding: 0.75rem 1rem;
+    border-radius: 6px;
+    font-size: 0.95rem;
+    margin-top: 1rem;
+}
+
+.message-success {
+    background: rgb(91 219 166 / 40%);
+    color: #166534;
+}
+
+.message-warn {
+    background: rgb(255 200 100 / 50%);
+    color: #92400e;
+}
+
+.message-error {
+    background: rgb(255 161 161 / 60%);
+    color: #991b1b;
+}
+
+.save-btn-full {
+    width: 100%;
+    background: #ffea95;
+    border-color: transparent;
+    color: #000;
+    margin-top: 0.75rem;
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+}
+
+.save-btn-full:hover {
+    background: #ffe066;
+    border-color: transparent;
 }
 
 
