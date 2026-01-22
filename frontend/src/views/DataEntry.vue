@@ -857,6 +857,11 @@ function handleClickOutside(event) {
     border-radius: 3px;
 }
 
+.thema-chip-expanded .keyword-tag {
+    font-size: 1rem;
+    padding: 0.15rem 0.5rem;
+}
+
 /* Expand zone for keywords */
 .expand-zone {
     position: absolute;
