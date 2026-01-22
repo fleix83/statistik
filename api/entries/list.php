@@ -14,7 +14,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
 
 $startDate = $_GET['start_date'] ?? null;
 $endDate = $_GET['end_date'] ?? null;
-$limit = min(intval($_GET['limit'] ?? 50), 100);
+$limit = min(intval($_GET['limit'] ?? 50), 5000);
 $offset = max(intval($_GET['offset'] ?? 0), 0);
 
 $db = getDB();

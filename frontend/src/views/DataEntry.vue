@@ -52,6 +52,16 @@ const message = ref({ type: '', text: '' })
 // Highlight user select placeholder
 const highlightUserSelect = ref(false)
 
+// Pagination state
+const entriesList = ref([])
+const currentEntryIndex = ref(-1)
+const currentEntryId = computed(() => {
+    if (currentEntryIndex.value >= 0 && entriesList.value[currentEntryIndex.value]) {
+        return entriesList.value[currentEntryIndex.value].id
+    }
+    return null
+})
+
 // Formatted date for header
 const formattedDate = computed(() => {
     const days = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag']
@@ -64,6 +74,7 @@ const currentYear = computed(() => new Date().getFullYear())
 
 onMounted(async () => {
     await loadData()
+    await loadEntries(true)
     document.addEventListener('click', handleClickOutside)
 })
 
@@ -166,6 +177,7 @@ async function submitEntry() {
 
         showMessage('success', 'Eintrag wurde erfolgreich gespeichert')
         resetForm()
+        await loadEntries()
     } catch (error) {
         showMessage('error', 'Eintrag konnte nicht gespeichert werden')
     } finally {
@@ -174,6 +186,7 @@ async function submitEntry() {
 }
 
 function resetForm() {
+    selectedUser.value = null
     formData.value = {
         kontaktart: [],
         person: [],
@@ -186,6 +199,72 @@ function resetForm() {
     erfassungsdatum.value = new Date()
     message.value = { type: '', text: '' }
     highlightUserSelect.value = true
+    currentEntryIndex.value = -1
+}
+
+async function loadEntries(showLatest = false) {
+    try {
+        const res = await entries.list({ limit: 2000 })
+        // Sort by ID ascending for intuitive navigation
+        const items = res.data?.items || []
+        items.sort((a, b) => a.id - b.id)
+        entriesList.value = items
+
+        // Show latest entry if requested
+        if (showLatest && items.length > 0) {
+            await loadEntry(items.length - 1)
+        }
+    } catch (error) {
+        console.error('Failed to load entries:', error)
+    }
+}
+
+async function loadEntry(index) {
+    if (index < 0 || index >= entriesList.value.length) return
+
+    const entry = entriesList.value[index]
+    try {
+        const res = await entries.get(entry.id)
+        const data = res.data
+
+        // Populate form with entry data
+        selectedUser.value = userList.value.find(u => u.id === data.user_id) || null
+        erfassungsdatum.value = new Date(data.created_at)
+
+        // Parse values
+        formData.value = {
+            kontaktart: data.values?.kontaktart || [],
+            person: data.values?.person || [],
+            thema: data.values?.thema || [],
+            zeitfenster: data.values?.zeitfenster || [],
+            dauer: data.values?.dauer || [],
+            referenz: (data.values?.referenz || []).filter(r => !r.startsWith('andere:'))
+        }
+
+        // Extract "andere" value from referenz
+        const andere = (data.values?.referenz || []).find(r => r.startsWith('andere:'))
+        referenzAndere.value = andere ? andere.replace('andere:', '').trim() : ''
+
+        currentEntryIndex.value = index
+        highlightUserSelect.value = false
+        message.value = { type: '', text: '' }
+    } catch (error) {
+        console.error('Failed to load entry:', error)
+    }
+}
+
+function goToPreviousEntry() {
+    if (currentEntryIndex.value > 0) {
+        loadEntry(currentEntryIndex.value - 1)
+    } else if (currentEntryIndex.value === -1 && entriesList.value.length > 0) {
+        loadEntry(entriesList.value.length - 1)
+    }
+}
+
+function goToNextEntry() {
+    if (currentEntryIndex.value < entriesList.value.length - 1) {
+        loadEntry(currentEntryIndex.value + 1)
+    }
 }
 
 function isChecked(section, value) {
@@ -242,6 +321,24 @@ function handleClickOutside(event) {
             <div class="header-title">
                 <h1>STATISTIK</h1>
                 <p>{{ formattedDate }}</p>
+                <!-- Pagination -->
+                <div class="entry-pagination">
+                    <button
+                        class="pagination-btn"
+                        @click="goToPreviousEntry"
+                        :disabled="entriesList.length === 0 || currentEntryIndex === 0"
+                    >
+                        <i class="pi pi-chevron-left"></i>
+                    </button>
+                    <span class="pagination-id">{{ currentEntryId || '–' }}</span>
+                    <button
+                        class="pagination-btn"
+                        @click="goToNextEntry"
+                        :disabled="currentEntryIndex >= entriesList.length - 1"
+                    >
+                        <i class="pi pi-chevron-right"></i>
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -983,10 +1080,59 @@ function handleClickOutside(event) {
 /* Footer Buttons */
 .footer-buttons {
     display: flex;
+    align-items: center;
     gap: 0.5rem;
     margin-top: 1rem;
     padding-top: 1rem;
     border-top: 2px solid var(--surface-border);
+}
+
+/* Entry Pagination */
+.entry-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    margin-top: 1.25rem;
+}
+
+.pagination-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: #f0f0f0;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.pagination-btn:hover:not(:disabled) {
+    background: #e0e0e0;
+}
+
+.pagination-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.pagination-btn i {
+    font-size: 0.9rem;
+    color: #333;
+}
+
+.pagination-id {
+    min-width: 50px;
+    text-align: center;
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: var(--text-color);
+    padding: 0.25rem 0.5rem;
+    background: #fff;
+    border-radius: 4px;
+    border: 1px solid #ddd;
 }
 
 .save-btn {
