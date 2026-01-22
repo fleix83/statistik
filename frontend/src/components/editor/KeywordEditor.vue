@@ -1,5 +1,6 @@
 <script setup>
 import { ref, computed, watch, nextTick } from 'vue'
+import { VueDraggableNext as draggable } from 'vue-draggable-next'
 import Dialog from 'primevue/dialog'
 import InputText from 'primevue/inputtext'
 import Button from 'primevue/button'
@@ -80,19 +81,26 @@ function onCancel() {
     >
         <div class="keyword-editor">
             <p class="editor-description">
-                Keywords helfen Benutzern, das richtige Thema zu finden. Sie werden als Hinweise bei der Dateneingabe angezeigt.
+                Keywords helfen Benutzern, das richtige Thema zu finden. Sie werden als Hinweise bei der Dateneingabe angezeigt. Die Reihenfolge kann durch Ziehen mit der Maus geändert werden.
             </p>
 
             <!-- Current Keywords -->
             <div class="keywords-list">
-                <Chip
-                    v-for="(keyword, index) in keywords"
-                    :key="keyword"
-                    :label="keyword"
-                    removable
-                    @remove="removeKeyword(index)"
-                    class="keyword-chip"
-                />
+                <draggable
+                    v-model="keywords"
+                    ghost-class="ghost-keyword"
+                    :animation="200"
+                    class="keywords-draggable"
+                >
+                    <Chip
+                        v-for="(keyword, index) in keywords"
+                        :key="keyword"
+                        :label="keyword"
+                        removable
+                        @remove="removeKeyword(index)"
+                        class="keyword-chip"
+                    />
+                </draggable>
                 <span v-if="keywords.length === 0" class="no-keywords">
                     Keine Keywords definiert
                 </span>
@@ -154,9 +162,20 @@ function onCancel() {
     border: 1px solid var(--surface-200);
 }
 
+.keywords-draggable {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
 .keyword-chip {
     background: var(--primary-100);
     color: var(--primary-700);
+    cursor: move;
+}
+
+.ghost-keyword {
+    opacity: 0.5;
 }
 
 .no-keywords {
