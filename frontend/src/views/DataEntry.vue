@@ -502,11 +502,6 @@ function handleClickOutside(event) {
                 severity="secondary"
                 outlined
             />
-            <Button
-                label="Beenden"
-                severity="danger"
-                class="end-btn"
-            />
         </div>
     </div>
 </template>
@@ -516,6 +511,8 @@ function handleClickOutside(event) {
     max-width: 1200px;
     margin: 0 auto;
     padding: 1rem;
+    background: #f8f7f5;
+    min-height: 100vh;
 }
 
 /* Header */
@@ -632,21 +629,12 @@ function handleClickOutside(event) {
     flex-direction: column;
 }
 
-/* Card color accents */
-.card-person {
-    background-color: rgba(99, 102, 241, 0.04);
-}
-
-.card-thema {
-    background-color: rgba(34, 197, 94, 0.04);
-}
-
-.card-zeitfenster {
-    background-color: rgba(234, 179, 8, 0.04);
-}
-
+/* Card backgrounds */
+.card-person,
+.card-thema,
+.card-zeitfenster,
 .card-referenz {
-    background-color: rgba(6, 182, 212, 0.04);
+    background-color: #ffffffad;
 }
 
 /* Checkbox Row */
@@ -673,7 +661,6 @@ function handleClickOutside(event) {
     cursor: pointer;
     user-select: none;
     transition: all 0.15s ease;
-    border: 1px solid transparent;
 }
 
 .checkbox-item label {
@@ -696,111 +683,99 @@ function handleClickOutside(event) {
     transition: all 0.15s ease;
 }
 
-/* === PERSON CARD CHIPS (Indigo) === */
+/* === KONTAKT CARD CHIPS (Blue) === */
 .card-person .checkbox-item {
-    background: rgba(99, 102, 241, 0.08);
-    border-color: rgba(99, 102, 241, 0.15);
+    background: rgb(111 172 255 / 22%);
 }
 
 .card-person .checkbox-item:hover {
-    background: rgba(99, 102, 241, 0.15);
-    border-color: rgba(99, 102, 241, 0.3);
+    background: rgb(111 172 255 / 35%);
 }
 
 .card-person .checkbox-item.is-checked {
-    background: rgba(99, 102, 241, 0.35);
-    border-color: rgba(99, 102, 241, 0.6);
+    background: rgb(111 172 255 / 50%);
 }
 
 .card-person .checkbox-item.is-checked label {
-    color: rgb(79, 70, 229);
+    color: #2563eb;
 }
 
 .card-person :deep(.p-checkbox-checked .p-checkbox-box) {
-    background: rgb(99, 102, 241);
-    border-color: rgb(99, 102, 241);
+    background: #3b82f6;
+    border-color: #3b82f6;
 }
 
-/* === THEMA CARD CHIPS (Green) === */
+/* === THEMA CARD CHIPS (Red/Pink) === */
 .card-thema .checkbox-item {
-    background: rgba(34, 197, 94, 0.08);
-    border-color: rgba(34, 197, 94, 0.15);
+    background: rgb(255 161 161 / 83%);
 }
 
 .card-thema .checkbox-item:hover {
-    background: rgba(34, 197, 94, 0.15);
-    border-color: rgba(34, 197, 94, 0.3);
+    background: rgb(255 140 140 / 90%);
 }
 
 .card-thema .checkbox-item.is-checked {
-    background: rgba(34, 197, 94, 0.35);
-    border-color: rgba(34, 197, 94, 0.6);
+    background: rgb(255 120 120 / 95%);
 }
 
 .card-thema .checkbox-item.is-checked label {
-    color: rgb(22, 163, 74);
+    color: #991b1b;
 }
 
 .card-thema :deep(.p-checkbox-checked .p-checkbox-box) {
-    background: rgb(34, 197, 94);
-    border-color: rgb(34, 197, 94);
+    background: #dc2626;
+    border-color: #dc2626;
 }
 
-/* === ZEITFENSTER CARD CHIPS (Amber) === */
+/* === ZEITFENSTER CARD CHIPS (Green) === */
 .card-zeitfenster .checkbox-item {
-    background: rgba(234, 179, 8, 0.08);
-    border-color: rgba(234, 179, 8, 0.15);
+    background: rgb(91 219 166 / 56%);
 }
 
 .card-zeitfenster .checkbox-item:hover {
-    background: rgba(234, 179, 8, 0.15);
-    border-color: rgba(234, 179, 8, 0.3);
+    background: rgb(91 219 166 / 70%);
 }
 
 .card-zeitfenster .checkbox-item.is-checked {
-    background: rgba(234, 179, 8, 0.35);
-    border-color: rgba(234, 179, 8, 0.6);
+    background: rgb(91 219 166 / 85%);
 }
 
 .card-zeitfenster .checkbox-item.is-checked label {
-    color: rgb(180, 140, 8);
+    color: #166534;
 }
 
 .card-zeitfenster :deep(.p-checkbox-checked .p-checkbox-box) {
-    background: rgb(234, 179, 8);
-    border-color: rgb(234, 179, 8);
+    background: #22c55e;
+    border-color: #22c55e;
 }
 
-/* === REFERENZ CARD CHIPS (Cyan) === */
+/* === REFERENZ CARD CHIPS (Beige/Tan) === */
 .card-referenz .checkbox-item {
-    background: rgba(6, 182, 212, 0.08);
-    border-color: rgba(6, 182, 212, 0.15);
+    background: rgb(217 210 177 / 50%);
 }
 
 .card-referenz .checkbox-item:hover {
-    background: rgba(6, 182, 212, 0.15);
-    border-color: rgba(6, 182, 212, 0.3);
+    background: rgb(217 210 177 / 65%);
 }
 
 .card-referenz .checkbox-item.is-checked {
-    background: rgba(6, 182, 212, 0.35);
-    border-color: rgba(6, 182, 212, 0.6);
+    background: rgb(217 210 177 / 80%);
 }
 
 .card-referenz .checkbox-item.is-checked label {
-    color: rgb(8, 145, 178);
+    color: #78716c;
 }
 
 .card-referenz :deep(.p-checkbox-checked .p-checkbox-box) {
-    background: rgb(6, 182, 212);
-    border-color: rgb(6, 182, 212);
+    background: #a8a29e;
+    border-color: #a8a29e;
 }
 
 /* Thema Section */
 .thema-row {
     display: flex;
     align-items: flex-start;
-    margin-bottom: 0.35rem;
+    margin-bottom: 0.5rem;
 }
 
 /* Thema chip with integrated keywords */
@@ -813,8 +788,7 @@ function handleClickOutside(event) {
 }
 
 .thema-chip-expanded {
-    background: rgba(34, 197, 94, 0.15);
-    border-color: rgba(34, 197, 94, 0.35);
+    background: rgb(255 140 140 / 90%);
 }
 
 .thema-chip :deep(.p-checkbox) {
@@ -848,7 +822,7 @@ function handleClickOutside(event) {
     font-size: 0.68rem;
     color: var(--text-color-secondary);
     font-weight: 400;
-    background: rgba(255, 255, 255, 0.7);
+    background: rgb(255 255 255);
     border-radius: 3px;
 }
 
@@ -893,20 +867,18 @@ function handleClickOutside(event) {
     align-items: center;
     gap: 0.5rem;
     width: 100%;
-    margin-top: 0.25rem;
+    margin-top: 0.5rem;
     padding: 0.4rem 0.75rem;
-    background: rgba(6, 182, 212, 0.08);
-    border: 1px solid rgba(6, 182, 212, 0.15);
+    background: rgb(217 210 177 / 50%);
     border-radius: 6px;
 }
 
 .andere-row:has(.andere-input:focus) {
-    border-color: rgba(6, 182, 212, 0.5);
-    background: rgba(6, 182, 212, 0.12);
+    background: rgb(217 210 177 / 65%);
 }
 
 .andere-row label {
-    font-size: 0.875rem;
+    font-size: 1rem;
     font-weight: 500;
     color: var(--text-color);
 }
@@ -944,9 +916,6 @@ function handleClickOutside(event) {
     border-color: #3BC9BB;
 }
 
-.end-btn {
-    margin-left: auto;
-}
 
 /* Responsive */
 @media (max-width: 900px) {
