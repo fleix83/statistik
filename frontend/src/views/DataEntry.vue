@@ -225,20 +225,21 @@ function handleClickOutside(event) {
     <div class="data-entry">
         <!-- Header -->
         <div class="header">
-            <Button
-                label="neue Eingabe"
-                icon="pi pi-plus"
-                @click="resetForm"
-                class="new-entry-btn"
-            />
             <div class="header-title">
-                <h1>Anlaufstelle Statistik {{ currentYear }}</h1>
+                <h1>STATISTIK</h1>
                 <p>{{ formattedDate }}</p>
             </div>
         </div>
 
         <!-- Main Form -->
         <div class="form-container">
+            <Button
+                label="neue Eingabe"
+                icon="pi pi-plus"
+                @click="resetForm"
+                class="new-entry-btn"
+            />
+
             <!-- Top Fields -->
             <div class="top-fields">
                 <div class="field-row">
@@ -507,19 +508,21 @@ function handleClickOutside(event) {
 </template>
 
 <style scoped>
+@import url('https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap');
+
 .data-entry {
     max-width: 1200px;
     margin: 0 auto;
     padding: 1rem;
     background: #f8f7f5;
     min-height: 100vh;
+    border-radius: 30px;
 }
 
 /* Header */
 .header {
     display: flex;
-    align-items: flex-start;
-    gap: 2rem;
+    justify-content: flex-end;
     margin-bottom: 1rem;
     padding-bottom: 1rem;
     border-bottom: 2px solid var(--surface-border);
@@ -529,6 +532,7 @@ function handleClickOutside(event) {
     background: #40E0D0;
     border-color: #40E0D0;
     color: #000;
+    margin-bottom: 0.75rem;
 }
 
 .new-entry-btn:hover {
@@ -537,25 +541,27 @@ function handleClickOutside(event) {
 }
 
 .header-title {
-    text-align: center;
-    flex: 1;
+    text-align: right;
 }
 
 .header-title h1 {
-    font-size: 1.5rem;
-    font-weight: 600;
+    font-family: 'Patrick Hand', cursive;
+    font-size: 2.5rem;
+    font-weight: 400;
     margin: 0;
     color: var(--text-color);
 }
 
 .header-title p {
     margin: 0.25rem 0 0;
+    font-size: 1.1rem;
     color: var(--text-color-secondary);
 }
 
 /* Form Container */
 .form-container {
     padding: 1rem 0;
+    margin-top: -50px;
 }
 
 /* Top Fields */
