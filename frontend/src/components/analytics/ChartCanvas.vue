@@ -38,6 +38,24 @@ ChartJS.register(
     Filler
 )
 
+// Register custom tooltip positioner - dynamically offset based on position
+Tooltip.positioners.customOffset = function(elements, eventPosition) {
+    if (!elements.length) {
+        return false
+    }
+    const pos = Tooltip.positioners.average.call(this, elements, eventPosition)
+    const chart = this.chart
+    const chartCenter = (chart.chartArea.left + chart.chartArea.right) / 2
+
+    // If point is on left side, show tooltip to the right; otherwise to the left
+    const xOffset = pos.x < chartCenter ? 30 : -30
+
+    return {
+        x: pos.x + xOffset,
+        y: pos.y - 100
+    }
+}
+
 const {
     chartType,
     chartData,
@@ -54,16 +72,28 @@ watch(chartData, () => {
     chartKey.value++
 })
 
-// Color palette
-const primaryColor = '#55b76b'
-const comparisonColor = '#94a3b8' // Muted gray for comparison
-const colors = [
-    '#55b76b', '#6366f1', '#f59e0b', '#ef4444',
-    '#8b5cf6', '#06b6d4', '#ec4899', '#84cc16',
-    '#f97316', '#14b8a6', '#a855f7', '#0ea5e9'
-]
+// Color palette - read from global CSS variables (colors.css)
+const getCssVar = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim()
 
-const colorsBg = colors.map(c => c + '20')
+const primaryColor = computed(() => getCssVar('--color-kontakt-checkbox'))
+const comparisonColor = computed(() => getCssVar('--color-referenz-checkbox'))
+
+const colors = computed(() => [
+    getCssVar('--color-kontakt-checkbox'),    // blue
+    getCssVar('--color-thema-checkbox'),      // red
+    getCssVar('--color-zeitfenster-checkbox'),// green
+    getCssVar('--color-referenz-checkbox'),   // earth
+    getCssVar('--color-primary'),             // yellow
+    '#6366f1', // indigo (additional)
+    '#f59e0b', // amber (additional)
+    '#ec4899', // pink (additional)
+    '#06b6d4', // cyan (additional)
+    '#8b5cf6', // violet (additional)
+    '#14b8a6', // teal (additional)
+    '#f97316'  // orange (additional)
+])
+
+const colorsBg = computed(() => colors.value.map(c => c + '20'))
 
 // Bar chart data
 const barChartData = computed(() => {
@@ -76,7 +106,7 @@ const barChartData = computed(() => {
             datasets: [{
                 label: 'Anzahl',
                 data: chartData.value.items.map(d => d.count),
-                backgroundColor: primaryColor,
+                backgroundColor: primaryColor.value,
                 borderRadius: 4
             }]
         }
@@ -89,7 +119,7 @@ const barChartData = computed(() => {
             datasets: chartData.value.datasets.map((ds, i) => ({
                 label: ds.label,
                 data: ds.data,
-                backgroundColor: ds.isComparison ? comparisonColor : primaryColor,
+                backgroundColor: ds.isComparison ? comparisonColor.value : primaryColor.value,
                 borderRadius: 4
             }))
         }
@@ -125,7 +155,7 @@ const barChartOptions = computed(() => ({
             beginAtZero: true,
             title: {
                 display: true,
-                text: 'Besuche'
+                text: 'Anfragen'
             }
         }
     }
@@ -146,8 +176,8 @@ const lineChartData = computed(() => {
             datasets: chartData.value.datasets.map((ds, i) => ({
                 label: `${ds.label} (${(ds.total || 0).toLocaleString('de-CH')})`,
                 data: ds.data || [],
-                borderColor: ds.isComparison ? comparisonColor : primaryColor,
-                backgroundColor: ds.isComparison ? comparisonColor + '10' : primaryColor + '20',
+                borderColor: ds.isComparison ? comparisonColor.value : primaryColor.value,
+                backgroundColor: ds.isComparison ? comparisonColor.value + '10' : primaryColor.value + '20',
                 fill: !ds.isComparison, // Only fill the primary line
                 tension: 0.3,
                 pointRadius: ds.isComparison ? 2 : 4,
@@ -169,8 +199,8 @@ const lineChartData = computed(() => {
             datasets: chartData.value.datasets.map((ds, i) => ({
                 label: ds.label,
                 data: ds.data || [],
-                borderColor: colors[i % colors.length],
-                backgroundColor: colorsBg[i % colorsBg.length],
+                borderColor: colors.value[i % colors.value.length],
+                backgroundColor: colorsBg.value[i % colorsBg.value.length],
                 fill: true,
                 tension: 0.3,
                 pointRadius: 3,
@@ -186,8 +216,8 @@ const lineChartData = computed(() => {
             datasets: [{
                 label: `Total (${(chartData.value.total || 0).toLocaleString('de-CH')})`,
                 data: chartData.value.items.map(d => d.count),
-                borderColor: primaryColor,
-                backgroundColor: primaryColor + '20',
+                borderColor: primaryColor.value,
+                backgroundColor: primaryColor.value + '20',
                 fill: true,
                 tension: 0.3,
                 pointRadius: 4,
@@ -219,7 +249,31 @@ const lineChartOptions = computed(() => ({
         },
         tooltip: {
             mode: 'index',
-            intersect: false
+            intersect: false,
+            position: 'customOffset',
+            padding: 12,
+            titleFont: {
+                size: 14,
+                weight: 'bold'
+            },
+            bodyFont: {
+                size: 13
+            },
+            callbacks: {
+                title: (tooltipItems) => {
+                    if (!tooltipItems.length) return ''
+                    const index = tooltipItems[0].dataIndex
+                    // Use rawLabels if available for full date
+                    if (chartData.value?.rawLabels?.[index]) {
+                        return chartData.value.rawLabels[index]
+                    }
+                    return tooltipItems[0].label
+                },
+                label: (context) => {
+                    const value = context.raw
+                    return `${context.dataset.label}: ${value}`
+                }
+            }
         }
     },
     scales: {
@@ -228,13 +282,39 @@ const lineChartOptions = computed(() => ({
             title: {
                 display: true,
                 text: xAxisLabel.value
+            },
+            grid: {
+                color: (context) => {
+                    // Fade grid lines towards the top
+                    const chart = context.chart
+                    const { ctx, chartArea } = chart
+                    if (!chartArea) return 'rgba(0, 0, 0, 0.1)'
+                    // Vertical lines fade from bottom to top
+                    const gradient = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top)
+                    gradient.addColorStop(0, 'rgba(0, 0, 0, 0.1)')
+                    gradient.addColorStop(1, 'rgba(0, 0, 0, 0)')
+                    return gradient
+                }
             }
         },
         y: {
             beginAtZero: true,
             title: {
                 display: true,
-                text: 'Besuche'
+                text: 'Anfragen'
+            },
+            grid: {
+                color: (context) => {
+                    // Fade horizontal grid lines towards the top
+                    const chart = context.chart
+                    const { chartArea } = chart
+                    if (!chartArea) return 'rgba(0, 0, 0, 0.1)'
+                    const totalTicks = context.scale.ticks.length
+                    const tickIndex = context.index
+                    // Calculate opacity: 0.1 at bottom, 0 at top
+                    const opacity = 0.1 * (1 - tickIndex / (totalTicks - 1))
+                    return `rgba(0, 0, 0, ${opacity})`
+                }
             }
         }
     },
@@ -254,7 +334,7 @@ const pieChartData = computed(() => {
             labels: items.map(d => d.label),
             datasets: [{
                 data: items.map(d => d.count),
-                backgroundColor: colors.slice(0, items.length)
+                backgroundColor: colors.value.slice(0, items.length)
             }]
         }
     }
@@ -290,7 +370,7 @@ const stackedChartData = computed(() => {
         datasets: chartData.value.datasets.map((ds, i) => ({
             label: ds.label,
             data: ds.data,
-            backgroundColor: colors[i % colors.length],
+            backgroundColor: colors.value[i % colors.value.length],
             borderRadius: 4
         }))
     }
@@ -322,7 +402,7 @@ const stackedChartOptions = computed(() => ({
             beginAtZero: true,
             title: {
                 display: true,
-                text: 'Besuche'
+                text: 'Anfragen'
             }
         }
     }
@@ -381,7 +461,7 @@ const tableData = computed(() => {
 // Chart title
 const chartTitle = computed(() => {
     if (chartData.value?.mode === 'totals') {
-        return 'Besuche'
+        return 'Anfragen'
     }
 
     const labels = {
@@ -584,6 +664,7 @@ const canShowStream = computed(() => {
 .chart-card {
     flex: 1;
     min-height: 400px;
+    margin-bottom: 100px;
 }
 
 .chart-subtitle {

@@ -1,6 +1,7 @@
 import { ref, computed, watch } from 'vue'
 import { analytics } from '../services/api'
 import { format, startOfYear, endOfYear } from 'date-fns'
+import { de } from 'date-fns/locale'
 
 const currentYear = new Date().getFullYear()
 const lastYear = currentYear - 1
@@ -306,6 +307,7 @@ export function useAnalyticsState() {
                     let granularityUsed = 'month'
 
                     // Fetch totals for each period
+                    let rawLabels = []
                     for (const period of periods.value) {
                         const params = {
                             start_date: formatDateForApi(period.start),
@@ -315,6 +317,29 @@ export function useAnalyticsState() {
                         }
                         const response = await analytics.totals(params)
                         granularityUsed = response.data.granularity
+
+                        // Store raw labels for tooltip (first period only)
+                        if (rawLabels.length === 0) {
+                            rawLabels = response.data.labels.map(l => {
+                                if (granularityUsed === 'day') {
+                                    // Format: 2025-01-15 → 15. Januar 2025
+                                    const date = new Date(l)
+                                    return format(date, 'd. MMMM yyyy', { locale: de })
+                                } else if (granularityUsed === 'week') {
+                                    // Format: 2025-W03 → week start date
+                                    const [year, week] = l.split('-W')
+                                    const jan4 = new Date(parseInt(year), 0, 4)
+                                    const weekStart = new Date(jan4)
+                                    weekStart.setDate(jan4.getDate() - jan4.getDay() + 1 + (parseInt(week) - 1) * 7)
+                                    return format(weekStart, 'd. MMMM yyyy', { locale: de })
+                                } else {
+                                    // Format: 2025-01 → Januar 2025
+                                    const [year, month] = l.split('-')
+                                    const date = new Date(parseInt(year), parseInt(month) - 1, 1)
+                                    return format(date, 'MMMM yyyy', { locale: de })
+                                }
+                            })
+                        }
 
                         // Format labels based on granularity
                         const labels = response.data.labels.map(l => {
@@ -340,7 +365,8 @@ export function useAnalyticsState() {
                             label: period.label,
                             data: response.data.data,
                             total: response.data.total,
-                            isComparison: period.isComparison
+                            isComparison: period.isComparison,
+                            rawLabels: rawLabels
                         })
                     }
 
@@ -354,6 +380,7 @@ export function useAnalyticsState() {
                         mode: 'totals',
                         granularity: granularityUsed,
                         labels: allLabels,
+                        rawLabels: rawLabels,
                         datasets: datasets
                     }
 
