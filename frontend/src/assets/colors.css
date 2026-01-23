@@ -29,6 +29,7 @@
     --color-thema-checked: rgb(255 120 120 / 95%);
     --color-thema-checkbox: #dc2626;
     --color-thema-text: #991b1b;
+    --color-thema-checkbox: #e1d896;
 
     /* Zeitfenster (Green) */
     --color-zeitfenster: rgb(91 219 166);
@@ -69,4 +70,24 @@
 /* Chips - remove borders */
 .chips-container .p-chip {
     border: none !important;
+}
+
+/* ===== Chart Color Palette ===== */
+:root {
+    --chart-color-1: #3b82f6;  /* blue */
+    --chart-color-2: #dc2626;  /* red */
+    --chart-color-3: #22c55e;  /* green */
+    --chart-color-4: #a8a29e;  /* earth */
+    --chart-color-5: #ffea95;  /* yellow */
+    --chart-color-6: #6366f1;  /* indigo */
+    --chart-color-7: #f59e0b;  /* amber */
+    --chart-color-8: #ec4899;  /* pink */
+    --chart-color-9: #06b6d4;  /* cyan */
+    --chart-color-10: #8b5cf6; /* violet */
+    --chart-color-11: #14b8a6; /* teal */
+    --chart-color-12: #f97316; /* orange */
+
+    /* Primary/Comparison for line/bar charts */
+    --chart-primary: #3b82f6;
+    --chart-comparison: #a8a29e;
 }

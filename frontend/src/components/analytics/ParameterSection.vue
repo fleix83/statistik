@@ -29,7 +29,8 @@ const {
     selectedParams,
     activeSection,
     toggleParam,
-    clearSection
+    clearSection,
+    fetchData
 } = useAnalyticsState()
 
 const collapsed = ref(false)
@@ -75,6 +76,18 @@ function clearAll() {
     }
 }
 
+// Select all options in this section
+function selectAll() {
+    if (props.groups) {
+        for (const [groupSection, groupOptions] of Object.entries(props.groups)) {
+            selectedParams.value[groupSection] = [...groupOptions]
+        }
+    } else {
+        selectedParams.value[props.section] = [...props.options]
+    }
+    fetchData()
+}
+
 // Group label mapping
 const groupLabels = {
     kontaktart: 'Kontaktart',
@@ -94,6 +107,7 @@ const groupLabels = {
         <template #header>
             <div class="panel-header">
                 <span class="panel-title">{{ title }}</span>
+                <button class="select-all-link" @click.stop="selectAll">Alle</button>
                 <span v-if="selectionCount > 0" class="selection-badge">
                     {{ selectionCount }}
                 </span>
@@ -182,6 +196,22 @@ const groupLabels = {
 
 .panel-title {
     font-weight: 600;
+}
+
+.select-all-link {
+    background: none;
+    border: none;
+    color: var(--primary-color);
+    font-size: 0.75rem;
+    cursor: pointer;
+    padding: 0.125rem 0.375rem;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+}
+
+.select-all-link:hover {
+    background: var(--surface-100);
+    text-decoration: underline;
 }
 
 .selection-badge {

@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref, watch } from 'vue'
+import { computed, ref, watch, nextTick } from 'vue'
 import {
     Chart as ChartJS,
     CategoryScale,
@@ -94,31 +94,46 @@ const primaryTotal = computed(() => {
     return primary?.total ?? summaryData.value.total ?? 0
 })
 
-// Key for forcing chart re-render
-const chartKey = ref(0)
+// Key for forcing chart re-render - use timestamp for guaranteed uniqueness
+const chartKey = ref(Date.now())
+const chartReady = ref(true)
+
+// Force complete remount by toggling chartReady
+async function forceChartRemount() {
+    chartReady.value = false
+    await nextTick()
+    chartKey.value = Date.now()
+    chartReady.value = true
+}
+
 watch(chartData, () => {
-    chartKey.value++
+    forceChartRemount()
+}, { deep: true })
+
+// Also watch chartType to force re-render when switching chart types
+watch(chartType, () => {
+    forceChartRemount()
 })
 
 // Color palette - read from global CSS variables (colors.css)
 const getCssVar = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim()
 
-const primaryColor = computed(() => getCssVar('--color-kontakt-checkbox'))
-const comparisonColor = computed(() => getCssVar('--color-referenz-checkbox'))
+const primaryColor = computed(() => getCssVar('--chart-primary'))
+const comparisonColor = computed(() => getCssVar('--chart-comparison'))
 
 const colors = computed(() => [
-    getCssVar('--color-kontakt-checkbox'),    // blue
-    getCssVar('--color-thema-checkbox'),      // red
-    getCssVar('--color-zeitfenster-checkbox'),// green
-    getCssVar('--color-referenz-checkbox'),   // earth
-    getCssVar('--color-primary'),             // yellow
-    '#6366f1', // indigo (additional)
-    '#f59e0b', // amber (additional)
-    '#ec4899', // pink (additional)
-    '#06b6d4', // cyan (additional)
-    '#8b5cf6', // violet (additional)
-    '#14b8a6', // teal (additional)
-    '#f97316'  // orange (additional)
+    getCssVar('--chart-color-1'),  // blue
+    getCssVar('--chart-color-2'),  // red
+    getCssVar('--chart-color-3'),  // green
+    getCssVar('--chart-color-4'),  // earth
+    getCssVar('--chart-color-5'),  // yellow
+    getCssVar('--chart-color-6'),  // indigo
+    getCssVar('--chart-color-7'),  // amber
+    getCssVar('--chart-color-8'),  // pink
+    getCssVar('--chart-color-9'),  // cyan
+    getCssVar('--chart-color-10'), // violet
+    getCssVar('--chart-color-11'), // teal
+    getCssVar('--chart-color-12')  // orange
 ])
 
 const colorsBg = computed(() => colors.value.map(c => c + '20'))
@@ -491,23 +506,23 @@ const canShowStream = computed(() => {
             <template #content>
                 <!-- KPI Header -->
                 <div class="kpi-header">
-                    <!-- Left: Time periods -->
+                    <!-- Left: Time periods + Total count -->
                     <div class="header-left">
-                        <div
-                            v-for="period in formattedPeriods"
-                            :key="period.id"
-                            class="period-item"
-                            :class="{ 'comparison': period.isComparison }"
-                        >
-                            <span class="period-label">{{ period.label }}</span>
-                            <span class="period-dates">{{ period.dateRange }}</span>
+                        <div class="periods-group">
+                            <div
+                                v-for="period in formattedPeriods"
+                                :key="period.id"
+                                class="period-item"
+                                :class="{ 'comparison': period.isComparison }"
+                            >
+                                <span class="period-label">{{ period.label }}</span>
+                                <span class="period-dates">{{ period.dateRange }}</span>
+                            </div>
                         </div>
-                    </div>
-
-                    <!-- Center: Total count -->
-                    <div class="header-center">
-                        <div class="total-count">{{ primaryTotal.toLocaleString('de-CH') }}</div>
-                        <div class="total-label">Anfragen total<br>Selektion</div>
+                        <div class="total-group">
+                            <div class="total-count">{{ primaryTotal.toLocaleString('de-CH') }}</div>
+                            <div class="total-label">Anfragen in Selektion</div>
+                        </div>
                     </div>
 
                     <!-- Right: Chart type selector -->
@@ -544,7 +559,7 @@ const canShowStream = computed(() => {
                     <p>Wählen Sie Filter aus und klicken Sie auf "Anzeigen"</p>
                 </div>
 
-                <div v-else class="chart-container">
+                <div v-else-if="chartReady" class="chart-container">
                     <!-- Bar Chart -->
                     <Bar
                         v-if="chartType === 'bar' && barChartData"
@@ -644,15 +659,20 @@ const canShowStream = computed(() => {
     align-items: center;
     justify-content: space-between;
     padding: 1.5rem 2rem;
-    border-bottom: 1px solid #f1f5f9;
     margin-bottom: 130px;
 }
 
 .header-left {
     display: flex;
+    align-items: flex-start;
+    gap: 3rem;
+    flex: 1;
+}
+
+.periods-group {
+    display: flex;
     flex-direction: column;
     gap: 0.5rem;
-    flex: 1;
 }
 
 .period-item {
@@ -675,16 +695,13 @@ const canShowStream = computed(() => {
     color: var(--text-color-secondary);
 }
 
-.header-center {
+.total-group {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    text-align: center;
-    flex: 1;
 }
 
 .total-count {
-    font-size: 3rem;
+    font-size: 2rem;
     font-weight: 700;
     color: #1e293b;
     line-height: 1;
