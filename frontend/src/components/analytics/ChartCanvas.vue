@@ -17,11 +17,11 @@ import {
 import 'chartjs-adapter-date-fns'
 import { Bar, Line, Doughnut } from 'vue-chartjs'
 import Card from 'primevue/card'
-import DataTable from 'primevue/datatable'
-import Column from 'primevue/column'
-import AnalyticsHeader from './AnalyticsHeader.vue'
+import SelectButton from 'primevue/selectbutton'
 import StreamGraph from './StreamGraph.vue'
 import { useAnalyticsState } from '../../composables/useAnalyticsState'
+import { format } from 'date-fns'
+import { de } from 'date-fns/locale'
 
 // Register Chart.js components
 ChartJS.register(
@@ -63,8 +63,36 @@ const {
     loading,
     isCompareMode,
     activeSection,
-    isShowingTotals
+    isShowingTotals,
+    periods
 } = useAnalyticsState()
+
+// Chart type options for selector
+const chartTypes = [
+    { value: 'bar', icon: 'pi pi-chart-bar', title: 'Balkendiagramm' },
+    { value: 'stacked', icon: 'pi pi-objects-column', title: 'Gestapeltes Balkendiagramm' },
+    { value: 'line', icon: 'pi pi-chart-line', title: 'Liniendiagramm' },
+    { value: 'pie', icon: 'pi pi-chart-pie', title: 'Kreisdiagramm' },
+    { value: 'stream', icon: 'pi pi-wave-pulse', title: 'Streamgraph' }
+]
+
+// Format periods as date ranges
+const formattedPeriods = computed(() => {
+    return periods.value.map(p => {
+        const startDate = format(p.start, 'dd.MM.yyyy', { locale: de })
+        const endDate = format(p.end, 'dd.MM.yyyy', { locale: de })
+        return {
+            ...p,
+            dateRange: `${startDate} – ${endDate}`
+        }
+    })
+})
+
+// Get the primary total (non-comparison period)
+const primaryTotal = computed(() => {
+    const primary = summaryData.value.periods.find(p => !p.isComparison)
+    return primary?.total ?? summaryData.value.total ?? 0
+})
 
 // Key for forcing chart re-render
 const chartKey = ref(0)
@@ -408,56 +436,6 @@ const stackedChartOptions = computed(() => ({
     }
 }))
 
-// Table data
-const tableData = computed(() => {
-    if (!chartData.value) return []
-
-    if (chartData.value.mode === 'aggregate') {
-        return chartData.value.items.map(item => ({
-            label: item.label,
-            count: item.count,
-            percentage: chartData.value.total > 0
-                ? ((item.count / chartData.value.total) * 100).toFixed(1)
-                : 0
-        }))
-    }
-
-    if (chartData.value.mode === 'aggregate-compare') {
-        // Period comparison breakdown
-        return chartData.value.labels.map((label, i) => {
-            const row = { label }
-            chartData.value.datasets.forEach(ds => {
-                row[ds.label] = ds.data[i]
-            })
-            return row
-        })
-    }
-
-    if (chartData.value.mode === 'stacked') {
-        // Stacked chart: rows are periods, columns are values
-        return chartData.value.labels.map((periodLabel, i) => {
-            const row = { label: periodLabel }
-            chartData.value.datasets.forEach(ds => {
-                row[ds.label] = ds.data[i]
-            })
-            return row
-        })
-    }
-
-    if (chartData.value.mode === 'totals') {
-        // Monthly breakdown for totals
-        return chartData.value.labels.map((label, i) => {
-            const row = { label }
-            chartData.value.datasets.forEach(ds => {
-                row[ds.label] = ds.data[i]
-            })
-            return row
-        })
-    }
-
-    return []
-})
-
 // Chart title
 const chartTitle = computed(() => {
     if (chartData.value?.mode === 'totals') {
@@ -509,16 +487,53 @@ const canShowStream = computed(() => {
 
 <template>
     <div class="chart-canvas">
-        <!-- KPI Header -->
-        <AnalyticsHeader />
-
-        <!-- Chart Area -->
         <Card class="chart-card">
-            <template #title>
-                {{ chartTitle }}
-                <span v-if="chartSubtitle" class="chart-subtitle">{{ chartSubtitle }}</span>
-            </template>
             <template #content>
+                <!-- KPI Header -->
+                <div class="kpi-header">
+                    <!-- Left: Time periods -->
+                    <div class="header-left">
+                        <div
+                            v-for="period in formattedPeriods"
+                            :key="period.id"
+                            class="period-item"
+                            :class="{ 'comparison': period.isComparison }"
+                        >
+                            <span class="period-label">{{ period.label }}</span>
+                            <span class="period-dates">{{ period.dateRange }}</span>
+                        </div>
+                    </div>
+
+                    <!-- Center: Total count -->
+                    <div class="header-center">
+                        <div class="total-count">{{ primaryTotal.toLocaleString('de-CH') }}</div>
+                        <div class="total-label">Anfragen total<br>Selektion</div>
+                    </div>
+
+                    <!-- Right: Chart type selector -->
+                    <div class="header-right">
+                        <SelectButton
+                            v-model="chartType"
+                            :options="chartTypes"
+                            optionValue="value"
+                            class="chart-type-selector"
+                        >
+                            <template #option="{ option }">
+                                <i :class="option.icon" :title="option.title"></i>
+                            </template>
+                        </SelectButton>
+                    </div>
+                </div>
+
+                <!-- Chart Title -->
+                <div class="chart-title-row">
+                    <h3 class="chart-title">
+                        {{ chartTitle }}
+                        <span v-if="chartSubtitle" class="chart-subtitle">{{ chartSubtitle }}</span>
+                    </h3>
+                </div>
+
+                <!-- Chart Content -->
                 <div v-if="loading" class="chart-loading">
                     <i class="pi pi-spin pi-spinner" style="font-size: 2rem;"></i>
                     <span>Daten werden geladen...</span>
@@ -590,81 +605,146 @@ const canShowStream = computed(() => {
             </template>
         </Card>
 
-        <!-- Data Table -->
-        <Card v-if="tableData.length > 0" class="table-card">
-            <template #title>Detailansicht</template>
-            <template #content>
-                <DataTable
-                    :value="tableData"
-                    :loading="loading"
-                    paginator
-                    :rows="10"
-                    class="data-table"
-                >
-                    <Column field="label" :header="chartData?.mode === 'totals' ? xAxisLabel : chartData?.mode === 'stacked' ? 'Periode' : 'Wert'" sortable />
-
-                    <!-- Single period columns (aggregate) -->
-                    <template v-if="chartData?.mode === 'aggregate'">
-                        <Column field="count" header="Anzahl" sortable />
-                        <Column field="percentage" header="Anteil" sortable>
-                            <template #body="{ data }">
-                                {{ data.percentage }}%
-                            </template>
-                        </Column>
-                    </template>
-
-                    <!-- Period comparison columns (aggregate-compare) -->
-                    <template v-else-if="chartData?.mode === 'aggregate-compare'">
-                        <Column
-                            v-for="ds in chartData.datasets"
-                            :key="ds.label"
-                            :field="ds.label"
-                            :header="ds.label"
-                            sortable
-                        />
-                    </template>
-
-                    <!-- Stacked mode columns -->
-                    <template v-else-if="chartData?.mode === 'stacked'">
-                        <Column
-                            v-for="ds in chartData.datasets"
-                            :key="ds.label"
-                            :field="ds.label"
-                            :header="ds.label"
-                            sortable
-                        />
-                    </template>
-
-                    <!-- Totals mode columns -->
-                    <template v-else-if="chartData?.mode === 'totals'">
-                        <Column
-                            v-for="ds in chartData.datasets"
-                            :key="ds.label"
-                            :field="ds.label"
-                            :header="ds.label"
-                            sortable
-                        />
-                    </template>
-                </DataTable>
-            </template>
-        </Card>
     </div>
 </template>
 
 <style scoped>
 .chart-canvas {
     flex: 1;
-    padding: 1rem;
+    padding: 1.5rem;
     overflow-y: auto;
     display: flex;
     flex-direction: column;
-    gap: 1rem;
+    background: #f5f3ef;
 }
 
 .chart-card {
     flex: 1;
-    min-height: 400px;
-    margin-bottom: 100px;
+    min-height: 500px;
+    margin-bottom: 50px;
+}
+
+.chart-card :deep(.p-card) {
+    border-radius: 30px;
+    box-shadow: none;
+    border: none;
+}
+
+.chart-card :deep(.p-card-body) {
+    padding: 0;
+}
+
+.chart-card :deep(.p-card-content) {
+    padding: 0;
+}
+
+/* KPI Header */
+.kpi-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.5rem 2rem;
+    border-bottom: 1px solid #f1f5f9;
+    margin-bottom: 130px;
+}
+
+.header-left {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    flex: 1;
+}
+
+.period-item {
+    display: flex;
+    flex-direction: column;
+}
+
+.period-item.comparison {
+    opacity: 0.6;
+}
+
+.period-label {
+    font-weight: 600;
+    font-size: 0.875rem;
+    color: var(--text-color);
+}
+
+.period-dates {
+    font-size: 0.8rem;
+    color: var(--text-color-secondary);
+}
+
+.header-center {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    flex: 1;
+}
+
+.total-count {
+    font-size: 3rem;
+    font-weight: 700;
+    color: #1e293b;
+    line-height: 1;
+}
+
+.total-label {
+    font-size: 0.75rem;
+    color: var(--text-color-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-top: 0.25rem;
+    line-height: 1.3;
+}
+
+.header-right {
+    display: flex;
+    justify-content: flex-end;
+    flex: 1;
+}
+
+.chart-type-selector {
+    display: flex;
+    background: #f5f3ef;
+    border-radius: 12px;
+    padding: 4px;
+}
+
+.chart-type-selector :deep(.p-togglebutton) {
+    padding: 0.625rem 0.875rem;
+    min-width: 44px;
+    border: none !important;
+    background: transparent !important;
+    color: #64748b !important;
+    border-radius: 8px !important;
+}
+
+.chart-type-selector :deep(.p-togglebutton.p-togglebutton-checked) {
+    background: white !important;
+    color: #1e293b !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.chart-type-selector :deep(.p-togglebutton i) {
+    font-size: 1.125rem;
+}
+
+.chart-type-selector :deep(.p-togglebutton:hover:not(.p-togglebutton-checked)) {
+    background: rgba(255,255,255,0.5) !important;
+}
+
+/* Chart Title */
+.chart-title-row {
+    padding: 1rem 2rem 0.5rem;
+}
+
+.chart-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    margin: 0;
+    color: var(--text-color);
 }
 
 .chart-subtitle {
@@ -673,9 +753,11 @@ const canShowStream = computed(() => {
     color: var(--text-color-secondary);
 }
 
+/* Chart Content */
 .chart-container {
     height: 400px;
     position: relative;
+    padding: 0 2rem 2rem;
 }
 
 .chart-loading,
@@ -694,13 +776,28 @@ const canShowStream = computed(() => {
     background: var(--surface-50);
     border-radius: 8px;
     padding: 2rem;
+    margin: 0 2rem 2rem;
 }
 
-.table-card {
-    margin-top: auto;
-}
+/* Responsive */
+@media (max-width: 768px) {
+    .kpi-header {
+        flex-direction: column;
+        gap: 1rem;
+        padding: 1rem;
+    }
 
-.data-table :deep(.p-datatable-thead > tr > th) {
-    background: var(--surface-50);
+    .header-left,
+    .header-center,
+    .header-right {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .header-left {
+        flex-direction: row;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
 }
 </style>

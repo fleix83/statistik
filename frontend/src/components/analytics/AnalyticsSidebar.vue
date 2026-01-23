@@ -116,7 +116,6 @@ function onExport() {
     width: 320px;
     min-width: 320px;
     background: #f5f3ef;
-    border-right: 1px solid #e2e8f0;
     height: 100%;
     transition: width 0.3s ease, min-width 0.3s ease;
     overflow: visible;
