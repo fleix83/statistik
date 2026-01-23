@@ -83,11 +83,12 @@ const primaryTotal = computed(() => {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    background: var(--surface-100);
-    border-radius: 8px;
-    padding: 1rem 1.5rem;
+    background: white;
+    border-radius: 30px;
+    padding: 1.25rem 2rem;
     margin-bottom: 1rem;
     min-height: 80px;
+    box-shadow: none;
 }
 
 /* Left section: Periods */
@@ -128,9 +129,9 @@ const primaryTotal = computed(() => {
 }
 
 .total-count {
-    font-size: 2.5rem;
+    font-size: 3rem;
     font-weight: 700;
-    color: var(--primary-color);
+    color: #1e293b;
     line-height: 1;
 }
 
@@ -152,15 +153,32 @@ const primaryTotal = computed(() => {
 
 .chart-type-selector {
     display: flex;
+    background: #f5f3ef;
+    border-radius: 12px;
+    padding: 4px;
 }
 
 .chart-type-selector :deep(.p-togglebutton) {
-    padding: 0.75rem 1rem;
-    min-width: 50px;
+    padding: 0.625rem 0.875rem;
+    min-width: 44px;
+    border: none !important;
+    background: transparent !important;
+    color: #64748b !important;
+    border-radius: 8px !important;
+}
+
+.chart-type-selector :deep(.p-togglebutton.p-togglebutton-checked) {
+    background: white !important;
+    color: #1e293b !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
 
 .chart-type-selector :deep(.p-togglebutton i) {
-    font-size: 1.25rem;
+    font-size: 1.125rem;
+}
+
+.chart-type-selector :deep(.p-togglebutton:hover:not(.p-togglebutton-checked)) {
+    background: rgba(255,255,255,0.5) !important;
 }
 
 /* Responsive adjustments */

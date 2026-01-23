@@ -69,7 +69,7 @@ async function login() {
                 </div>
             </template>
             <template #content>
-                <form @submit.prevent="login" class="flex flex-column gap-3">
+                <form @submit.prevent="login" class="login-form">
                     <div class="field">
                         <label for="username">Benutzername</label>
                         <InputText
@@ -96,7 +96,7 @@ async function login() {
                         label="Anmelden"
                         icon="pi pi-sign-in"
                         :loading="loading"
-                        class="w-full mt-2"
+                        class="w-full"
                     />
                 </form>
             </template>
@@ -127,6 +127,31 @@ async function login() {
     max-width: 400px;
 }
 
+.login-card :deep(.p-card) {
+    background: white !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
+    border-radius: 12px;
+}
+
+.login-card :deep(.p-card-title) {
+    padding: 1.5rem 1.5rem 0;
+    font-size: 1.25rem;
+}
+
+.login-card :deep(.p-card-content) {
+    padding: 1.5rem;
+}
+
+.login-card :deep(.p-card-footer) {
+    padding: 0 1.5rem 1.5rem;
+}
+
+.login-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
 .field {
     display: flex;
     flex-direction: column;
@@ -135,5 +160,14 @@ async function login() {
 
 .field label {
     font-weight: 500;
+}
+
+/* Fix password field width */
+.field :deep(.p-password) {
+    width: 100%;
+}
+
+.field :deep(.p-password-input) {
+    width: 100%;
 }
 </style>

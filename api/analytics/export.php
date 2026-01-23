@@ -25,6 +25,8 @@ if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
 $section = $_GET['section'] ?? '';
 $startDate = $_GET['start_date'] ?? null;
 $endDate = $_GET['end_date'] ?? null;
+$valuesParam = $_GET['values'] ?? null;
+$periodsParam = $_GET['periods'] ?? null;
 
 $validSections = ['kontaktart', 'person', 'thema', 'zeitfenster', 'tageszeit', 'dauer', 'referenz'];
 
@@ -33,11 +35,43 @@ if (empty($section) || !in_array($section, $validSections)) {
     exit('Valid section parameter required');
 }
 
+// Parse selected values
+$selectedValues = [];
+if ($valuesParam) {
+    $selectedValues = array_map('trim', explode(',', $valuesParam));
+}
+
+// Parse periods if provided
+$periods = [];
+if ($periodsParam) {
+    $periods = json_decode($periodsParam, true) ?: [];
+}
+
 $db = getDB();
 
-// Build query
+// If no values selected, get all values for the section
+if (empty($selectedValues)) {
+    $sql = 'SELECT DISTINCT value_text FROM stats_entry_values WHERE section = ? ORDER BY value_text';
+    $stmt = $db->prepare($sql);
+    $stmt->execute([$section]);
+    $selectedValues = $stmt->fetchAll(PDO::FETCH_COLUMN);
+}
+
+// Generate all dates in the range
+$dates = [];
+if ($startDate && $endDate) {
+    $current = new DateTime($startDate);
+    $end = new DateTime($endDate);
+    while ($current <= $end) {
+        $dates[] = $current->format('Y-m-d');
+        $current->modify('+1 day');
+    }
+}
+
+// Query counts per day per value
 $sql = '
     SELECT
+        DATE(se.created_at) as date,
         sev.value_text as label,
         COUNT(DISTINCT sev.entry_id) as count
     FROM stats_entry_values sev
@@ -57,11 +91,23 @@ if ($endDate) {
     $params[] = $endDate;
 }
 
-$sql .= ' GROUP BY sev.value_text ORDER BY count DESC, label';
+if (!empty($selectedValues)) {
+    $placeholders = implode(',', array_fill(0, count($selectedValues), '?'));
+    $sql .= " AND sev.value_text IN ($placeholders)";
+    $params = array_merge($params, $selectedValues);
+}
+
+$sql .= ' GROUP BY DATE(se.created_at), sev.value_text';
 
 $stmt = $db->prepare($sql);
 $stmt->execute($params);
-$items = $stmt->fetchAll();
+$results = $stmt->fetchAll();
+
+// Build data matrix: date -> value -> count
+$dataMatrix = [];
+foreach ($results as $row) {
+    $dataMatrix[$row['date']][$row['label']] = $row['count'];
+}
 
 // Generate CSV
 $filename = "statistik-{$section}-" . date('Y-m-d') . '.csv';
@@ -74,12 +120,22 @@ $output = fopen('php://output', 'w');
 // BOM for Excel UTF-8 compatibility
 fprintf($output, chr(0xEF).chr(0xBB).chr(0xBF));
 
-// Header row
-fputcsv($output, ['Wert', 'Anzahl'], ';');
+// Header row: Zeitraum + each selected value
+$header = array_merge(['Zeitraum'], $selectedValues);
+fputcsv($output, $header, ';');
 
-// Data rows
-foreach ($items as $item) {
-    fputcsv($output, [$item['label'], $item['count']], ';');
+// Data rows: one per day
+foreach ($dates as $date) {
+    // Format date as DD.MM.YYYY
+    $formattedDate = date('d.m.Y', strtotime($date));
+    $row = [$formattedDate];
+
+    foreach ($selectedValues as $value) {
+        $count = $dataMatrix[$date][$value] ?? '';
+        $row[] = $count;
+    }
+
+    fputcsv($output, $row, ';');
 }
 
 fclose($output);

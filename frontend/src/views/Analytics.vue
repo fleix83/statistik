@@ -15,7 +15,8 @@ const {
     fetchData,
     periods,
     activeSection,
-    activeValues
+    activeValues,
+    selectedParams
 } = useAnalyticsState()
 
 onMounted(async () => {
@@ -26,11 +27,23 @@ onMounted(async () => {
 
 async function handleExport() {
     try {
-        const period = periods.value[0]
+        // Use all selected periods
+        const allPeriods = periods.value.map(p => ({
+            start: format(p.start, 'yyyy-MM-dd'),
+            end: format(p.end, 'yyyy-MM-dd'),
+            label: p.label
+        }))
+
         const params = {
             section: activeSection.value,
-            start_date: format(period.start, 'yyyy-MM-dd'),
-            end_date: format(period.end, 'yyyy-MM-dd')
+            start_date: allPeriods[0].start,
+            end_date: allPeriods[0].end,
+            periods: JSON.stringify(allPeriods)
+        }
+
+        // Add selected values if any
+        if (activeValues.value.length > 0) {
+            params.values = activeValues.value.join(',')
         }
 
         const response = await analytics.export(params)

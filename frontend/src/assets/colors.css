@@ -91,11 +91,8 @@
     --chart-comparison: #a8a29e;
 }
 
-/* Global card overrides */
-.p-card {
+/* Analytics chart card overrides */
+.chart-card .p-card {
     background: transparent !important;
     box-shadow: none !important;
 }
-
-   
---chart-primary: #3b82f6;
