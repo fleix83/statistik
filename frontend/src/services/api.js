@@ -87,4 +87,12 @@ export const analytics = {
     export: (params) => api.get('/analytics/export.php', { params, responseType: 'blob' })
 }
 
+// Chart Markers
+export const markers = {
+    list: () => api.get('/analytics/markers.php'),
+    create: (data) => api.post('/analytics/markers.php', data),
+    update: (id, data) => api.put(`/analytics/markers.php?id=${id}`, data),
+    delete: (id) => api.delete(`/analytics/markers.php?id=${id}`)
+}
+
 export default api

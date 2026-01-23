@@ -1,5 +1,5 @@
 import { ref, computed, watch } from 'vue'
-import { analytics } from '../services/api'
+import { analytics, markers as markersApi } from '../services/api'
 import { format, startOfYear, endOfYear } from 'date-fns'
 import { de } from 'date-fns/locale'
 
@@ -49,6 +49,9 @@ const filterOptions = ref({
 // Chart data
 const chartData = ref(null)
 const summaryData = ref({ total: 0, periods: [] })
+
+// Chart markers
+const markers = ref([])
 
 // Debounce timer
 let fetchDebounceTimer = null
@@ -481,6 +484,40 @@ export function useAnalyticsState() {
         debouncedFetch()
     })
 
+    // Load markers from API
+    async function loadMarkers() {
+        try {
+            const response = await markersApi.list()
+            markers.value = response.data
+        } catch (err) {
+            console.error('Failed to load markers:', err)
+        }
+    }
+
+    // Create a new marker
+    async function createMarker(data) {
+        const response = await markersApi.create(data)
+        markers.value.unshift(response.data)
+        return response.data
+    }
+
+    // Update a marker
+    async function updateMarker(id, data) {
+        const response = await markersApi.update(id, data)
+        const index = markers.value.findIndex(m => m.id === id)
+        if (index !== -1) {
+            // Use splice to ensure Vue reactivity triggers
+            markers.value.splice(index, 1, response.data)
+        }
+        return response.data
+    }
+
+    // Delete a marker
+    async function deleteMarker(id) {
+        await markersApi.delete(id)
+        markers.value = markers.value.filter(m => m.id !== id)
+    }
+
     return {
         // State
         periods,
@@ -492,6 +529,7 @@ export function useAnalyticsState() {
         filterOptions,
         chartData,
         summaryData,
+        markers,
 
         // Computed
         isCompareMode,
@@ -508,6 +546,10 @@ export function useAnalyticsState() {
         toggleParam,
         clearSection,
         clearAllSelections,
-        fetchData
+        fetchData,
+        loadMarkers,
+        createMarker,
+        updateMarker,
+        deleteMarker
     }
 }

@@ -1,8 +1,9 @@
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import Button from 'primevue/button'
 import PeriodSelector from './PeriodSelector.vue'
 import ParameterSection from './ParameterSection.vue'
+import MarkerManager from './MarkerManager.vue'
 import { useAnalyticsState } from '../../composables/useAnalyticsState'
 
 const emit = defineEmits(['fetch', 'export', 'toggle'])
@@ -13,8 +14,14 @@ const {
     filterOptions,
     loading,
     fetchData,
-    clearAllSelections
+    clearAllSelections,
+    loadMarkers
 } = useAnalyticsState()
+
+// Load markers on mount
+onMounted(() => {
+    loadMarkers()
+})
 
 function toggleSidebar() {
     collapsed.value = !collapsed.value
@@ -49,6 +56,17 @@ function onExport() {
                 </div>
                 <div class="sidebar-card-content">
                     <PeriodSelector />
+                </div>
+            </div>
+
+            <!-- Markers Card -->
+            <div class="sidebar-card">
+                <div class="sidebar-card-header">
+                    <i class="pi pi-flag"></i>
+                    Markierungen
+                </div>
+                <div class="sidebar-card-content">
+                    <MarkerManager />
                 </div>
             </div>
 

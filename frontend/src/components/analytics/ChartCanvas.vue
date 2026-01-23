@@ -14,13 +14,14 @@ import {
     Legend,
     Filler
 } from 'chart.js'
+import annotationPlugin from 'chartjs-plugin-annotation'
 import 'chartjs-adapter-date-fns'
 import { Bar, Line, Doughnut } from 'vue-chartjs'
 import Card from 'primevue/card'
 import SelectButton from 'primevue/selectbutton'
 import StreamGraph from './StreamGraph.vue'
 import { useAnalyticsState } from '../../composables/useAnalyticsState'
-import { format } from 'date-fns'
+import { format, parseISO, isWithinInterval } from 'date-fns'
 import { de } from 'date-fns/locale'
 
 // Register Chart.js components
@@ -35,7 +36,8 @@ ChartJS.register(
     Title,
     Tooltip,
     Legend,
-    Filler
+    Filler,
+    annotationPlugin
 )
 
 // Register custom tooltip positioner - dynamically offset based on position
@@ -64,7 +66,8 @@ const {
     isCompareMode,
     activeSection,
     isShowingTotals,
-    periods
+    periods,
+    markers
 } = useAnalyticsState()
 
 // Chart type options for selector
@@ -123,6 +126,11 @@ watch(lineFill, () => {
     forceChartRemount()
 })
 
+// Watch markers to re-render when markers change
+watch(markers, () => {
+    forceChartRemount()
+}, { deep: true })
+
 // Color palette - read from global CSS variables (colors.css)
 const getCssVar = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim()
 
@@ -172,6 +180,142 @@ const baseTooltipStyle = {
     bodyColor: 'rgba(255, 255, 255, 0.85)',
     borderColor: 'rgba(255, 255, 255, 0.1)',
     borderWidth: 1
+}
+
+// Convert markers to Chart.js annotations
+const chartAnnotations = computed(() => {
+    if (!markers.value || markers.value.length === 0) return {}
+    if (!chartData.value?.labels) return {}
+    if (!periods.value || periods.value.length === 0) return {}
+
+    const labels = chartData.value.labels
+    const annotations = {}
+
+    // Get the primary period's date range for filtering
+    const primaryPeriod = periods.value.find(p => !p.isComparison) || periods.value[0]
+    const periodStart = primaryPeriod.start
+    const periodEnd = primaryPeriod.end
+
+    // Filter to only active markers
+    const activeMarkers = markers.value.filter(m => m.is_active !== false)
+
+    activeMarkers.forEach((marker) => {
+        const startDate = parseISO(marker.start_date)
+        const endDate = marker.end_date ? parseISO(marker.end_date) : null
+
+        // Check if marker overlaps with the current period
+        const markerEnd = endDate || startDate
+        if (markerEnd < periodStart || startDate > periodEnd) {
+            return // Marker is outside the visible period
+        }
+
+        // Find the label index that matches or is closest to the marker date
+        let startIndex = findLabelIndex(startDate, labels, periodStart)
+        let endIndex = endDate ? findLabelIndex(endDate, labels, periodStart) : startIndex
+
+        // Clamp indices to valid range
+        if (startIndex === -1) startIndex = 0
+        if (endIndex === -1) endIndex = labels.length - 1
+        startIndex = Math.max(0, Math.min(startIndex, labels.length - 1))
+        endIndex = Math.max(0, Math.min(endIndex, labels.length - 1))
+
+        const color = marker.color || '#f59e0b'
+
+        if (endDate && endIndex !== startIndex) {
+            // Range marker - draw a box
+            annotations[`marker-${marker.id}`] = {
+                type: 'box',
+                xMin: startIndex - 0.5,
+                xMax: endIndex + 0.5,
+                backgroundColor: color + '20',
+                borderColor: color,
+                borderWidth: 1,
+                borderDash: [4, 4],
+                label: {
+                    display: true,
+                    content: marker.name,
+                    position: 'start',
+                    color: color,
+                    font: {
+                        size: 11,
+                        weight: '500'
+                    },
+                    padding: 4,
+                    yAdjust: -20
+                }
+            }
+        } else {
+            // Single date marker - draw a line
+            annotations[`marker-${marker.id}`] = {
+                type: 'line',
+                xMin: startIndex,
+                xMax: startIndex,
+                borderColor: color,
+                borderWidth: 2,
+                borderDash: [6, 4],
+                label: {
+                    display: true,
+                    content: marker.name,
+                    position: 'start',
+                    backgroundColor: color,
+                    color: '#fff',
+                    font: {
+                        size: 11,
+                        weight: '500'
+                    },
+                    padding: { x: 6, y: 3 },
+                    borderRadius: 4,
+                    yAdjust: -10
+                }
+            }
+        }
+    })
+
+    return annotations
+})
+
+// Find the label index for a given date
+function findLabelIndex(date, labels, periodStart) {
+    if (!labels || !date) return -1
+
+    const granularity = chartData.value?.granularity || 'month'
+    const dateMonth = date.getMonth()
+    const dateYear = date.getFullYear()
+    const dateWeek = getWeekNumber(date)
+    const dateDay = date.getDate()
+
+    // For year comparisons, we need to normalize to the period's context
+    const periodYear = periodStart?.getFullYear() || dateYear
+
+    for (let i = 0; i < labels.length; i++) {
+        const label = labels[i]
+
+        if (granularity === 'month') {
+            // Labels are like 'Jan', 'Feb', etc. - match by month index
+            const monthNames = ['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez']
+            // Only match if the marker is in the same year as the period (or we're doing year comparison)
+            if (monthNames[dateMonth] === label && dateYear === periodYear) return i
+        } else if (granularity === 'week') {
+            // Labels are like 'KW01', 'KW02', etc.
+            const weekNum = parseInt(label.replace('KW', ''))
+            if (weekNum === dateWeek && dateYear === periodYear) return i
+        } else if (granularity === 'day') {
+            // Labels are like '15.01.', '16.01.', etc.
+            const expectedLabel = `${String(dateDay).padStart(2, '0')}.${String(dateMonth + 1).padStart(2, '0')}.`
+            if (label === expectedLabel) return i
+        }
+    }
+
+    return -1
+}
+
+// Get ISO week number
+function getWeekNumber(date) {
+    const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()))
+    const dayNum = d.getUTCDay() || 7
+    d.setUTCDate(d.getUTCDate() + 4 - dayNum)
+    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1))
+    return Math.ceil((((d - yearStart) / 86400000) + 1) / 7)
 }
 
 // Bar chart data
@@ -347,6 +491,9 @@ const lineChartOptions = computed(() => ({
                     return ` ${context.dataset.label}:  ${value}`
                 }
             }
+        },
+        annotation: {
+            annotations: chartAnnotations.value
         }
     },
     scales: {
