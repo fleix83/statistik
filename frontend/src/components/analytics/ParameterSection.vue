@@ -121,13 +121,6 @@ const groupLabels = {
             >
                 <div class="group-header">
                     <span class="group-label">{{ groupLabels[groupSection] || groupSection }}</span>
-                    <Button
-                        size="small"
-                        :outlined="activeSection !== groupSection"
-                        label="Anzeigen"
-                        @click="setActive(groupSection)"
-                        class="show-btn"
-                    />
                 </div>
                 <div class="chips-container">
                     <Chip
@@ -143,15 +136,6 @@ const groupLabels = {
 
         <!-- Simple options -->
         <template v-else>
-            <div class="section-header">
-                <Button
-                    size="small"
-                    :outlined="activeSection !== section"
-                    label="Anzeigen"
-                    @click="setActive(section)"
-                    class="show-btn"
-                />
-            </div>
             <div class="chips-container">
                 <Chip
                     v-for="value in options"
@@ -167,11 +151,27 @@ const groupLabels = {
 
 <style scoped>
 .parameter-section {
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.75rem;
 }
 
-.parameter-section.is-active :deep(.p-panel-header) {
-    border-left: 3px solid var(--primary-color);
+.parameter-section :deep(.p-panel) {
+    border-radius: 12px;
+    border: none;
+    overflow: hidden;
+}
+
+.parameter-section :deep(.p-panel-header) {
+    background: white;
+    border: none;
+    padding: 0.75rem 1rem;
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
+}
+
+.parameter-section :deep(.p-panel-content) {
+    padding: 0.75rem 1rem;
+    border-bottom-left-radius: 12px;
+    border-bottom-right-radius: 12px;
 }
 
 .panel-header {
@@ -214,17 +214,6 @@ const groupLabels = {
     font-weight: 500;
 }
 
-.section-header {
-    display: flex;
-    justify-content: flex-end;
-    margin-bottom: 0.5rem;
-}
-
-.show-btn {
-    font-size: 0.75rem;
-    padding: 0.25rem 0.5rem;
-}
-
 .chips-container {
     display: flex;
     flex-wrap: wrap;
@@ -238,23 +227,20 @@ const groupLabels = {
     padding: 0.25rem 0.625rem;
     background: #f1f5f9;
     color: #334155;
-    border: 2px solid transparent;
+    border: none;
 }
 
 .chips-container :deep(.p-chip:hover) {
     background: #e0e7ff;
-    border-color: #a5b4fc;
 }
 
 .chips-container :deep(.p-chip.chip-selected) {
-    background: #6366f1;
+    background: #ef4444;
     color: white;
-    border-color: #4f46e5;
     font-weight: 600;
 }
 
 .chips-container :deep(.p-chip.chip-selected:hover) {
-    background: #4f46e5;
-    border-color: #4338ca;
+    background: #dc2626;
 }
 </style>

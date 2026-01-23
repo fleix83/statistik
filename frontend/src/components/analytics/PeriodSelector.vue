@@ -30,6 +30,10 @@ function onDateRangeChange(periodId, dates) {
 function getDateRange(period) {
     return [period.start, period.end]
 }
+
+function isYearSelected(year) {
+    return periods.value[0]?.label === String(year)
+}
 </script>
 
 <template>
@@ -41,7 +45,7 @@ function getDateRange(period) {
                 :key="year"
                 :label="String(year)"
                 size="small"
-                :outlined="periods.length !== 1 || periods[0].label !== String(year)"
+                :class="{ 'year-selected': isYearSelected(year) }"
                 @click="setYearPeriod(year)"
             />
         </div>
@@ -104,11 +108,34 @@ function getDateRange(period) {
 
 .year-buttons {
     display: flex;
-    gap: 0.5rem;
+    gap: 0;
+    background: #f1f5f9;
+    border-radius: 20px;
+    padding: 3px;
 }
 
 .year-buttons :deep(.p-button) {
     flex: 1;
+    border: none !important;
+    border-radius: 18px !important;
+    font-weight: 500;
+    padding: 0.5rem 1rem;
+    background: transparent !important;
+    color: #64748b !important;
+}
+
+.year-buttons :deep(.p-button:hover) {
+    background: rgba(59, 130, 246, 0.1) !important;
+}
+
+/* Selected year - blue background */
+.year-buttons :deep(.year-selected.p-button) {
+    background: #3b82f6 !important;
+    color: white !important;
+}
+
+.year-buttons :deep(.year-selected.p-button:hover) {
+    background: #2563eb !important;
 }
 
 .periods-list {
@@ -119,8 +146,8 @@ function getDateRange(period) {
 
 .period-item {
     padding: 0.75rem;
-    background: var(--surface-50);
-    border-radius: 6px;
+    background: #f8fafc;
+    border-radius: 8px;
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
@@ -147,5 +174,14 @@ function getDateRange(period) {
 
 .add-period-btn {
     margin-top: 0.25rem;
+}
+
+:deep(.add-period-btn.p-button) {
+    color: #3b82f6 !important;
+    border: none !important;
+}
+
+:deep(.add-period-btn.p-button:hover) {
+    background: rgba(59, 130, 246, 0.1) !important;
 }
 </style>

@@ -97,7 +97,7 @@ function isActive(item) {
 
 html, body, #app {
     font-family: 'Source Sans Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    background: var(--surface-ground);
+    background: #f5f3ef;
     color: var(--text-color);
     min-height: 100vh;
 }
@@ -149,5 +149,16 @@ button, input, select, textarea {
 .app-main {
     flex: 1;
     padding: 1rem;
+}
+
+/* Year button selected state - blue background */
+.year-buttons .year-selected.p-button {
+    background-color: #3b82f6 !important;
+    color: white !important;
+    border: none !important;
+}
+
+.year-buttons .year-selected.p-button:hover {
+    background-color: #2563eb !important;
 }
 </style>

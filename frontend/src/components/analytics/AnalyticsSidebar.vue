@@ -1,6 +1,5 @@
 <script setup>
 import { computed, ref } from 'vue'
-import Divider from 'primevue/divider'
 import Button from 'primevue/button'
 import PeriodSelector from './PeriodSelector.vue'
 import ParameterSection from './ParameterSection.vue'
@@ -42,55 +41,52 @@ function onExport() {
         </button>
 
         <div class="sidebar-content" v-show="!collapsed">
-            <!-- Period Selection -->
-            <div class="sidebar-section">
-                <h3 class="section-title">
+            <!-- Period Selection Card -->
+            <div class="sidebar-card">
+                <div class="sidebar-card-header">
                     <i class="pi pi-calendar"></i>
                     Zeitperiode
-                </h3>
-                <PeriodSelector />
+                </div>
+                <div class="sidebar-card-content">
+                    <PeriodSelector />
+                </div>
             </div>
 
-            <Divider />
-
-            <!-- Parameter Filters -->
-            <div class="sidebar-section filters-section">
-                <div class="section-header">
-                    <h3 class="section-title">
-                        <i class="pi pi-filter"></i>
-                        Filter & Anzeige
-                    </h3>
+            <!-- Filter & Anzeige Card -->
+            <div class="sidebar-card filters-section">
+                <div class="sidebar-card-header">
+                    <i class="pi pi-filter"></i>
+                    Filter & Anzeige
                     <button class="reset-link" @click="clearAllSelections" title="Alle Filter zurücksetzen">
                         Zurücksetzen
                     </button>
                 </div>
+                <div class="sidebar-card-content">
+                    <ParameterSection
+                        title="Kontakt"
+                        section="kontaktart"
+                        :groups="kontaktGroups"
+                    />
 
-                <ParameterSection
-                    title="Kontakt"
-                    section="kontaktart"
-                    :groups="kontaktGroups"
-                />
+                    <ParameterSection
+                        title="Thema"
+                        section="thema"
+                        :options="filterOptions.thema"
+                    />
 
-                <ParameterSection
-                    title="Thema"
-                    section="thema"
-                    :options="filterOptions.thema"
-                />
+                    <ParameterSection
+                        title="Zeitfenster"
+                        section="zeitfenster"
+                        :options="filterOptions.zeitfenster"
+                    />
 
-                <ParameterSection
-                    title="Zeitfenster"
-                    section="zeitfenster"
-                    :options="filterOptions.zeitfenster"
-                />
-
-                <ParameterSection
-                    title="Referenz"
-                    section="referenz"
-                    :options="filterOptions.referenz"
-                />
+                    <ParameterSection
+                        title="Referenz"
+                        section="referenz"
+                        :options="filterOptions.referenz"
+                    />
+                </div>
             </div>
-
-            <Divider />
 
             <!-- Action Buttons -->
             <div class="sidebar-section action-buttons">
@@ -99,7 +95,7 @@ function onExport() {
                     icon="pi pi-search"
                     :loading="loading"
                     @click="onFetch"
-                    class="w-full"
+                    class="w-full action-btn-primary"
                 />
                 <Button
                     label="Export CSV"
@@ -119,11 +115,11 @@ function onExport() {
     position: relative;
     width: 320px;
     min-width: 320px;
-    background: var(--surface-card);
-    border-right: 1px solid var(--surface-border);
-    overflow-y: auto;
+    background: #f5f3ef;
+    border-right: 1px solid #e2e8f0;
     height: 100%;
     transition: width 0.3s ease, min-width 0.3s ease;
+    overflow: visible;
 }
 
 .analytics-sidebar.collapsed {
@@ -133,65 +129,88 @@ function onExport() {
 
 .sidebar-content {
     padding: 1rem;
+    background: #f5f3ef;
+    height: 100%;
+    overflow-y: auto;
 }
 
 .sidebar-toggle {
     position: absolute;
-    top: 0.5rem;
-    right: 0.5rem;
-    width: 28px;
-    height: 28px;
+    top: 16px;
+    right: -9px;
+    width: 24px;
+    height: 44px;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: var(--surface-100);
-    border: 1px solid var(--surface-border);
-    border-radius: 4px;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-left: none;
+    border-radius: 0 6px 6px 0;
     cursor: pointer;
     color: var(--text-color-secondary);
     transition: background-color 0.2s, color 0.2s;
     z-index: 10;
 }
 
+.sidebar-toggle i {
+    font-size: 0.75rem;
+}
+
 .sidebar-toggle:hover {
-    background: var(--surface-200);
+    background: #f8fafc;
     color: var(--text-color);
+    width: 16px;
 }
 
 .collapsed .sidebar-toggle {
-    right: 50%;
-    transform: translateX(50%);
+    right: -12px;
+    top: 16px;
 }
 
 .sidebar-section {
     margin-bottom: 0.5rem;
 }
 
-.section-title {
+/* Sidebar Card Styling */
+.sidebar-card {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    margin-bottom: 1rem;
+    overflow: hidden;
+}
+
+.sidebar-card:first-child {
+    border-top-right-radius: 0;
+}
+
+.sidebar-card-header {
+    background: white;
+    border-bottom: 1px solid #e2e8f0;
+    padding: 0.75rem 1rem;
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
     font-size: 0.875rem;
     font-weight: 600;
     color: var(--text-color-secondary);
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    margin-bottom: 0.75rem;
     display: flex;
     align-items: center;
     gap: 0.5rem;
 }
 
-.section-title i {
+.sidebar-card-header i {
     font-size: 0.875rem;
 }
 
-.section-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 0.75rem;
+.sidebar-card-header .reset-link {
+    margin-left: auto;
 }
 
-.section-header .section-title {
-    margin-bottom: 0;
+.sidebar-card-content {
+    padding: 1rem;
 }
 
 .reset-link {
@@ -210,7 +229,7 @@ function onExport() {
     text-decoration: underline;
 }
 
-.filters-section {
+.filters-section .sidebar-card-content {
     max-height: 50vh;
     overflow-y: auto;
 }
@@ -221,7 +240,17 @@ function onExport() {
     gap: 0.5rem;
 }
 
-:deep(.p-divider) {
-    margin: 1rem 0;
+:deep(.action-btn-primary.p-button) {
+    background: #3b82f6 !important;
+    border: none !important;
+    border-radius: 8px !important;
+}
+
+:deep(.action-btn-primary.p-button:hover) {
+    background: #2563eb !important;
+}
+
+:deep(.action-buttons .p-button-outlined) {
+    border: none !important;
 }
 </style>

@@ -1,5 +1,13 @@
 /* Global Color Variables for Helpdesk Statistik */
 :root {
+    /* Analytics UI Overrides */
+    --analytics-canvas-radius: 30px;
+    --analytics-sidebar-card-radius: 12px;
+    --analytics-action-color: #dc2626;
+    --analytics-action-hover: #b91c1c;
+    --analytics-selected-color: #3b82f6;
+    --analytics-selected-hover: #2563eb;
+
     /* Primary (Yellow) */
     --color-primary: #ffea95;
     --color-primary-light: #fdedad;
@@ -37,4 +45,28 @@
     --color-referenz-checked: rgb(217 210 177 / 80%);
     --color-referenz-checkbox: #a8a29e;
     --color-referenz-text: #78716c;
+}
+
+/* ===== Analytics Global Button/Chip Overrides ===== */
+
+/* Remove borders from all PrimeVue buttons in analytics */
+.analytics-sidebar .p-button,
+.period-selector .p-button,
+.parameter-section .p-button {
+    border: none !important;
+}
+
+/* Year buttons - selected state (blue background) */
+.year-buttons .year-selected.p-button {
+    background: #3b82f6 !important;
+    color: white !important;
+}
+
+.year-buttons .year-selected.p-button:hover {
+    background: #2563eb !important;
+}
+
+/* Chips - remove borders */
+.chips-container .p-chip {
+    border: none !important;
 }
