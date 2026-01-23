@@ -146,6 +146,34 @@ const colors = computed(() => [
 
 const colorsBg = computed(() => colors.value.map(c => c + '20'))
 
+// Shared tooltip styling
+const baseTooltipStyle = {
+    padding: {
+        top: 14,
+        right: 18,
+        bottom: 14,
+        left: 18
+    },
+    cornerRadius: 8,
+    titleFont: {
+        size: 15,
+        weight: '600'
+    },
+    titleMarginBottom: 10,
+    bodyFont: {
+        size: 14
+    },
+    bodySpacing: 8,
+    boxWidth: 14,
+    boxHeight: 14,
+    boxPadding: 8,
+    backgroundColor: 'rgba(30, 41, 59, 0.95)',
+    titleColor: '#fff',
+    bodyColor: 'rgba(255, 255, 255, 0.85)',
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+    borderWidth: 1
+}
+
 // Bar chart data
 const barChartData = computed(() => {
     if (!chartData.value) return null
@@ -188,10 +216,11 @@ const barChartOptions = computed(() => ({
             position: 'top'
         },
         tooltip: {
+            ...baseTooltipStyle,
             callbacks: {
                 label: (context) => {
                     const value = context.raw
-                    return `${context.dataset.label}: ${value}`
+                    return ` ${context.dataset.label}:  ${value}`
                 }
             }
         }
@@ -299,22 +328,15 @@ const lineChartOptions = computed(() => ({
             position: 'top'
         },
         tooltip: {
+            ...baseTooltipStyle,
             mode: 'index',
             intersect: false,
             position: 'customOffset',
-            padding: 12,
-            titleFont: {
-                size: 14,
-                weight: 'bold'
-            },
-            bodyFont: {
-                size: 13
-            },
             callbacks: {
                 title: (tooltipItems) => {
                     if (!tooltipItems.length) return ''
                     const index = tooltipItems[0].dataIndex
-                    // Use rawLabels if available for full date
+                    // Use rawLabels for full date display (e.g., "15. Januar 2025")
                     if (chartData.value?.rawLabels?.[index]) {
                         return chartData.value.rawLabels[index]
                     }
@@ -322,7 +344,7 @@ const lineChartOptions = computed(() => ({
                 },
                 label: (context) => {
                     const value = context.raw
-                    return `${context.dataset.label}: ${value}`
+                    return ` ${context.dataset.label}:  ${value}`
                 }
             }
         }
@@ -401,12 +423,13 @@ const pieChartOptions = computed(() => ({
             position: 'right'
         },
         tooltip: {
+            ...baseTooltipStyle,
             callbacks: {
                 label: (context) => {
                     const value = context.raw
                     const total = context.dataset.data.reduce((a, b) => a + b, 0)
                     const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0
-                    return `${context.label}: ${value} (${percentage}%)`
+                    return ` ${context.label}:  ${value} (${percentage}%)`
                 }
             }
         }
@@ -436,8 +459,15 @@ const stackedChartOptions = computed(() => ({
             position: 'top'
         },
         tooltip: {
+            ...baseTooltipStyle,
             mode: 'index',
-            intersect: false
+            intersect: false,
+            callbacks: {
+                label: (context) => {
+                    const value = context.raw
+                    return ` ${context.dataset.label}:  ${value}`
+                }
+            }
         }
     },
     scales: {

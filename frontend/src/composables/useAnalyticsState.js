@@ -404,11 +404,45 @@ export function useAnalyticsState() {
                     }
 
                     const response = await analytics.timeseries(params)
+                    const granularityUsed = response.data.granularity
+
+                    // Create rawLabels for tooltip display
+                    const rawLabels = response.data.labels.map(l => {
+                        if (granularityUsed === 'day') {
+                            const date = new Date(l)
+                            return format(date, 'd. MMMM yyyy', { locale: de })
+                        } else if (granularityUsed === 'week') {
+                            const [year, week] = l.split('-W')
+                            const jan4 = new Date(parseInt(year), 0, 4)
+                            const weekStart = new Date(jan4)
+                            weekStart.setDate(jan4.getDate() - jan4.getDay() + 1 + (parseInt(week) - 1) * 7)
+                            return format(weekStart, 'd. MMMM yyyy', { locale: de })
+                        } else {
+                            const [year, month] = l.split('-')
+                            const date = new Date(parseInt(year), parseInt(month) - 1, 1)
+                            return format(date, 'MMMM yyyy', { locale: de })
+                        }
+                    })
+
+                    // Format display labels
+                    const displayLabels = response.data.labels.map(l => {
+                        if (granularityUsed === 'day') {
+                            const parts = l.split('-')
+                            return `${parts[2]}.${parts[1]}.`
+                        } else if (granularityUsed === 'week') {
+                            return l.replace(/^\d{4}-W/, 'KW')
+                        } else {
+                            const monthNames = ['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez']
+                            const parts = l.split('-')
+                            return monthNames[parseInt(parts[1]) - 1] || l
+                        }
+                    })
 
                     chartData.value = {
                         mode: 'timeseries',
-                        granularity: response.data.granularity,
-                        labels: response.data.labels,
+                        granularity: granularityUsed,
+                        labels: displayLabels,
+                        rawLabels: rawLabels,
                         datasets: response.data.datasets
                     }
 
