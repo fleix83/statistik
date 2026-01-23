@@ -76,6 +76,9 @@ const chartTypes = [
     { value: 'stream', icon: 'pi pi-wave-pulse', title: 'Streamgraph' }
 ]
 
+// Line chart fill toggle
+const lineFill = ref(true)
+
 // Format periods as date ranges
 const formattedPeriods = computed(() => {
     return periods.value.map(p => {
@@ -112,6 +115,11 @@ watch(chartData, () => {
 
 // Also watch chartType to force re-render when switching chart types
 watch(chartType, () => {
+    forceChartRemount()
+})
+
+// Watch lineFill to re-render when toggled
+watch(lineFill, () => {
     forceChartRemount()
 })
 
@@ -221,7 +229,7 @@ const lineChartData = computed(() => {
                 data: ds.data || [],
                 borderColor: ds.isComparison ? comparisonColor.value : primaryColor.value,
                 backgroundColor: ds.isComparison ? comparisonColor.value + '10' : primaryColor.value + '20',
-                fill: !ds.isComparison, // Only fill the primary line
+                fill: lineFill.value && !ds.isComparison, // Only fill the primary line when enabled
                 tension: 0.3,
                 pointRadius: ds.isComparison ? 2 : 4,
                 pointHoverRadius: ds.isComparison ? 4 : 6,
@@ -244,7 +252,7 @@ const lineChartData = computed(() => {
                 data: ds.data || [],
                 borderColor: colors.value[i % colors.value.length],
                 backgroundColor: colorsBg.value[i % colorsBg.value.length],
-                fill: true,
+                fill: lineFill.value,
                 tension: 0.3,
                 pointRadius: 3,
                 pointHoverRadius: 5
@@ -261,7 +269,7 @@ const lineChartData = computed(() => {
                 data: chartData.value.items.map(d => d.count),
                 borderColor: primaryColor.value,
                 backgroundColor: primaryColor.value + '20',
-                fill: true,
+                fill: lineFill.value,
                 tension: 0.3,
                 pointRadius: 4,
                 pointHoverRadius: 6,
@@ -527,16 +535,28 @@ const canShowStream = computed(() => {
 
                     <!-- Right: Chart type selector -->
                     <div class="header-right">
-                        <SelectButton
-                            v-model="chartType"
-                            :options="chartTypes"
-                            optionValue="value"
-                            class="chart-type-selector"
-                        >
-                            <template #option="{ option }">
-                                <i :class="option.icon" :title="option.title"></i>
-                            </template>
-                        </SelectButton>
+                        <div class="chart-type-wrapper">
+                            <SelectButton
+                                v-model="chartType"
+                                :options="chartTypes"
+                                optionValue="value"
+                                class="chart-type-selector"
+                            >
+                                <template #option="{ option }">
+                                    <i :class="option.icon" :title="option.title"></i>
+                                </template>
+                            </SelectButton>
+                            <!-- Line fill toggle (positioned below line chart icon) -->
+                            <button
+                                v-if="chartType === 'line'"
+                                class="fill-toggle"
+                                :class="{ active: lineFill }"
+                                @click="lineFill = !lineFill"
+                                :title="lineFill ? 'Füllung ausblenden' : 'Füllung einblenden'"
+                            >
+                                <i :class="lineFill ? 'pi pi-circle' : 'pi pi-circle-fill'"></i>
+                            </button>
+                        </div>
                     </div>
                 </div>
 
@@ -630,7 +650,6 @@ const canShowStream = computed(() => {
     overflow-y: auto;
     display: flex;
     flex-direction: column;
-    background: #f5f3ef;
 }
 
 .chart-card {
@@ -640,8 +659,9 @@ const canShowStream = computed(() => {
 }
 
 .chart-card :deep(.p-card) {
+    background: transparent !important;
     border-radius: 30px;
-    box-shadow: none;
+    box-shadow: none !important;
     border: none;
 }
 
@@ -718,8 +738,46 @@ const canShowStream = computed(() => {
 
 .header-right {
     display: flex;
+    align-items: flex-start;
     justify-content: flex-end;
     flex: 1;
+}
+
+.chart-type-wrapper {
+    position: relative;
+}
+
+.fill-toggle {
+    position: absolute;
+    top: 100%;
+    /* Position below the 3rd button (line chart) */
+    left: calc(4px + 70px * 2);
+    margin-top: 9px;
+    padding: 0.5rem;
+    min-width: 70px;
+    border: none;
+    background: #f5f3ef;
+    color: #64748b;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.fill-toggle:hover {
+    background: #e2e8f0;
+}
+
+.fill-toggle.active {
+    background: white;
+    color: #1e293b;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.fill-toggle i {
+    font-size: 1rem;
 }
 
 .chart-type-selector {

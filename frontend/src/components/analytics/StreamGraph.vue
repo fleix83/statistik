@@ -12,12 +12,23 @@ const props = defineProps({
 const containerRef = ref(null)
 const svgRef = ref(null)
 
-// Color palette matching the app theme
-const colors = [
-    '#55b76b', '#6366f1', '#f59e0b', '#ef4444',
-    '#8b5cf6', '#06b6d4', '#ec4899', '#84cc16',
-    '#f97316', '#14b8a6', '#a855f7', '#0ea5e9'
-]
+// Color palette - read from global CSS variables (colors.css)
+const getCssVar = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim()
+
+const colors = computed(() => [
+    getCssVar('--chart-color-1'),
+    getCssVar('--chart-color-2'),
+    getCssVar('--chart-color-3'),
+    getCssVar('--chart-color-4'),
+    getCssVar('--chart-color-5'),
+    getCssVar('--chart-color-6'),
+    getCssVar('--chart-color-7'),
+    getCssVar('--chart-color-8'),
+    getCssVar('--chart-color-9'),
+    getCssVar('--chart-color-10'),
+    getCssVar('--chart-color-11'),
+    getCssVar('--chart-color-12')
+])
 
 // Transform chart data to D3 format
 const transformedData = computed(() => {
@@ -105,7 +116,7 @@ function renderChart() {
     // Color scale
     const color = d3.scaleOrdinal()
         .domain(keys)
-        .range(colors.slice(0, keys.length))
+        .range(colors.value.slice(0, keys.length))
 
     // Area generator with smooth curves
     const area = d3.area()

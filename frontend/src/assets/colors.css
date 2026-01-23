@@ -29,7 +29,6 @@
     --color-thema-checked: rgb(255 120 120 / 95%);
     --color-thema-checkbox: #dc2626;
     --color-thema-text: #991b1b;
-    --color-thema-checkbox: #e1d896;
 
     /* Zeitfenster (Green) */
     --color-zeitfenster: rgb(91 219 166);
@@ -74,11 +73,11 @@
 
 /* ===== Chart Color Palette ===== */
 :root {
-    --chart-color-1: #3b82f6;  /* blue */
-    --chart-color-2: #dc2626;  /* red */
-    --chart-color-3: #22c55e;  /* green */
-    --chart-color-4: #a8a29e;  /* earth */
-    --chart-color-5: #ffea95;  /* yellow */
+    --chart-color-1: #ff4b57;  /* red */
+    --chart-color-2: #3180ab;  /* blue */
+    --chart-color-3: #99cdee;  /* green */
+    --chart-color-4: #780000;  /* earth */
+    --chart-color-5: #BC412B;  /* yellow */
     --chart-color-6: #6366f1;  /* indigo */
     --chart-color-7: #f59e0b;  /* amber */
     --chart-color-8: #ec4899;  /* pink */
@@ -88,6 +87,15 @@
     --chart-color-12: #f97316; /* orange */
 
     /* Primary/Comparison for line/bar charts */
-    --chart-primary: #3b82f6;
+    --chart-primary: #ff4b57;
     --chart-comparison: #a8a29e;
 }
+
+/* Global card overrides */
+.p-card {
+    background: transparent !important;
+    box-shadow: none !important;
+}
+
+   
+--chart-primary: #3b82f6;

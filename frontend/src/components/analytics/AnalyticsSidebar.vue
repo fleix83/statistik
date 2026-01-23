@@ -115,7 +115,6 @@ function onExport() {
     position: relative;
     width: 320px;
     min-width: 320px;
-    background: #f5f3ef;
     height: 100%;
     transition: width 0.3s ease, min-width 0.3s ease;
     overflow: visible;
@@ -128,7 +127,6 @@ function onExport() {
 
 .sidebar-content {
     padding: 1rem;
-    background: #f5f3ef;
     height: 100%;
     overflow-y: auto;
 }
