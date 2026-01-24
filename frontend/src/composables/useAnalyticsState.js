@@ -1,5 +1,5 @@
 import { ref, computed, watch } from 'vue'
-import { analytics, markers as markersApi } from '../services/api'
+import { analytics, markers as markersApi, savedPeriods as savedPeriodsApi } from '../services/api'
 import { format, startOfYear, endOfYear } from 'date-fns'
 import { de } from 'date-fns/locale'
 
@@ -53,7 +53,11 @@ const summaryData = ref({ total: 0, periods: [] })
 // Chart markers
 const markers = ref([])
 
-// Debounce timer
+// Saved periods (multiple can be active for comparison)
+const savedPeriodsConfigs = ref([])
+const activeSavedPeriodIds = ref([])
+
+// Debounce timer for data fetching
 let fetchDebounceTimer = null
 
 let nextPeriodId = 3
@@ -518,6 +522,166 @@ export function useAnalyticsState() {
         markers.value = markers.value.filter(m => m.id !== id)
     }
 
+    // Load saved periods from API
+    async function loadSavedPeriods() {
+        try {
+            const response = await savedPeriodsApi.list()
+            savedPeriodsConfigs.value = response.data
+
+            // Check for active configs and load them
+            const activeConfigs = response.data.filter(c => c.is_active)
+            if (activeConfigs.length > 0) {
+                activeSavedPeriodIds.value = activeConfigs.map(c => c.id)
+                applyMultiplePeriodConfigs(activeConfigs)
+            }
+        } catch (err) {
+            console.error('Failed to load saved periods:', err)
+        }
+    }
+
+    // Apply a single period configuration to the current state
+    function applyPeriodConfig(config) {
+        // Convert date strings back to Date objects
+        const convertedPeriods = config.periods.map((p, index) => ({
+            id: index + 1,
+            start: new Date(p.start),
+            end: new Date(p.end),
+            label: p.label,
+            isComparison: p.isComparison
+        }))
+        periods.value = convertedPeriods
+        nextPeriodId = convertedPeriods.length + 1
+    }
+
+    // Apply multiple period configurations (merge all periods)
+    function applyMultiplePeriodConfigs(configs) {
+        let allPeriods = []
+        let id = 1
+
+        configs.forEach((config, configIndex) => {
+            config.periods.forEach(p => {
+                allPeriods.push({
+                    id: id++,
+                    start: new Date(p.start),
+                    end: new Date(p.end),
+                    label: p.label,
+                    isComparison: configIndex > 0 // First config is primary, rest are comparison
+                })
+            })
+        })
+
+        periods.value = allPeriods
+        nextPeriodId = id
+    }
+
+    // Serialize a single period for storage
+    function serializePeriod(period) {
+        return {
+            start: format(period.start, 'yyyy-MM-dd'),
+            end: format(period.end, 'yyyy-MM-dd'),
+            label: period.label,
+            isComparison: period.isComparison
+        }
+    }
+
+    // Save a single period configuration
+    async function savePeriodConfig(period) {
+        const name = period.label
+        const serializedPeriods = [serializePeriod(period)]
+
+        // Check if a config with this exact name exists
+        const existingConfig = savedPeriodsConfigs.value.find(c => c.name === name)
+
+        try {
+            if (existingConfig) {
+                // Update existing config (matched by name)
+                const response = await savedPeriodsApi.update(existingConfig.id, {
+                    periods: serializedPeriods
+                })
+                const index = savedPeriodsConfigs.value.findIndex(c => c.id === existingConfig.id)
+                if (index !== -1) {
+                    savedPeriodsConfigs.value.splice(index, 1, response.data)
+                }
+            } else {
+                // Create new config (not active by default - user can activate it)
+                const response = await savedPeriodsApi.create({
+                    name,
+                    periods: serializedPeriods,
+                    is_active: false
+                })
+                savedPeriodsConfigs.value.unshift(response.data)
+            }
+            return true
+        } catch (err) {
+            console.error('Failed to save period config:', err)
+            return false
+        }
+    }
+
+    // Toggle a saved period configuration (add/remove from active list)
+    async function togglePeriodConfig(id) {
+        const config = savedPeriodsConfigs.value.find(c => c.id === id)
+        if (!config) return
+
+        const isCurrentlyActive = activeSavedPeriodIds.value.includes(id)
+
+        try {
+            if (isCurrentlyActive) {
+                // Deactivate this config
+                await savedPeriodsApi.update(id, { is_active: false })
+                config.is_active = false
+                activeSavedPeriodIds.value = activeSavedPeriodIds.value.filter(i => i !== id)
+            } else {
+                // Activate this config
+                await savedPeriodsApi.update(id, { is_active: true })
+                config.is_active = true
+                activeSavedPeriodIds.value.push(id)
+            }
+
+            // Rebuild periods from all active configs
+            const activeConfigs = savedPeriodsConfigs.value.filter(c => activeSavedPeriodIds.value.includes(c.id))
+            if (activeConfigs.length > 0) {
+                applyMultiplePeriodConfigs(activeConfigs)
+            } else {
+                // No active configs - reset to default
+                periods.value = [{
+                    id: 1,
+                    start: startOfYear(new Date(currentYear, 0, 1)),
+                    end: endOfYear(new Date(currentYear, 0, 1)),
+                    label: String(currentYear),
+                    isComparison: false
+                }]
+                nextPeriodId = 2
+            }
+        } catch (err) {
+            console.error('Failed to toggle period config:', err)
+        }
+    }
+
+    // Update saved period name
+    async function updateSavedPeriodName(id, name) {
+        try {
+            const response = await savedPeriodsApi.update(id, { name })
+            const index = savedPeriodsConfigs.value.findIndex(c => c.id === id)
+            if (index !== -1) {
+                savedPeriodsConfigs.value.splice(index, 1, response.data)
+            }
+            return response.data
+        } catch (err) {
+            console.error('Failed to update period name:', err)
+            throw err
+        }
+    }
+
+    // Delete a saved period configuration
+    async function deleteSavedPeriod(id) {
+        await savedPeriodsApi.delete(id)
+        savedPeriodsConfigs.value = savedPeriodsConfigs.value.filter(c => c.id !== id)
+        if (activeSavedPeriodId.value === id) {
+            activeSavedPeriodId.value = null
+        }
+    }
+
     return {
         // State
         periods,
@@ -530,6 +694,8 @@ export function useAnalyticsState() {
         chartData,
         summaryData,
         markers,
+        savedPeriodsConfigs,
+        activeSavedPeriodIds,
 
         // Computed
         isCompareMode,
@@ -550,6 +716,11 @@ export function useAnalyticsState() {
         loadMarkers,
         createMarker,
         updateMarker,
-        deleteMarker
+        deleteMarker,
+        loadSavedPeriods,
+        togglePeriodConfig,
+        updateSavedPeriodName,
+        deleteSavedPeriod,
+        savePeriodConfig
     }
 }

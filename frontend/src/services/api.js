@@ -95,4 +95,12 @@ export const markers = {
     delete: (id) => api.delete(`/analytics/markers.php?id=${id}`)
 }
 
+// Saved Periods
+export const savedPeriods = {
+    list: () => api.get('/analytics/periods.php'),
+    create: (data) => api.post('/analytics/periods.php', data),
+    update: (id, data) => api.put(`/analytics/periods.php?id=${id}`, data),
+    delete: (id) => api.delete(`/analytics/periods.php?id=${id}`)
+}
+
 export default api

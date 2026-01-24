@@ -262,7 +262,7 @@ const groupLabels = {
     transition: all 0.15s ease;
     font-size: 0.8125rem;
     padding: 0.25rem 0.625rem;
-    background: #f1f5f9;
+    background: #f5f3ef;
     color: #334155;
     border: none;
 }
