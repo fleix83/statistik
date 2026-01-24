@@ -196,6 +196,7 @@ async function removeMarker(id, event) {
                     dateFormat="dd.mm.yy"
                     placeholder="Datum oder Zeitraum wählen"
                     showIcon
+                    hideOnRangeSelection
                     class="w-full"
                 />
             </div>

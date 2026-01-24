@@ -9,6 +9,7 @@ import { useAnalyticsState } from '../../composables/useAnalyticsState'
 const emit = defineEmits(['fetch', 'export', 'toggle'])
 
 const collapsed = ref(false)
+const activeTab = ref('period') // 'period' | 'markers'
 
 const {
     filterOptions,
@@ -48,25 +49,29 @@ function onExport() {
         </button>
 
         <div class="sidebar-content" v-show="!collapsed">
-            <!-- Period Selection Card -->
+            <!-- Period & Markers Card with Tabs -->
             <div class="sidebar-card">
-                <div class="sidebar-card-header">
-                    <i class="pi pi-calendar"></i>
-                    Zeitperiode
+                <div class="sidebar-card-tabs">
+                    <button
+                        class="tab-btn"
+                        :class="{ active: activeTab === 'period' }"
+                        @click="activeTab = 'period'"
+                    >
+                        <i class="pi pi-calendar"></i>
+                        Zeitperiode
+                    </button>
+                    <button
+                        class="tab-btn"
+                        :class="{ active: activeTab === 'markers' }"
+                        @click="activeTab = 'markers'"
+                    >
+                        <i class="pi pi-flag"></i>
+                        Markierungen
+                    </button>
                 </div>
                 <div class="sidebar-card-content">
-                    <PeriodSelector />
-                </div>
-            </div>
-
-            <!-- Markers Card -->
-            <div class="sidebar-card">
-                <div class="sidebar-card-header">
-                    <i class="pi pi-flag"></i>
-                    Markierungen
-                </div>
-                <div class="sidebar-card-content">
-                    <MarkerManager />
+                    <PeriodSelector v-if="activeTab === 'period'" />
+                    <MarkerManager v-else />
                 </div>
             </div>
 
@@ -222,6 +227,63 @@ function onExport() {
 
 .sidebar-card-header .reset-link {
     margin-left: auto;
+}
+
+/* Tab Header */
+.sidebar-card-tabs {
+    display: flex;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.tab-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    background: none;
+    border: none;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-color-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    position: relative;
+}
+
+.tab-btn:first-child {
+    border-top-left-radius: 12px;
+}
+
+.tab-btn:last-child {
+    border-top-right-radius: 0;
+}
+
+.tab-btn i {
+    font-size: 0.8rem;
+}
+
+.tab-btn:hover {
+    background: #f8fafc;
+    color: var(--text-color);
+}
+
+.tab-btn.active {
+    color: var(--primary-color);
+    background: #f8fafc;
+}
+
+.tab-btn.active::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: var(--primary-color);
 }
 
 .sidebar-card-content {
