@@ -170,13 +170,14 @@ const groupLabels = {
 
 .parameter-section :deep(.p-panel) {
     border-radius: 12px;
-    border: none;
+    border: none !important;
+    box-shadow: none;
     overflow: hidden;
 }
 
 .parameter-section :deep(.p-panel-header) {
     background: white;
-    border: none;
+    border: none !important;
     padding: 0.75rem 1rem;
     border-top-left-radius: 12px;
     border-top-right-radius: 12px;
@@ -184,6 +185,7 @@ const groupLabels = {
 
 .parameter-section :deep(.p-panel-content) {
     padding: 0.75rem 1rem;
+    border: none !important;
     border-bottom-left-radius: 12px;
     border-bottom-right-radius: 12px;
 }
@@ -247,7 +249,12 @@ const groupLabels = {
 .chips-container {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.375rem;
+    gap: 0.975rem;
+    margin-bottom: 24px;
+}
+
+.chips-container:last-child {
+    margin-bottom: 0;
 }
 
 .chips-container :deep(.p-chip) {

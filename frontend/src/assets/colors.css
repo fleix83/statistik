@@ -96,3 +96,12 @@
     background: transparent !important;
     box-shadow: none !important;
 }
+
+/* Global p-panel reset - remove border */
+:root {
+    --p-panel-border-color: transparent;
+}
+
+.p-panel {
+    border: none !important;
+}
