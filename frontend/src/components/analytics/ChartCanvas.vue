@@ -1022,6 +1022,7 @@ const canShowStream = computed(() => {
     height: 400px;
     position: relative;
     padding: 0 2rem 2rem;
+    margin-top: 100px;
 }
 
 .chart-loading,

@@ -164,11 +164,11 @@ button, input, select, textarea {
     border-left: 0;
     border-right: 0;
     border-top: 0;
-    transition: transform 0.3s ease;
+    transition: margin-top 0.3s ease;
 }
 
 .app-header.navbar-hidden {
-    transform: translateY(-100%);
+    margin-top: -54px;
 }
 
 .app-logo {
