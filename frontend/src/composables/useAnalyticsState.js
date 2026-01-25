@@ -33,6 +33,11 @@ const selectedParams = ref({
     referenz: []
 })
 
+// Selection hierarchy tracks groups in order of selection
+// Each entry: { group: string, selections: { section: [values] } }
+// First group = base (visualized), subsequent groups = filters (AND logic)
+const selectionHierarchy = ref([])
+
 const chartType = ref('line') // 'line' | 'bar' | 'pie' - default to line
 const activeSection = ref('thema') // Which section to visualize
 const loading = ref(false)
@@ -150,17 +155,60 @@ export function useAnalyticsState() {
         ]
     }
 
-    // Toggle a parameter value
-    function toggleParam(section, value) {
+    // Toggle a parameter value with group tracking for hierarchy
+    function toggleParam(section, value, group) {
         const current = selectedParams.value[section]
         const index = current.indexOf(value)
+
+        // Use section as fallback group if no group provided
+        const effectiveGroup = group || section
+
         if (index === -1) {
+            // Adding a value
             current.push(value)
-            // Auto-set active section when selecting a parameter
-            activeSection.value = section
+
+            // Track in hierarchy
+            const hierarchyEntry = selectionHierarchy.value.find(h => h.group === effectiveGroup)
+            if (hierarchyEntry) {
+                // Group already in hierarchy - add to existing level (OR logic)
+                if (!hierarchyEntry.selections[section]) {
+                    hierarchyEntry.selections[section] = []
+                }
+                hierarchyEntry.selections[section].push(value)
+            } else {
+                // New group - add new level to hierarchy (AND logic)
+                selectionHierarchy.value.push({
+                    group: effectiveGroup,
+                    selections: { [section]: [value] }
+                })
+
+                // First group determines the active section for visualization
+                if (selectionHierarchy.value.length === 1) {
+                    activeSection.value = section
+                }
+            }
         } else {
+            // Removing a value
             current.splice(index, 1)
+
+            // Remove from hierarchy
+            const hierarchyEntry = selectionHierarchy.value.find(h => h.group === effectiveGroup)
+            if (hierarchyEntry && hierarchyEntry.selections[section]) {
+                const valIndex = hierarchyEntry.selections[section].indexOf(value)
+                if (valIndex !== -1) {
+                    hierarchyEntry.selections[section].splice(valIndex, 1)
+                }
+                // Remove section if empty
+                if (hierarchyEntry.selections[section].length === 0) {
+                    delete hierarchyEntry.selections[section]
+                }
+                // Remove group from hierarchy if no selections left
+                if (Object.keys(hierarchyEntry.selections).length === 0) {
+                    selectionHierarchy.value = selectionHierarchy.value.filter(h => h.group !== effectiveGroup)
+                }
+            }
         }
+
         // Auto-fetch with debounce
         debouncedFetch()
     }
@@ -168,6 +216,18 @@ export function useAnalyticsState() {
     // Clear all selections for a section
     function clearSection(section) {
         selectedParams.value[section] = []
+
+        // Clear from hierarchy too
+        selectionHierarchy.value.forEach(h => {
+            if (h.selections[section]) {
+                delete h.selections[section]
+            }
+        })
+        // Remove empty groups
+        selectionHierarchy.value = selectionHierarchy.value.filter(
+            h => Object.keys(h.selections).length > 0
+        )
+
         debouncedFetch()
     }
 
@@ -176,6 +236,9 @@ export function useAnalyticsState() {
         for (const section in selectedParams.value) {
             selectedParams.value[section] = []
         }
+        // Clear hierarchy completely
+        selectionHierarchy.value = []
+
         debouncedFetch()
     }
 
@@ -184,8 +247,22 @@ export function useAnalyticsState() {
         return format(date, 'yyyy-MM-dd')
     }
 
-    // Build filters object from all selected params (for API filtering)
+    // Build filters object from selection hierarchy (for API filtering)
+    // Uses hierarchy for proper OR/AND logic:
+    // - Values within same group: OR (add up)
+    // - Values from different groups: AND (filter/subtract)
     function buildFilters() {
+        // If we have a hierarchy, use it for structured filtering
+        if (selectionHierarchy.value.length > 0) {
+            return {
+                hierarchy: selectionHierarchy.value.map(h => ({
+                    group: h.group,
+                    filters: h.selections
+                }))
+            }
+        }
+
+        // Fallback: flat filters for options without groups
         const filters = {}
         for (const [section, values] of Object.entries(selectedParams.value)) {
             if (values.length > 0) {
@@ -677,15 +754,15 @@ export function useAnalyticsState() {
     async function deleteSavedPeriod(id) {
         await savedPeriodsApi.delete(id)
         savedPeriodsConfigs.value = savedPeriodsConfigs.value.filter(c => c.id !== id)
-        if (activeSavedPeriodId.value === id) {
-            activeSavedPeriodId.value = null
-        }
+        // Remove from active list if present
+        activeSavedPeriodIds.value = activeSavedPeriodIds.value.filter(i => i !== id)
     }
 
     return {
         // State
         periods,
         selectedParams,
+        selectionHierarchy,
         chartType,
         activeSection,
         loading,

@@ -80,10 +80,10 @@ function clearAll() {
 function selectAll() {
     if (props.groups) {
         for (const [groupSection, groupOptions] of Object.entries(props.groups)) {
-            selectedParams.value[groupSection] = [...groupOptions]
+            selectedParams.value[groupSection] = groupOptions.map(opt => getOptionLabel(opt))
         }
     } else {
-        selectedParams.value[props.section] = [...props.options]
+        selectedParams.value[props.section] = props.options.map(opt => getOptionLabel(opt))
     }
     fetchData()
 }
@@ -93,6 +93,16 @@ const groupLabels = {
     kontaktart: 'Kontaktart',
     person: 'Person',
     dauer: 'Dauer'
+}
+
+// Helper to get option label (supports both string and object format)
+function getOptionLabel(opt) {
+    return typeof opt === 'object' ? opt.label : opt
+}
+
+// Helper to get option group (supports both string and object format)
+function getOptionGroup(opt) {
+    return typeof opt === 'object' ? opt.group : null
 }
 </script>
 
@@ -138,11 +148,11 @@ const groupLabels = {
                 </div>
                 <div class="chips-container">
                     <Chip
-                        v-for="value in groupOptions"
-                        :key="value"
-                        :label="value"
-                        :class="{ 'chip-selected': isSelected(groupSection, value) }"
-                        @click="toggleParam(groupSection, value)"
+                        v-for="opt in groupOptions"
+                        :key="getOptionLabel(opt)"
+                        :label="getOptionLabel(opt)"
+                        :class="{ 'chip-selected': isSelected(groupSection, getOptionLabel(opt)) }"
+                        @click="toggleParam(groupSection, getOptionLabel(opt), getOptionGroup(opt))"
                     />
                 </div>
             </div>
@@ -152,11 +162,11 @@ const groupLabels = {
         <template v-else>
             <div class="chips-container">
                 <Chip
-                    v-for="value in options"
-                    :key="value"
-                    :label="value"
-                    :class="{ 'chip-selected': isSelected(section, value) }"
-                    @click="toggleParam(section, value)"
+                    v-for="opt in options"
+                    :key="getOptionLabel(opt)"
+                    :label="getOptionLabel(opt)"
+                    :class="{ 'chip-selected': isSelected(section, getOptionLabel(opt)) }"
+                    @click="toggleParam(section, getOptionLabel(opt), getOptionGroup(opt))"
                 />
             </div>
         </template>

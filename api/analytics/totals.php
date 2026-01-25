@@ -3,13 +3,16 @@
  * Analytics: Total entries time-series (for default dashboard view)
  * GET /analytics/totals.php?start_date=2024-01-01&end_date=2024-12-31&granularity=month
  * GET /analytics/totals.php?...&filters={"person":["Mann","Frau"],"zeitfenster":["13:00-14:00"]}
+ * GET /analytics/totals.php?...&filters={"hierarchy":[{"group":"g1","filters":{...}}]}
  *
  * Returns total entry counts per time bucket, optionally filtered.
- * Filters within same section use OR, filters across sections use AND.
+ * Flat filters: OR within same section, AND across sections.
+ * Hierarchy filters: OR within same group, AND across different groups.
  */
 
 require_once __DIR__ . '/../config/cors.php';
 require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../config/filters.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
     errorResponse('Method not allowed', 405);
@@ -19,30 +22,7 @@ $startDate = $_GET['start_date'] ?? null;
 $endDate = $_GET['end_date'] ?? null;
 $granularity = $_GET['granularity'] ?? 'auto';
 $filtersJson = $_GET['filters'] ?? '{}';
-$filters = json_decode($filtersJson, true) ?: [];
-
-/**
- * Build filter JOINs for SQL query
- * Each section becomes a JOIN that requires the entry to have at least one of the selected values (OR within section)
- * Multiple sections create multiple JOINs (AND across sections)
- */
-function buildFilterJoins($filters, &$params) {
-    $joins = '';
-    $i = 0;
-    foreach ($filters as $section => $values) {
-        if (empty($values)) continue;
-        $alias = "f{$i}";
-        $placeholders = implode(',', array_fill(0, count($values), '?'));
-        $joins .= " JOIN stats_entry_values {$alias} ON se.id = {$alias}.entry_id
-                    AND {$alias}.section = ? AND {$alias}.value_text IN ({$placeholders})";
-        $params[] = $section;
-        foreach ($values as $v) {
-            $params[] = $v;
-        }
-        $i++;
-    }
-    return $joins;
-}
+$parsedFilters = parseFilters($filtersJson);
 
 if (!$startDate || !$endDate) {
     errorResponse('start_date and end_date are required');
@@ -100,7 +80,7 @@ foreach ($period as $date) {
 
 // Build filter JOINs and params
 $filterParams = [];
-$filterJoins = buildFilterJoins($filters, $filterParams);
+$filterJoins = buildFilterJoins($parsedFilters, $filterParams);
 
 // Query total counts per period (with optional filters)
 $sql = "
@@ -133,7 +113,7 @@ foreach ($labels as $label) {
 
 // Get total count (with same filters applied)
 $totalFilterParams = [];
-$totalFilterJoins = buildFilterJoins($filters, $totalFilterParams);
+$totalFilterJoins = buildFilterJoins($parsedFilters, $totalFilterParams);
 $totalSql = "SELECT COUNT(DISTINCT se.id) FROM stats_entries se {$totalFilterJoins} WHERE DATE(se.created_at) >= ? AND DATE(se.created_at) <= ?";
 $totalParams = array_merge($totalFilterParams, [$startDate, $endDate]);
 $stmt = $db->prepare($totalSql);

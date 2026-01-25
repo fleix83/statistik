@@ -16,23 +16,26 @@ if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
 
 $db = getDB();
 
-// Get all active options
+// Get all active options with their param_group
 $stmt = $db->query('
-    SELECT section, label
+    SELECT section, label, param_group
     FROM option_definitions
     WHERE is_active = 1
     ORDER BY section, sort_order, label
 ');
 $options = $stmt->fetchAll();
 
-// Group by section
+// Group by section (for UI display)
 $grouped = [];
 foreach ($options as $opt) {
     $section = $opt['section'];
     if (!isset($grouped[$section])) {
         $grouped[$section] = [];
     }
-    $grouped[$section][] = $opt['label'];
+    $grouped[$section][] = [
+        'label' => $opt['label'],
+        'group' => $opt['param_group']
+    ];
 }
 
 // Build response with Kontakt grouping

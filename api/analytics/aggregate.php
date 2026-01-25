@@ -4,12 +4,15 @@
  * GET /analytics/aggregate.php?section=thema
  * GET /analytics/aggregate.php?section=thema&start_date=2025-01-01&end_date=2025-12-31
  * GET /analytics/aggregate.php?...&filters={"person":["Mann","Frau"]}
+ * GET /analytics/aggregate.php?...&filters={"hierarchy":[{"group":"g1","filters":{...}}]}
  *
- * Filters work as: OR within same section, AND across different sections.
+ * Flat filters: OR within same section, AND across different sections.
+ * Hierarchy filters: OR within same group, AND across different groups.
  */
 
 require_once __DIR__ . '/../config/cors.php';
 require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../config/filters.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
     errorResponse('Method not allowed', 405);
@@ -19,30 +22,9 @@ $section = $_GET['section'] ?? '';
 $startDate = $_GET['start_date'] ?? null;
 $endDate = $_GET['end_date'] ?? null;
 $filtersJson = $_GET['filters'] ?? '{}';
-$filters = json_decode($filtersJson, true) ?: [];
+$parsedFilters = parseFilters($filtersJson);
 
 $validSections = ['kontaktart', 'person', 'thema', 'zeitfenster', 'dauer', 'referenz'];
-
-/**
- * Build filter JOINs for SQL query
- */
-function buildFilterJoins($filters, &$params) {
-    $joins = '';
-    $i = 0;
-    foreach ($filters as $section => $values) {
-        if (empty($values)) continue;
-        $alias = "f{$i}";
-        $placeholders = implode(',', array_fill(0, count($values), '?'));
-        $joins .= " JOIN stats_entry_values {$alias} ON se.id = {$alias}.entry_id
-                    AND {$alias}.section = ? AND {$alias}.value_text IN ({$placeholders})";
-        $params[] = $section;
-        foreach ($values as $v) {
-            $params[] = $v;
-        }
-        $i++;
-    }
-    return $joins;
-}
 
 if (empty($section) || !in_array($section, $validSections)) {
     errorResponse('Valid section parameter required');
@@ -52,7 +34,7 @@ $db = getDB();
 
 // Build filter JOINs and params
 $filterParams = [];
-$filterJoins = buildFilterJoins($filters, $filterParams);
+$filterJoins = buildFilterJoins($parsedFilters, $filterParams);
 
 // Build query with optional filters
 $sql = "
@@ -85,7 +67,7 @@ $items = $stmt->fetchAll();
 
 // Get total entries in date range (with same filters applied)
 $totalFilterParams = [];
-$totalFilterJoins = buildFilterJoins($filters, $totalFilterParams);
+$totalFilterJoins = buildFilterJoins($parsedFilters, $totalFilterParams);
 $totalSql = "SELECT COUNT(DISTINCT se.id) FROM stats_entries se {$totalFilterJoins} WHERE 1=1";
 $totalParams = $totalFilterParams;
 

@@ -3,13 +3,16 @@
  * Analytics: Time-series data for line charts
  * GET /analytics/timeseries.php?section=thema&values=Bildung,Arbeit&start_date=2024-01-01&end_date=2024-12-31&granularity=month
  * GET /analytics/timeseries.php?...&filters={"person":["Mann","Frau"]}
+ * GET /analytics/timeseries.php?...&filters={"hierarchy":[{"group":"g1","filters":{...}}]}
  *
  * Returns time-bucketed counts for each selected value, optionally filtered.
- * Filters work as: OR within same section, AND across different sections.
+ * Flat filters: OR within same section, AND across sections.
+ * Hierarchy filters: OR within same group, AND across different groups.
  */
 
 require_once __DIR__ . '/../config/cors.php';
 require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../config/filters.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
     errorResponse('Method not allowed', 405);
@@ -21,30 +24,9 @@ $startDate = $_GET['start_date'] ?? null;
 $endDate = $_GET['end_date'] ?? null;
 $granularity = $_GET['granularity'] ?? 'auto';
 $filtersJson = $_GET['filters'] ?? '{}';
-$filters = json_decode($filtersJson, true) ?: [];
+$parsedFilters = parseFilters($filtersJson);
 
 $validSections = ['kontaktart', 'person', 'thema', 'zeitfenster', 'dauer', 'referenz'];
-
-/**
- * Build filter JOINs for SQL query
- */
-function buildFilterJoins($filters, &$params, $startIndex = 0) {
-    $joins = '';
-    $i = $startIndex;
-    foreach ($filters as $section => $values) {
-        if (empty($values)) continue;
-        $alias = "f{$i}";
-        $placeholders = implode(',', array_fill(0, count($values), '?'));
-        $joins .= " JOIN stats_entry_values {$alias} ON se.id = {$alias}.entry_id
-                    AND {$alias}.section = ? AND {$alias}.value_text IN ({$placeholders})";
-        $params[] = $section;
-        foreach ($values as $v) {
-            $params[] = $v;
-        }
-        $i++;
-    }
-    return $joins;
-}
 
 if (empty($section) || !in_array($section, $validSections)) {
     errorResponse('Valid section parameter required');
@@ -116,7 +98,7 @@ foreach ($values as $value) {
 
     // Build filter JOINs (start index at 1 since sev is effectively filter 0)
     $filterParams = [];
-    $filterJoins = buildFilterJoins($filters, $filterParams, 1);
+    $filterJoins = buildFilterJoins($parsedFilters, $filterParams, 1);
 
     $sql = "
         SELECT

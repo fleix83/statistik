@@ -20,6 +20,7 @@ import { Bar, Line, Doughnut } from 'vue-chartjs'
 import Card from 'primevue/card'
 import SelectButton from 'primevue/selectbutton'
 import StreamGraph from './StreamGraph.vue'
+import SelectionHierarchy from './SelectionHierarchy.vue'
 import { useAnalyticsState } from '../../composables/useAnalyticsState'
 import { format, parseISO, isWithinInterval } from 'date-fns'
 import { de } from 'date-fns/locale'
@@ -737,6 +738,11 @@ const canShowStream = computed(() => {
                     </div>
                 </div>
 
+                <!-- Selection Hierarchy -->
+                <div class="hierarchy-container">
+                    <SelectionHierarchy />
+                </div>
+
                 <!-- Chart Title -->
                 <div class="chart-title-row">
                     <h3 class="chart-title">
@@ -814,6 +820,7 @@ const canShowStream = computed(() => {
                         </div>
                     </template>
                 </div>
+
             </template>
         </Card>
 
@@ -856,7 +863,6 @@ const canShowStream = computed(() => {
     align-items: center;
     justify-content: space-between;
     padding: 1.5rem 2rem;
-    margin-bottom: 130px;
 }
 
 .header-left {
@@ -985,6 +991,12 @@ const canShowStream = computed(() => {
 
 .chart-type-selector :deep(.p-togglebutton:hover:not(.p-togglebutton-checked)) {
     background: rgba(255,255,255,0.5) !important;
+}
+
+/* Hierarchy Container */
+.hierarchy-container {
+    padding: 0 2rem 1rem;
+    margin-bottom: 100px;
 }
 
 /* Chart Title */
