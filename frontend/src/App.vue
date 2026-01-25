@@ -1,5 +1,5 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, ref, watch, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useAuthStore } from './stores/auth'
 import Menubar from 'primevue/menubar'
@@ -7,6 +7,53 @@ import Button from 'primevue/button'
 
 const route = useRoute()
 const authStore = useAuthStore()
+
+// Auto-hide navbar for Analytics view
+const navbarVisible = ref(true)
+let hideTimer = null
+
+const isAnalyticsView = computed(() => route.path === '/analytics')
+
+function showNavbar() {
+    navbarVisible.value = true
+    resetHideTimer()
+}
+
+function resetHideTimer() {
+    if (hideTimer) clearTimeout(hideTimer)
+    if (isAnalyticsView.value) {
+        hideTimer = setTimeout(() => {
+            navbarVisible.value = false
+        }, 4000)
+    }
+}
+
+function handleMouseMove(e) {
+    if (!isAnalyticsView.value) return
+    // Show navbar when mouse is at top edge (within 5px)
+    if (e.clientY <= 5) {
+        showNavbar()
+    }
+}
+
+// Watch for route changes
+watch(isAnalyticsView, (isAnalytics) => {
+    if (isAnalytics) {
+        resetHideTimer()
+    } else {
+        navbarVisible.value = true
+        if (hideTimer) clearTimeout(hideTimer)
+    }
+}, { immediate: true })
+
+onMounted(() => {
+    document.addEventListener('mousemove', handleMouseMove)
+})
+
+onUnmounted(() => {
+    document.removeEventListener('mousemove', handleMouseMove)
+    if (hideTimer) clearTimeout(hideTimer)
+})
 
 const menuItems = computed(() => {
     const items = [
@@ -42,7 +89,7 @@ function isActive(item) {
 
 <template>
     <div class="app-layout">
-        <Menubar :model="menuItems" class="app-header">
+        <Menubar :model="menuItems" class="app-header" :class="{ 'navbar-hidden': !navbarVisible && isAnalyticsView }">
             <template #start>
                 <img src="@/assets/logo.svg" alt="Logo" class="app-logo" />
             </template>
@@ -117,6 +164,11 @@ button, input, select, textarea {
     border-left: 0;
     border-right: 0;
     border-top: 0;
+    transition: transform 0.3s ease;
+}
+
+.app-header.navbar-hidden {
+    transform: translateY(-100%);
 }
 
 .app-logo {
