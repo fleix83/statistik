@@ -6,8 +6,18 @@
 // Start session early for all requests
 session_start();
 
-// Allow from localhost during development
-header('Access-Control-Allow-Origin: http://localhost:5173');
+// CORS: Allow localhost in development, same-origin in production
+$origin = $_SERVER['HTTP_ORIGIN'] ?? '';
+$allowedOrigins = ['http://localhost:5173', 'http://localhost'];
+
+// In production (same-origin), no CORS headers needed
+// In development, allow specific origins
+if (in_array($origin, $allowedOrigins)) {
+    header('Access-Control-Allow-Origin: ' . $origin);
+} elseif (!empty($origin)) {
+    // For production with different subdomain, add your domain here
+    // header('Access-Control-Allow-Origin: https://yourdomain.ch');
+}
 header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, Authorization');
 header('Access-Control-Allow-Credentials: true');

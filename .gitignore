@@ -24,8 +24,9 @@ Thumbs.db
 *.log
 npm-debug.log*
 
-# API local config
+# API local/production config (credentials)
 api/config/database.local.php
+api/config/database.prod.php
 
 # Legacy data imports
 db/statistik_2025.csv

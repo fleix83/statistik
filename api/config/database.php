@@ -1,13 +1,22 @@
 <?php
 /**
  * Database Configuration
+ *
+ * For production: create database.prod.php with your credentials
+ * This file will be auto-loaded if it exists
  */
 
-define('DB_HOST', 'localhost');
-define('DB_NAME', 'helpdesk_stats');
-define('DB_USER', 'wegstat');
-define('DB_PASS', 'wegstat2026');
-define('DB_CHARSET', 'utf8mb4');
+// Load production config if it exists (not committed to git)
+if (file_exists(__DIR__ . '/database.prod.php')) {
+    require_once __DIR__ . '/database.prod.php';
+} else {
+    // Development defaults
+    define('DB_HOST', 'localhost');
+    define('DB_NAME', 'helpdesk_stats');
+    define('DB_USER', 'wegstat');
+    define('DB_PASS', 'wegstat2026');
+    define('DB_CHARSET', 'utf8mb4');
+}
 
 /**
  * Get PDO database connection

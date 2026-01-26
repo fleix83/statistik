@@ -8,8 +8,12 @@
 
 require_once __DIR__ . '/../config/database.php';
 
-// Don't use cors.php headers for file download
-header('Access-Control-Allow-Origin: http://localhost:5173');
+// CORS for file download
+$origin = $_SERVER['HTTP_ORIGIN'] ?? '';
+$allowedOrigins = ['http://localhost:5173', 'http://localhost'];
+if (in_array($origin, $allowedOrigins)) {
+    header('Access-Control-Allow-Origin: ' . $origin);
+}
 header('Access-Control-Allow-Credentials: true');
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
