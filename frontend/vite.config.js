@@ -4,6 +4,7 @@ import vue from '@vitejs/plugin-vue'
 // https://vite.dev/config/
 export default defineConfig({
     plugins: [vue()],
+    base: '/statistik/', // Deployed to subdirectory
     server: {
         port: 5173,
         proxy: {

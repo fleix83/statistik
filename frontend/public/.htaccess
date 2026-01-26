@@ -1,7 +1,7 @@
 # Vue.js SPA routing - serve index.html for all non-file requests
 <IfModule mod_rewrite.c>
     RewriteEngine On
-    RewriteBase /
+    RewriteBase /statistik/
 
     # Don't rewrite API requests
     RewriteRule ^api/ - [L]
