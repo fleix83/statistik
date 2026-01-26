@@ -19,9 +19,12 @@ import 'chartjs-adapter-date-fns'
 import { Bar, Line, Doughnut } from 'vue-chartjs'
 import Card from 'primevue/card'
 import SelectButton from 'primevue/selectbutton'
+import Menu from 'primevue/menu'
+import { useToast } from 'primevue/usetoast'
 import StreamGraph from './StreamGraph.vue'
 import SelectionHierarchy from './SelectionHierarchy.vue'
 import { useAnalyticsState } from '../../composables/useAnalyticsState'
+import { analytics } from '../../services/api'
 import { format, parseISO, isWithinInterval } from 'date-fns'
 import { de } from 'date-fns/locale'
 
@@ -59,6 +62,8 @@ Tooltip.positioners.customOffset = function(elements, eventPosition) {
     }
 }
 
+const toast = useToast()
+
 const {
     chartType,
     chartData,
@@ -66,10 +71,107 @@ const {
     loading,
     isCompareMode,
     activeSection,
+    activeValues,
     isShowingTotals,
     periods,
     markers
 } = useAnalyticsState()
+
+// Export menu
+const exportMenu = ref()
+const exportMenuItems = ref([
+    {
+        label: 'Aktuelle Ansicht',
+        icon: 'pi pi-filter',
+        command: () => handleExportCurrentView()
+    },
+    {
+        label: 'Gesamte Datenbank',
+        icon: 'pi pi-database',
+        command: () => handleExportFullDatabase()
+    }
+])
+
+function toggleExportMenu(event) {
+    exportMenu.value.toggle(event)
+}
+
+async function handleExportCurrentView() {
+    try {
+        const allPeriods = periods.value.map(p => ({
+            start: format(p.start, 'yyyy-MM-dd'),
+            end: format(p.end, 'yyyy-MM-dd'),
+            label: p.label
+        }))
+
+        const params = {
+            section: activeSection.value,
+            start_date: allPeriods[0].start,
+            end_date: allPeriods[0].end,
+            periods: JSON.stringify(allPeriods)
+        }
+
+        if (activeValues.value.length > 0) {
+            params.values = activeValues.value.join(',')
+        }
+
+        const response = await analytics.export(params)
+
+        // Create download
+        const url = window.URL.createObjectURL(new Blob([response.data]))
+        const link = document.createElement('a')
+        link.href = url
+        link.setAttribute('download', `statistik-${activeSection.value}-${format(new Date(), 'yyyy-MM-dd')}.csv`)
+        document.body.appendChild(link)
+        link.click()
+        link.remove()
+        window.URL.revokeObjectURL(url)
+
+        toast.add({
+            severity: 'success',
+            summary: 'Export',
+            detail: 'Aktuelle Ansicht wurde exportiert',
+            life: 3000
+        })
+    } catch (error) {
+        toast.add({
+            severity: 'error',
+            summary: 'Fehler',
+            detail: 'Export fehlgeschlagen',
+            life: 3000
+        })
+    }
+}
+
+async function handleExportFullDatabase() {
+    try {
+        const response = await analytics.exportFull()
+
+        // Create download
+        const url = window.URL.createObjectURL(new Blob([response.data]))
+        const link = document.createElement('a')
+        link.href = url
+        link.setAttribute('download', `statistik-vollstaendig-${format(new Date(), 'yyyy-MM-dd')}.csv`)
+        document.body.appendChild(link)
+        link.click()
+        link.remove()
+        window.URL.revokeObjectURL(url)
+
+        toast.add({
+            severity: 'success',
+            summary: 'Export',
+            detail: 'Gesamte Datenbank wurde exportiert',
+            life: 3000
+        })
+    } catch (error) {
+        toast.add({
+            severity: 'error',
+            summary: 'Fehler',
+            detail: 'Export fehlgeschlagen',
+            life: 3000
+        })
+    }
+}
 
 // Chart type options for selector
 const chartTypes = [
@@ -759,29 +861,51 @@ const canShowStream = computed(() => {
                         </div>
                     </div>
 
-                    <!-- Right: Chart type selector -->
+                    <!-- Right: Export menu + Chart type selector -->
                     <div class="header-right">
-                        <div class="chart-type-wrapper">
-                            <SelectButton
-                                v-model="chartType"
-                                :options="chartTypes"
-                                optionValue="value"
-                                class="chart-type-selector"
-                            >
-                                <template #option="{ option }">
-                                    <i :class="option.icon" :title="option.title"></i>
-                                </template>
-                            </SelectButton>
-                            <!-- Line fill toggle (positioned below line chart icon) -->
-                            <button
-                                v-if="chartType === 'line'"
-                                class="fill-toggle"
-                                :class="{ active: lineFill }"
-                                @click="lineFill = !lineFill"
-                                :title="lineFill ? 'Füllung ausblenden' : 'Füllung einblenden'"
-                            >
-                                <i :class="lineFill ? 'pi pi-circle' : 'pi pi-circle-fill'"></i>
-                            </button>
+                        <div class="header-right-controls">
+                            <!-- Export menu -->
+                            <div class="export-menu-wrapper">
+                                <button
+                                    class="export-btn"
+                                    @click="toggleExportMenu"
+                                    title="Daten exportieren"
+                                >
+                                    <i class="pi pi-file-export"></i>
+                                    <span>Export</span>
+                                    <i class="pi pi-chevron-down chevron"></i>
+                                </button>
+                                <Menu
+                                    ref="exportMenu"
+                                    :model="exportMenuItems"
+                                    :popup="true"
+                                    class="export-dropdown"
+                                />
+                            </div>
+
+                            <!-- Chart type selector -->
+                            <div class="chart-type-wrapper">
+                                <SelectButton
+                                    v-model="chartType"
+                                    :options="chartTypes"
+                                    optionValue="value"
+                                    class="chart-type-selector"
+                                >
+                                    <template #option="{ option }">
+                                        <i :class="option.icon" :title="option.title"></i>
+                                    </template>
+                                </SelectButton>
+                                <!-- Line fill toggle (positioned below line chart icon) -->
+                                <button
+                                    v-if="chartType === 'line'"
+                                    class="fill-toggle"
+                                    :class="{ active: lineFill }"
+                                    @click="lineFill = !lineFill"
+                                    :title="lineFill ? 'Füllung ausblenden' : 'Füllung einblenden'"
+                                >
+                                    <i :class="lineFill ? 'pi pi-circle' : 'pi pi-circle-fill'"></i>
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -987,6 +1111,46 @@ const canShowStream = computed(() => {
     flex: 1;
 }
 
+.header-right-controls {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.75rem;
+}
+
+.export-menu-wrapper {
+    position: relative;
+}
+
+.export-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: #f5f3ef;
+    border: none;
+    border-radius: 8px;
+    color: #64748b;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.export-btn:hover {
+    background: #e2e8f0;
+    color: #1e293b;
+}
+
+.export-btn i:first-child {
+    font-size: 1rem;
+}
+
+.export-btn .chevron {
+    font-size: 0.75rem;
+    margin-left: 0.25rem;
+}
+
 .chart-type-wrapper {
     position: relative;
 }
@@ -1052,6 +1216,25 @@ const canShowStream = computed(() => {
 
 .chart-type-selector :deep(.p-togglebutton:hover:not(.p-togglebutton-checked)) {
     background: rgba(255,255,255,0.5) !important;
+}
+
+/* Export dropdown menu styling */
+:deep(.export-dropdown) {
+    min-width: 180px;
+    margin-top: 0.5rem;
+}
+
+:deep(.export-dropdown .p-menuitem-link) {
+    padding: 0.75rem 1rem;
+}
+
+:deep(.export-dropdown .p-menuitem-icon) {
+    margin-right: 0.75rem;
+    color: #64748b;
+}
+
+:deep(.export-dropdown .p-menuitem-text) {
+    font-size: 0.875rem;
 }
 
 /* Hierarchy Container */

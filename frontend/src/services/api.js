@@ -85,7 +85,8 @@ export const analytics = {
         }
         return api.get('/analytics/compare.php', { params })
     },
-    export: (params) => api.get('/analytics/export.php', { params, responseType: 'blob' })
+    export: (params) => api.get('/analytics/export.php', { params, responseType: 'blob' }),
+    exportFull: () => api.get('/analytics/export-full.php', { responseType: 'blob' })
 }
 
 // Chart Markers

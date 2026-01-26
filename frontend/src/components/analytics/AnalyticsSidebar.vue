@@ -6,7 +6,7 @@ import ParameterSection from './ParameterSection.vue'
 import MarkerManager from './MarkerManager.vue'
 import { useAnalyticsState } from '../../composables/useAnalyticsState'
 
-const emit = defineEmits(['fetch', 'export', 'toggle'])
+const emit = defineEmits(['fetch', 'toggle'])
 
 const collapsed = ref(false)
 const activeTab = ref('period') // 'period' | 'markers'
@@ -34,10 +34,6 @@ const kontaktGroups = computed(() => filterOptions.value.kontakt)
 
 function onFetch() {
     fetchData()
-}
-
-function onExport() {
-    emit('export')
 }
 </script>
 
@@ -119,14 +115,6 @@ function onExport() {
                     :loading="loading"
                     @click="onFetch"
                     class="w-full action-btn-primary"
-                />
-                <Button
-                    label="Export CSV"
-                    icon="pi pi-download"
-                    severity="secondary"
-                    outlined
-                    @click="onExport"
-                    class="w-full"
                 />
             </div>
         </div>
@@ -325,9 +313,5 @@ function onExport() {
 
 :deep(.action-btn-primary.p-button:hover) {
     background: #2563eb !important;
-}
-
-:deep(.action-buttons .p-button-outlined) {
-    border: none !important;
 }
 </style>
