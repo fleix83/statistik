@@ -172,24 +172,28 @@ function renderChart() {
         .style('fill', 'var(--text-color-secondary)')
         .text('Besuche')
 
-    // Legend
+    // Legend - horizontal, centered at top
+    const legendItemWidth = 120
+    const totalLegendWidth = keys.length * legendItemWidth
+    const legendStartX = (width - totalLegendWidth) / 2
+
     const legend = svg.append('g')
-        .attr('transform', `translate(${width - margin.right + 10}, ${margin.top})`)
+        .attr('transform', `translate(${legendStartX}, 20)`)
 
     keys.forEach((key, i) => {
-        const legendRow = legend.append('g')
-            .attr('transform', `translate(0, ${i * 22})`)
+        const legendItem = legend.append('g')
+            .attr('transform', `translate(${i * legendItemWidth}, 0)`)
 
-        legendRow.append('rect')
-            .attr('width', 14)
+        legendItem.append('rect')
+            .attr('width', 30)
             .attr('height', 14)
-            .attr('rx', 2)
+            .attr('rx', 3)
             .attr('fill', color(key))
 
-        legendRow.append('text')
-            .attr('x', 20)
+        legendItem.append('text')
+            .attr('x', 38)
             .attr('y', 11)
-            .style('font-size', '12px')
+            .style('font-size', '14px')
             .style('fill', 'var(--text-color)')
             .text(key)
     })

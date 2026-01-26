@@ -176,11 +176,20 @@ const baseTooltipStyle = {
     boxWidth: 14,
     boxHeight: 14,
     boxPadding: 8,
+    usePointStyle: false,
     backgroundColor: 'rgba(30, 41, 59, 0.95)',
     titleColor: '#fff',
     bodyColor: 'rgba(255, 255, 255, 0.85)',
     borderColor: 'rgba(255, 255, 255, 0.1)',
-    borderWidth: 1
+    borderWidth: 1,
+    callbacks: {
+        labelColor: (context) => ({
+            borderColor: 'transparent',
+            backgroundColor: context.dataset.borderColor || context.dataset.backgroundColor,
+            borderWidth: 0,
+            borderRadius: 2
+        })
+    }
 }
 
 // Convert markers to Chart.js annotations
@@ -357,8 +366,7 @@ const barChartOptions = computed(() => ({
     maintainAspectRatio: false,
     plugins: {
         legend: {
-            display: chartData.value?.mode === 'aggregate-compare',
-            position: 'top'
+            display: false
         },
         tooltip: {
             ...baseTooltipStyle,
@@ -469,8 +477,7 @@ const lineChartOptions = computed(() => ({
     maintainAspectRatio: false,
     plugins: {
         legend: {
-            display: true,
-            position: 'top'
+            display: false
         },
         tooltip: {
             ...baseTooltipStyle,
@@ -568,7 +575,7 @@ const pieChartOptions = computed(() => ({
     maintainAspectRatio: false,
     plugins: {
         legend: {
-            position: 'right'
+            display: false
         },
         tooltip: {
             ...baseTooltipStyle,
@@ -603,8 +610,7 @@ const stackedChartOptions = computed(() => ({
     maintainAspectRatio: false,
     plugins: {
         legend: {
-            display: true,
-            position: 'top'
+            display: false
         },
         tooltip: {
             ...baseTooltipStyle,
@@ -665,6 +671,48 @@ const chartSubtitle = computed(() => {
         return `- Zeitverlauf (${gran === 'month' ? 'monatlich' : gran === 'week' ? 'wöchentlich' : 'täglich'})`
     }
     return ''
+})
+
+// Custom legend items for HTML legend (outside canvas)
+const legendItems = computed(() => {
+    if (!chartData.value) return []
+
+    const mode = chartData.value.mode
+    const datasets = chartData.value.datasets
+
+    // For timeseries, totals, stacked - use dataset labels
+    if ((mode === 'timeseries' || mode === 'totals' || mode === 'stacked') && datasets?.length > 0) {
+        return datasets.map((ds, i) => ({
+            label: ds.label,
+            color: colors.value[i % colors.value.length]
+        }))
+    }
+
+    // For aggregate-compare mode
+    if (mode === 'aggregate-compare' && datasets?.length > 0) {
+        return datasets.map((ds, i) => ({
+            label: ds.label,
+            color: colors.value[i % colors.value.length]
+        }))
+    }
+
+    // For aggregate mode (pie chart)
+    if (mode === 'aggregate' && chartData.value.items?.length > 0) {
+        const items = chartData.value.items.slice(0, 10)
+        return items.map((item, i) => ({
+            label: item.label,
+            color: colors.value[i % colors.value.length]
+        }))
+    }
+
+    return []
+})
+
+// Check if custom legend should be shown
+const showCustomLegend = computed(() => {
+    const type = chartType.value
+    return legendItems.value.length > 0 &&
+           (type === 'line' || type === 'bar' || type === 'stacked' || type === 'pie')
 })
 
 // Check if pie chart is applicable
@@ -762,7 +810,19 @@ const canShowStream = computed(() => {
                     <p>Wählen Sie Filter aus und klicken Sie auf "Anzeigen"</p>
                 </div>
 
-                <div v-else-if="chartReady" class="chart-container">
+                <!-- Custom HTML Legend -->
+                <div v-if="showCustomLegend && chartReady" class="custom-legend" :class="{ 'pie-legend': chartType === 'pie' }">
+                    <div
+                        v-for="(item, index) in legendItems"
+                        :key="index"
+                        class="legend-item"
+                    >
+                        <span class="legend-color" :style="{ backgroundColor: item.color }"></span>
+                        <span class="legend-label">{{ item.label }}</span>
+                    </div>
+                </div>
+
+                <div v-if="chartReady" class="chart-container">
                     <!-- Bar Chart -->
                     <Bar
                         v-if="chartType === 'bar' && barChartData"
@@ -795,12 +855,13 @@ const canShowStream = computed(() => {
 
                     <!-- Pie Chart -->
                     <template v-else-if="chartType === 'pie'">
-                        <Doughnut
-                            v-if="canShowPie && pieChartData"
-                            :key="'pie-' + chartKey"
-                            :data="pieChartData"
-                            :options="pieChartOptions"
-                        />
+                        <div v-if="canShowPie && pieChartData" class="pie-chart-wrapper">
+                            <Doughnut
+                                :key="'pie-' + chartKey"
+                                :data="pieChartData"
+                                :options="pieChartOptions"
+                            />
+                        </div>
                         <div v-else class="chart-notice">
                             <i class="pi pi-info-circle"></i>
                             <p>Kreisdiagramm: Bitte wählen Sie Balkendiagramm und klicken Sie "Anzeigen"</p>
@@ -1018,11 +1079,48 @@ const canShowStream = computed(() => {
 }
 
 /* Chart Content */
+/* Custom HTML Legend */
+.custom-legend {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    margin-top: 70px;
+    margin-bottom: 1rem;
+}
+
+.custom-legend.pie-legend {
+    margin-left: -50px;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.legend-color {
+    width: 30px;
+    height: 14px;
+    border-radius: 3px;
+}
+
+.legend-label {
+    font-size: 14px;
+    color: var(--text-color);
+}
+
 .chart-container {
     height: 400px;
     position: relative;
     padding: 0 2rem 2rem;
-    margin-top: 100px;
+    margin-top: 30px;
+}
+
+.pie-chart-wrapper {
+    height: 100%;
+    width: 100%;
+    position: relative;
+    left: -50px;
 }
 
 .chart-loading,
