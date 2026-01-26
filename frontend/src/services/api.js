@@ -57,6 +57,7 @@ export const options = {
 // Entries (stats data)
 export const entries = {
     create: (data) => api.post('/entries/create.php', data),
+    update: (id, data) => api.put(`/entries/update.php?id=${id}`, data),
     list: (params) => api.get('/entries/list.php', { params }),
     get: (id) => api.get(`/entries/get.php?id=${id}`),
     delete: (id) => api.delete(`/entries/delete.php?id=${id}`)

@@ -52,6 +52,9 @@ const message = ref({ type: '', text: '' })
 // Highlight user select placeholder
 const highlightUserSelect = ref(false)
 
+// Confirmation dialog for editing existing entries
+const showConfirmDialog = ref(false)
+
 // Pagination state
 const entriesList = ref([])
 const currentEntryIndex = ref(-1)
@@ -74,7 +77,8 @@ const currentYear = computed(() => new Date().getFullYear())
 
 onMounted(async () => {
     await loadData()
-    await loadEntries(true)
+    await loadEntries(false)  // Load entries list but don't display any - start with new entry form
+    highlightUserSelect.value = true  // Highlight user dropdown for new entry
     document.addEventListener('click', handleClickOutside)
 })
 
@@ -142,10 +146,7 @@ function showMessage(type, text, duration = 5000) {
     }
 }
 
-async function submitEntry() {
-    // Clear any previous message
-    message.value = { type: '', text: '' }
-
+function validateForm() {
     // Validate all groups have at least one selection and user is selected
     // Note: dauer (länger als 20 minuten) is optional
     const hasAllSelections =
@@ -158,10 +159,41 @@ async function submitEntry() {
 
     if (!hasAllSelections) {
         showMessage('warn', 'Bitte wähle mindestens eine Option aus jeder Gruppe und deinen Namen.')
+        return false
+    }
+    return true
+}
+
+function submitEntry() {
+    // Clear any previous message
+    message.value = { type: '', text: '' }
+
+    if (!validateForm()) return
+
+    // If editing an existing entry, show confirmation dialog
+    if (currentEntryId.value) {
+        showConfirmDialog.value = true
         return
     }
 
+    // New entry - save directly
+    performSave()
+}
+
+function confirmSave() {
+    showConfirmDialog.value = false
+    performSave()
+}
+
+function cancelSave() {
+    showConfirmDialog.value = false
+}
+
+async function performSave() {
     submitting.value = true
+    const isEditing = currentEntryId.value !== null
+    const editingIndex = currentEntryIndex.value
+
     try {
         // Add "andere" to referenz if filled
         const values = { ...formData.value }
@@ -169,15 +201,28 @@ async function submitEntry() {
             values.referenz = [...values.referenz, `andere: ${referenzAndere.value.trim()}`]
         }
 
-        await entries.create({
+        const payload = {
             user_id: selectedUser.value.id,
             created_at: erfassungsdatum.value.toISOString(),
             values
-        })
+        }
 
-        showMessage('success', 'Eintrag wurde erfolgreich gespeichert')
-        resetForm()
-        await loadEntries()
+        if (isEditing) {
+            // Update existing entry
+            await entries.update(currentEntryId.value, payload)
+            showMessage('success', 'Eintrag wurde erfolgreich geändert')
+            // Reload entries list and show the updated entry
+            await loadEntries()
+            if (editingIndex >= 0) {
+                await loadEntry(editingIndex)
+            }
+        } else {
+            // Create new entry
+            await entries.create(payload)
+            showMessage('success', 'Eintrag wurde erfolgreich gespeichert')
+            resetForm()
+            await loadEntries()
+        }
     } catch (error) {
         showMessage('error', 'Eintrag konnte nicht gespeichert werden')
     } finally {
@@ -267,6 +312,27 @@ function goToNextEntry() {
     }
 }
 
+// Navigate to entry by ID (from input field)
+function goToEntryById(event) {
+    const inputId = parseInt(event.target.value, 10)
+    if (isNaN(inputId) || inputId <= 0) {
+        event.target.value = currentEntryId.value || ''
+        return
+    }
+
+    // Find entry with this ID
+    const matchingIndex = entriesList.value.findIndex(entry => entry.id === inputId)
+
+    if (matchingIndex >= 0) {
+        loadEntry(matchingIndex)
+        event.target.blur()
+    } else {
+        // Entry not found - reset input to current value
+        event.target.value = currentEntryId.value || ''
+        showMessage('warn', `Eintrag #${inputId} nicht gefunden`)
+    }
+}
+
 // Find and load entries for a specific date
 function onDateSelect(date) {
     if (!date) return
@@ -333,6 +399,31 @@ function handleClickOutside(event) {
 
 <template>
     <Toast />
+
+    <!-- Confirmation Dialog for editing existing entries -->
+    <div v-if="showConfirmDialog" class="confirm-overlay">
+        <div class="confirm-dialog">
+            <div class="confirm-icon">
+                <i class="pi pi-exclamation-triangle"></i>
+            </div>
+            <h3>Achtung</h3>
+            <p>Ein bestehender Eintrag wird geändert. Möchtest du fortfahren?</p>
+            <div class="confirm-buttons">
+                <Button
+                    label="Abbrechen"
+                    severity="secondary"
+                    outlined
+                    @click="cancelSave"
+                />
+                <Button
+                    label="Änderung speichern"
+                    @click="confirmSave"
+                    class="confirm-btn"
+                />
+            </div>
+        </div>
+    </div>
+
     <div class="data-entry">
         <!-- Header -->
         <div class="header">
@@ -348,7 +439,13 @@ function handleClickOutside(event) {
                     >
                         <i class="pi pi-chevron-left"></i>
                     </button>
-                    <span class="pagination-id">{{ currentEntryId || '–' }}</span>
+                    <input
+                        type="text"
+                        class="pagination-id"
+                        :value="currentEntryId || ''"
+                        placeholder="–"
+                        @keydown.enter="goToEntryById($event)"
+                    />
                     <button
                         class="pagination-btn"
                         @click="goToNextEntry"
@@ -616,19 +713,6 @@ function handleClickOutside(event) {
             </div>
         </div>
 
-        <!-- Footer Buttons -->
-        <div class="footer-buttons">
-            <Button
-                label="Besuch letzte 7 Tage"
-                severity="secondary"
-                outlined
-            />
-            <Button
-                label="Besuch letzte 30 Tage"
-                severity="secondary"
-                outlined
-            />
-        </div>
     </div>
 </template>
 
@@ -642,6 +726,78 @@ function handleClickOutside(event) {
     background: #f8f7f5;
     min-height: 100vh;
     border-radius: 30px;
+}
+
+/* Confirmation Dialog */
+.confirm-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.confirm-dialog {
+    background: #fff;
+    border-radius: 12px;
+    padding: 2rem;
+    max-width: 400px;
+    width: 90%;
+    text-align: center;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+.confirm-icon {
+    width: 60px;
+    height: 60px;
+    margin: 0 auto 1rem;
+    background: var(--color-primary-light);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.confirm-icon i {
+    font-size: 1.75rem;
+    color: #b45309;
+}
+
+.confirm-dialog h3 {
+    margin: 0 0 0.5rem;
+    font-size: 1.25rem;
+    color: var(--text-color);
+}
+
+.confirm-dialog p {
+    margin: 0 0 1.5rem;
+    color: var(--text-color-secondary);
+    line-height: 1.5;
+}
+
+.confirm-buttons {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: center;
+}
+
+.confirm-buttons .p-button {
+    min-width: 100px;
+}
+
+.confirm-btn {
+    background: var(--color-primary) !important;
+    border-color: transparent !important;
+    color: var(--color-primary-text) !important;
+}
+
+.confirm-btn:hover {
+    background: var(--color-primary-hover) !important;
 }
 
 /* Header */
@@ -1124,15 +1280,6 @@ function handleClickOutside(event) {
 }
 
 /* Footer Buttons */
-.footer-buttons {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    margin-top: 1rem;
-    padding-top: 1rem;
-    border-top: 2px solid var(--surface-border);
-}
-
 /* Entry Pagination */
 .entry-pagination {
     display: flex;
@@ -1170,7 +1317,7 @@ function handleClickOutside(event) {
 }
 
 .pagination-id {
-    min-width: 50px;
+    width: 60px;
     text-align: center;
     font-size: 0.95rem;
     font-weight: 500;
@@ -1179,6 +1326,16 @@ function handleClickOutside(event) {
     background: #fff;
     border-radius: 4px;
     border: 1px solid #ddd;
+    outline: none;
+}
+
+.pagination-id:focus {
+    border-color: var(--color-kontakt-checkbox);
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+.pagination-id::placeholder {
+    color: #999;
 }
 
 .save-btn {
@@ -1239,10 +1396,6 @@ function handleClickOutside(event) {
 
     .cards-column {
         gap: 0.75rem;
-    }
-
-    .footer-buttons {
-        flex-wrap: wrap;
     }
 }
 </style>
