@@ -22,7 +22,7 @@ const {
 
 const currentYear = new Date().getFullYear()
 const yearButtons = computed(() => {
-    return [currentYear - 2, currentYear - 1, currentYear]
+    return [2022, 2023, currentYear - 2, currentYear - 1, currentYear]
 })
 
 // Check if a specific period is already saved (by matching label)
