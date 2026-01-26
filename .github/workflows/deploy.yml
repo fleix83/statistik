@@ -34,8 +34,8 @@ jobs:
       - name: Prepare deployment structure
         run: |
           mkdir -p deploy
-          # Copy built frontend to root
-          cp -r frontend/dist/* deploy/
+          # Copy built frontend to root (including hidden files like .htaccess)
+          cp -r frontend/dist/. deploy/
           # Copy PHP API
           cp -r api deploy/
           # Copy database migrations (if needed on server)
