@@ -267,6 +267,24 @@ function goToNextEntry() {
     }
 }
 
+// Find and load entries for a specific date
+function onDateSelect(date) {
+    if (!date) return
+
+    // Format selected date as YYYY-MM-DD for comparison
+    const selectedDateStr = date.toISOString().split('T')[0]
+
+    // Find first entry matching this date
+    const matchingIndex = entriesList.value.findIndex(entry => {
+        const entryDateStr = new Date(entry.created_at).toISOString().split('T')[0]
+        return entryDateStr === selectedDateStr
+    })
+
+    if (matchingIndex >= 0) {
+        loadEntry(matchingIndex)
+    }
+}
+
 function isChecked(section, value) {
     return formData.value[section].includes(value)
 }
@@ -360,6 +378,7 @@ function handleClickOutside(event) {
                         dateFormat="DD, dd. MM yy"
                         showIcon
                         class="date-input"
+                        @date-select="onDateSelect"
                     />
                 </div>
                 <div class="field-row">
