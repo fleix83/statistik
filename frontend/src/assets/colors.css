@@ -14,13 +14,28 @@
     --color-primary-hover: #fee47b;
     --color-primary-text: #000;
 
-    /* Kontakt (Blue) */
+    /* Kontakt (Blue) - Base */
     --color-kontakt: rgb(111 172 255);
     --color-kontakt-light: rgb(111 172 255 / 22%);
     --color-kontakt-hover: rgb(111 172 255 / 35%);
     --color-kontakt-checked: rgb(111 172 255 / 50%);
     --color-kontakt-checkbox: #3b82f6;
     --color-kontakt-text: #2563eb;
+
+    /* Kontaktart subgroup (Blue - medium) */
+    --color-kontaktart-light: #bfdbfe;
+    --color-kontaktart-hover: #93c5fd;
+    --color-kontaktart-checked: #60a5fa;
+
+    /* Person subgroup (Blue - light) */
+    --color-person-light: #dfedff;
+    --color-person-hover: #c8e2ff;
+    --color-person-checked: #a8d4ff;
+
+    /* Dauer subgroup (Blue - same as Kontaktart) */
+    --color-dauer-light: #bfdbfe;
+    --color-dauer-hover: #93c5fd;
+    --color-dauer-checked: #60a5fa;
 
     /* Thema (Red) */
     --color-thema: rgb(255 161 161);

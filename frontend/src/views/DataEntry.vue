@@ -147,13 +147,13 @@ async function submitEntry() {
     message.value = { type: '', text: '' }
 
     // Validate all groups have at least one selection and user is selected
+    // Note: dauer (länger als 20 minuten) is optional
     const hasAllSelections =
         selectedUser.value &&
         formData.value.kontaktart.length > 0 &&
         formData.value.person.length > 0 &&
         formData.value.thema.length > 0 &&
         formData.value.zeitfenster.length > 0 &&
-        formData.value.dauer.length > 0 &&
         (formData.value.referenz.length > 0 || referenzAndere.value.trim())
 
     if (!hasAllSelections) {
@@ -386,7 +386,7 @@ function handleClickOutside(event) {
                         <h3 class="card-title">Kontakt</h3>
                         <div class="card-content">
                             <!-- Kontaktart -->
-                            <div class="checkbox-row">
+                            <div class="checkbox-row subgroup-kontaktart subgroup-last">
                                 <div
                                     v-for="opt in optionsBySection.kontaktart"
                                     :key="opt"
@@ -402,11 +402,11 @@ function handleClickOutside(event) {
                                 </div>
                             </div>
 
-                            <!-- Geschlecht -->
-                            <div class="checkbox-row">
+                            <!-- Geschlecht + Alter -->
+                            <div class="checkbox-row subgroup-person subgroup-first">
                                 <template v-for="opt in optionsBySection.person" :key="opt">
                                     <div
-                                        v-if="['Frau', 'Mann'].includes(opt)"
+                                        v-if="['Frau', 'Mann', 'unter 55', 'über 55', 'über 80'].includes(opt)"
                                         class="checkbox-item"
                                         :class="{ 'is-checked': formData.person.includes(opt) }"
                                     >
@@ -420,26 +420,8 @@ function handleClickOutside(event) {
                                 </template>
                             </div>
 
-                            <!-- Alter -->
-                            <div class="checkbox-row">
-                                <template v-for="opt in optionsBySection.person" :key="opt">
-                                    <div
-                                        v-if="['unter 55', 'über 55', 'über 80'].includes(opt)"
-                                        class="checkbox-item"
-                                        :class="{ 'is-checked': formData.person.includes(opt) }"
-                                    >
-                                        <Checkbox
-                                            :inputId="'alter-' + opt"
-                                            :value="opt"
-                                            v-model="formData.person"
-                                        />
-                                        <label :for="'alter-' + opt">{{ opt }}</label>
-                                    </div>
-                                </template>
-                            </div>
-
-                            <!-- Betroffenheit -->
-                            <div class="checkbox-row">
+                            <!-- Betroffenheit + Migrationshintergrund -->
+                            <div class="checkbox-row subgroup-person subgroup-last">
                                 <template v-for="opt in optionsBySection.person" :key="opt">
                                     <div
                                         v-if="['selbst betroffen', 'Angehörige Nachbarn und andere', 'Institution'].includes(opt)"
@@ -454,10 +436,22 @@ function handleClickOutside(event) {
                                         <label :for="'betroffen-' + opt">{{ opt }}</label>
                                     </div>
                                 </template>
+                                <!-- Migrationshintergrund on same line -->
+                                <div
+                                    class="checkbox-item"
+                                    :class="{ 'is-checked': formData.thema.includes('Migrationshintergrund') }"
+                                >
+                                    <Checkbox
+                                        inputId="migration"
+                                        value="Migrationshintergrund"
+                                        v-model="formData.thema"
+                                    />
+                                    <label for="migration">Migrationshintergrund</label>
+                                </div>
                             </div>
 
-                            <!-- Dauer -->
-                            <div class="checkbox-row">
+                            <!-- Dauer (optional) -->
+                            <div class="checkbox-row no-border subgroup-dauer subgroup-first">
                                 <div
                                     v-for="opt in optionsBySection.dauer"
                                     :key="opt"
@@ -470,21 +464,6 @@ function handleClickOutside(event) {
                                         v-model="formData.dauer"
                                     />
                                     <label :for="'dauer-' + opt">{{ opt }}</label>
-                                </div>
-                            </div>
-
-                            <!-- Migrationshintergrund -->
-                            <div class="checkbox-row no-border">
-                                <div
-                                    class="checkbox-item"
-                                    :class="{ 'is-checked': formData.thema.includes('Migrationshintergrund') }"
-                                >
-                                    <Checkbox
-                                        inputId="migration"
-                                        value="Migrationshintergrund"
-                                        v-model="formData.thema"
-                                    />
-                                    <label for="migration">Migrationshintergrund</label>
                                 </div>
                             </div>
                         </div>
@@ -791,6 +770,17 @@ function handleClickOutside(event) {
     padding-bottom: 0;
 }
 
+/* Subgroup spacing - larger gaps between Kontaktart, Person, Dauer */
+.checkbox-row.subgroup-first {
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+}
+
+.checkbox-row.subgroup-last {
+    border-bottom: none;
+    padding-bottom: 0.5rem;
+}
+
 /* Chip/Swatch Styles */
 .checkbox-item {
     display: flex;
@@ -838,23 +828,60 @@ function handleClickOutside(event) {
     border-color: inherit;
 }
 
-/* === KONTAKT CARD CHIPS (Blue) === */
-.card-person .checkbox-item {
-    background: var(--color-kontakt-light);
+/* === KONTAKT CARD CHIPS (Blue subgroups) === */
+
+/* Kontaktart subgroup - saturated blue */
+.card-person .subgroup-kontaktart .checkbox-item {
+    background: var(--color-kontaktart-light);
 }
 
-.card-person .checkbox-item:hover {
-    background: var(--color-kontakt-hover);
+.card-person .subgroup-kontaktart .checkbox-item:hover {
+    background: var(--color-kontaktart-hover);
 }
 
-.card-person .checkbox-item.is-checked {
-    background: var(--color-kontakt-checked);
+.card-person .subgroup-kontaktart .checkbox-item.is-checked {
+    background: var(--color-kontaktart-checked);
 }
 
-.card-person .checkbox-item.is-checked label {
+.card-person .subgroup-kontaktart .checkbox-item.is-checked label {
     color: var(--color-kontakt-text);
 }
 
+/* Person subgroup - medium blue */
+.card-person .subgroup-person .checkbox-item {
+    background: var(--color-person-light);
+}
+
+.card-person .subgroup-person .checkbox-item:hover {
+    background: var(--color-person-hover);
+}
+
+.card-person .subgroup-person .checkbox-item.is-checked {
+    background: var(--color-person-checked);
+}
+
+.card-person .subgroup-person .checkbox-item.is-checked label {
+    color: var(--color-kontakt-text);
+}
+
+/* Dauer subgroup - light blue */
+.card-person .subgroup-dauer .checkbox-item {
+    background: var(--color-dauer-light);
+}
+
+.card-person .subgroup-dauer .checkbox-item:hover {
+    background: var(--color-dauer-hover);
+}
+
+.card-person .subgroup-dauer .checkbox-item.is-checked {
+    background: var(--color-dauer-checked);
+}
+
+.card-person .subgroup-dauer .checkbox-item.is-checked label {
+    color: var(--color-kontakt-text);
+}
+
+/* All kontakt subgroups share the same checkbox color */
 .card-person :deep(.p-checkbox-checked .p-checkbox-box),
 .card-person :deep(.p-checkbox-checked:hover .p-checkbox-box),
 .card-person :deep(.p-checkbox-checked:has(.p-checkbox-input:hover) .p-checkbox-box) {
