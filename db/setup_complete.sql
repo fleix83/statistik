@@ -224,13 +224,14 @@ INSERT INTO option_definitions (section, label, sort_order, param_group) VALUES
 
 -- Zeitfenster (Time Slots)
 INSERT INTO option_definitions (section, label, sort_order, param_group) VALUES
-    ('zeitfenster', '11:30 - 12:00', 0, 'time_slot'),
-    ('zeitfenster', '12:00 - 13:00', 1, 'time_slot'),
-    ('zeitfenster', '13:00 - 14:00', 2, 'time_slot'),
-    ('zeitfenster', '14:00 - 15:00', 3, 'time_slot'),
-    ('zeitfenster', '15:00 - 16:00', 4, 'time_slot'),
-    ('zeitfenster', '16:00 - 17:00', 5, 'time_slot'),
-    ('zeitfenster', '17:00 - 18:00', 6, 'time_slot');
+    ('zeitfenster', '11:00 - 11:30', 0, 'time_slot'),
+    ('zeitfenster', '11:30 - 12:00', 1, 'time_slot'),
+    ('zeitfenster', '12:00 - 13:00', 2, 'time_slot'),
+    ('zeitfenster', '13:00 - 14:00', 3, 'time_slot'),
+    ('zeitfenster', '14:00 - 15:00', 4, 'time_slot'),
+    ('zeitfenster', '15:00 - 16:00', 5, 'time_slot'),
+    ('zeitfenster', '16:00 - 17:00', 6, 'time_slot'),
+    ('zeitfenster', '17:00 - 18:00', 7, 'time_slot');
 
 -- ============================================================================
 -- VERIFICATION
