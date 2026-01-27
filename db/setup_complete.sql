@@ -197,20 +197,20 @@ INSERT INTO option_definitions (section, label, sort_order, param_group) VALUES
 INSERT INTO option_definitions (section, label, sort_order, param_group) VALUES
     ('dauer', 'länger als 20 Minuten', 0, 'duration');
 
--- Thema (Topics)
-INSERT INTO option_definitions (section, label, sort_order, param_group) VALUES
-    ('thema', 'Bildung', 0, 'topic'),
-    ('thema', 'Arbeit', 1, 'topic'),
-    ('thema', 'Migrationshintergrund', 2, 'topic'),
-    ('thema', 'Finanzen', 3, 'topic'),
-    ('thema', 'Frauen Männer jung und alt', 4, 'topic'),
-    ('thema', 'Gesundheit', 5, 'topic'),
-    ('thema', 'Wohnen', 6, 'topic'),
-    ('thema', 'Austausch und Freizeit', 7, 'topic'),
-    ('thema', 'Migration und Integration', 8, 'topic'),
-    ('thema', 'Notlagen', 9, 'topic'),
-    ('thema', 'Allgemeine Hilfeleistungen', 10, 'topic'),
-    ('thema', 'Recht', 11, 'topic');
+-- Thema (Topics with Keywords)
+INSERT INTO option_definitions (section, label, sort_order, param_group, keywords) VALUES
+    ('thema', 'Bildung', 0, 'topic', '[\"Information, Beratung\",\"Frühförderung\",\"Schulen\",\"Schulunterstützende Angebote\",\"Brücken - und Integrationsangebote\",\"Lehrstellen, Berufsschulen\",\"Erwachsenenbildung, Elternbildung\",\"Sprachschule\"]'),
+    ('thema', 'Arbeit', 1, 'topic', '[\"Information, Beratung\",\"Berufsberatung, Neuorientierung\",\"Arbeitslosigkeit\",\"Soloeinsätze, Au Pair, Ferienjobs\",\"Freiwilligenarbeit\",\"Stellensuche\",\"Firmengründung\",\"Integrationsprogramme, geschützte Arbeitsplätze\"]'),
+    ('thema', 'Migrationshintergrund', 2, 'topic', NULL),
+    ('thema', 'Finanzen', 3, 'topic', '[\"Information, Budget- und Schuldenberatung\",\"Unterstützung, soziale Beiträge\",\"Fonds, Stiftungen\",\"Steuern, Pensionskasse\",\"Stipenden\",\"Günstig einkaufen, essen\"]'),
+    ('thema', 'Frauen Männer jung und alt', 4, 'topic', '[\"Information, Beratung\",\"Gleichstellung\",\"Familie\",\"Familienergänzende Kinderbetreuung\",\"Kinder\",\"Jugendliche\",\"Ältere Menschen\"]'),
+    ('thema', 'Gesundheit', 5, 'topic', '[\"Information Gesundheit\",\"Information Behinderung\",\"Information Sucht\",\"Arzt, Therapie\",\"Klinische Angebote\",\"Pflege, Unterstützung zu Hause\",\"Soziale Angebote\",\"Hilfsmittel und Fahrdienste\",\"Sterben und Tod\"]'),
+    ('thema', 'Wohnen', 6, 'topic', '[]'),
+    ('thema', 'Austausch und Freizeit', 7, 'topic', '[\"Quartierangebote\",\"Treffpunkte\",\"Religionsgemeinschaften\",\"Selbsthilfe\",\"Freiwilligenarbeit\",\"Freizeitaktivitäten\",\"Tiere\"]'),
+    ('thema', 'Migration und Integration', 8, 'topic', '[\"Information, Beratung\",\"Zuzug, Aufenthalt, Bewilligung, Auswandern\",\"Sprache, Bildung\",\"Vereine und Organisationen der Migrationsbevölkerung\",\"Flüchtlinge\"]'),
+    ('thema', 'Notlagen', 9, 'topic', '[\"Notdienste\",\"Gewalt und Krisen\",\"Finanzielle Nothilfe\",\"Notwohnungen, Notunterkünfte\"]'),
+    ('thema', 'Allgemeine Hilfeleistungen', 10, 'topic', '[\"Schreibdienste, Übersetzungen\",\"Allgemeine Rechtsberatung\",\"Ombudsstellen, Mediation\",\"Computer und Administration\",\"Gegenseitige Unterstützung\",\"Begleitung und andere Angebote\",\"Informationsstellen und Behörden\"]'),
+    ('thema', 'Recht', 11, 'topic', '[]');
 
 -- Referenz (Referral Source)
 INSERT INTO option_definitions (section, label, sort_order, param_group) VALUES
