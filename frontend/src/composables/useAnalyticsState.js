@@ -624,17 +624,20 @@ export function useAnalyticsState() {
                                 }
 
                                 // Build label for this subset line
-                                const subsetLabel = cumulativeValues.join(' + ')
+                                // For subsets, only show the last (current) value, not all cumulative values
+                                // e.g., "unter 55" instead of "Mann + unter 55"
+                                const displayValue = cumulativeValues[cumulativeValues.length - 1]
                                 const fullLabel = periods.value.length > 1
-                                    ? `${subsetLabel} (${period.label})`
-                                    : subsetLabel
+                                    ? `${displayValue} (${period.label})`
+                                    : displayValue
 
                                 console.log(`Dataset ${allDatasets.length}: ${fullLabel}, total=${response.data.total}, valueIndex=${subsetIndex}`)
 
                                 allDatasets.push({
                                     label: fullLabel,
                                     data: response.data.data,
-                                    valueLabel: subsetLabel,
+                                    valueLabel: displayValue,
+                                    cumulativeValues: cumulativeValues,  // Keep full list for reference
                                     valueIndex: subsetIndex,  // Index determines color
                                     periodIndex: periodIndex,
                                     periodLabel: period.label,
@@ -738,14 +741,27 @@ export function useAnalyticsState() {
                         numValues: useSubsetMode ? sectionSelections.length : activeValues.value.length
                     }
 
+                    // For subset mode, only count the base selection (first subset) to avoid double-counting
+                    // Subsets are nested within the base, so we only show the base total
                     summaryData.value = {
                         total: 0,
                         periods: periods.value.map((period, i) => {
                             const periodDatasets = allDatasets.filter(ds => ds.periodIndex === i)
+
+                            // In subset mode, only use the first (base) dataset's total
+                            // In standard mode, sum all datasets
+                            let periodTotal
+                            if (useSubsetMode) {
+                                const baseDataset = periodDatasets.find(ds => ds.valueIndex === 0)
+                                periodTotal = baseDataset?.total || 0
+                            } else {
+                                periodTotal = periodDatasets.reduce((sum, ds) =>
+                                    sum + (ds.total || ds.data.reduce((a, b) => a + b, 0)), 0)
+                            }
+
                             return {
                                 label: period.label,
-                                total: periodDatasets.reduce((sum, ds) =>
-                                    sum + (ds.total || ds.data.reduce((a, b) => a + b, 0)), 0),
+                                total: periodTotal,
                                 isComparison: i > 0
                             }
                         })
