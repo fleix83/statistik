@@ -164,13 +164,13 @@ async function handleSavePeriod(period) {
             </div>
         </div>
 
-        <!-- Clock Icon and Add Period Button -->
+        <!-- Bookmark Icon and Add Period Button -->
         <div class="period-actions">
             <Button
-                icon="pi pi-clock"
+                :icon="showSavedPeriods ? 'pi pi-bookmark-fill' : 'pi pi-bookmark'"
                 :outlined="!showSavedPeriods"
                 size="small"
-                class="icon-btn"
+                class="icon-btn saved-periods-btn"
                 @click="toggleSavedPeriods"
                 v-tooltip.top="'Gespeicherte Perioden'"
             />
@@ -487,5 +487,10 @@ async function handleSavePeriod(period) {
 
 .icon-btn.p-button:not(.p-button-outlined):not(.p-button-text):hover {
     background: #2563eb !important;
+}
+
+/* Saved periods button icon offset */
+.saved-periods-btn.p-button :deep(.p-button-icon) {
+    margin-left: 10px;
 }
 </style>
