@@ -141,9 +141,11 @@ function buildIntersectionFilterJoins($intersection, &$params, $startIndex = 0) 
 
         // Each value gets its own JOIN - entry must have ALL values
         foreach ($values as $value) {
-            $alias = "int{$i}";
-            $joins .= " JOIN stats_entry_values {$alias} ON se.id = {$alias}.entry_id
-                        AND {$alias}.section = ? AND {$alias}.value_text = ?";
+            // Use 'isec' prefix to avoid conflict with MySQL INT keyword
+            $alias = "isec{$i}";
+            $joins .= "
+                JOIN stats_entry_values {$alias} ON se.id = {$alias}.entry_id
+                AND {$alias}.section = ? AND {$alias}.value_text = ?";
             $params[] = $section;
             $params[] = $value;
             $i++;
