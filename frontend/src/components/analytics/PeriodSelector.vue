@@ -168,9 +168,10 @@ async function handleSavePeriod(period) {
         <div class="period-actions">
             <Button
                 :icon="showSavedPeriods ? 'pi pi-bookmark-fill' : 'pi pi-bookmark'"
-                :outlined="!showSavedPeriods"
+                text
                 size="small"
-                class="icon-btn saved-periods-btn"
+                class="saved-periods-btn"
+                :class="{ 'is-active': showSavedPeriods }"
                 @click="toggleSavedPeriods"
                 v-tooltip.top="'Gespeicherte Perioden'"
             />
@@ -468,29 +469,21 @@ async function handleSavePeriod(period) {
     background: rgba(59, 130, 246, 0.1);
 }
 
-/* Icon buttons (clock, bookmark) - blue */
-.icon-btn.p-button {
-    color: #3b82f6 !important;
-    border-color: #3b82f6 !important;
-}
-
-.icon-btn.p-button:hover {
-    background: rgba(59, 130, 246, 0.1) !important;
-}
-
-/* Filled state (not outlined, not text) */
-.icon-btn.p-button:not(.p-button-outlined):not(.p-button-text) {
-    background: #3b82f6 !important;
-    color: white !important;
-    margin-left: 15px;
-}
-
-.icon-btn.p-button:not(.p-button-outlined):not(.p-button-text):hover {
-    background: #2563eb !important;
-}
-
-/* Saved periods button icon offset */
-.saved-periods-btn.p-button :deep(.p-button-icon) {
+/* Saved periods toggle button */
+.saved-periods-btn.p-button {
+    color: #94a3b8 !important;
     margin-left: 10px;
+}
+
+.saved-periods-btn.p-button:hover {
+    background: rgba(148, 163, 184, 0.1) !important;
+}
+
+.saved-periods-btn.is-active.p-button {
+    color: #3b82f6 !important;
+}
+
+.saved-periods-btn.is-active.p-button:hover {
+    background: rgba(59, 130, 246, 0.1) !important;
 }
 </style>
