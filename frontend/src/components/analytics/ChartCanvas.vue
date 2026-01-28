@@ -238,7 +238,6 @@ watch(markers, () => {
 const getCssVar = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim()
 
 const primaryColor = computed(() => getCssVar('--chart-primary'))
-const comparisonColor = computed(() => getCssVar('--chart-comparison'))
 
 const colors = computed(() => [
     getCssVar('--chart-color-1'),  // blue
@@ -256,6 +255,47 @@ const colors = computed(() => [
 ])
 
 const colorsBg = computed(() => colors.value.map(c => c + '20'))
+
+// Utility: Lighten a hex color by a percentage (0-100)
+// Higher percentage = lighter color
+function lightenColor(hex, percent) {
+    // Remove # if present
+    hex = hex.replace(/^#/, '')
+
+    // Parse hex to RGB
+    let r = parseInt(hex.substring(0, 2), 16)
+    let g = parseInt(hex.substring(2, 4), 16)
+    let b = parseInt(hex.substring(4, 6), 16)
+
+    // Lighten by moving towards white (255)
+    r = Math.round(r + (255 - r) * (percent / 100))
+    g = Math.round(g + (255 - g) * (percent / 100))
+    b = Math.round(b + (255 - b) * (percent / 100))
+
+    // Clamp values
+    r = Math.min(255, Math.max(0, r))
+    g = Math.min(255, Math.max(0, g))
+    b = Math.min(255, Math.max(0, b))
+
+    // Convert back to hex
+    return '#' + [r, g, b].map(x => x.toString(16).padStart(2, '0')).join('')
+}
+
+// Get color for a specific period index (0 = primary, 1+ = comparison)
+// Returns progressively lighter shades for comparison periods
+function getColorForPeriod(baseColor, periodIndex, totalPeriods = 2) {
+    if (periodIndex === 0) return baseColor
+    // Lighten by 35% for each subsequent period (capped at 70%)
+    const lightenPercent = Math.min(35 * periodIndex, 70)
+    return lightenColor(baseColor, lightenPercent)
+}
+
+// Generate colors for all periods based on a base color
+function getPeriodColors(baseColor, numPeriods) {
+    return Array.from({ length: numPeriods }, (_, i) =>
+        getColorForPeriod(baseColor, i, numPeriods)
+    )
+}
 
 // Shared tooltip styling
 const baseTooltipStyle = {
@@ -449,12 +489,14 @@ const barChartData = computed(() => {
 
     // Multiple periods comparison mode - grouped bars
     if (chartData.value.mode === 'aggregate-compare') {
+        const numPeriods = chartData.value.datasets.length
+        const periodColors = getPeriodColors(primaryColor.value, numPeriods)
         return {
             labels: chartData.value.labels,
             datasets: chartData.value.datasets.map((ds, i) => ({
                 label: ds.label,
                 data: ds.data,
-                backgroundColor: ds.isComparison ? comparisonColor.value : primaryColor.value,
+                backgroundColor: periodColors[i],
                 borderRadius: 4
             }))
         }
@@ -500,27 +542,33 @@ const barChartOptions = computed(() => ({
 const lineChartData = computed(() => {
     if (!chartData.value) return null
 
-    // Totals mode - year comparison with shaded comparison line
+    // Totals mode - year comparison with lighter shades for comparison periods
     if (chartData.value.mode === 'totals') {
         // Handle empty datasets
         if (!chartData.value.datasets || chartData.value.datasets.length === 0) {
             return null
         }
+        const numPeriods = chartData.value.datasets.length
+        const periodColors = getPeriodColors(primaryColor.value, numPeriods)
         return {
             labels: chartData.value.labels || [],
-            datasets: chartData.value.datasets.map((ds, i) => ({
-                label: `${ds.label} (${(ds.total || 0).toLocaleString('de-CH')})`,
-                data: ds.data || [],
-                borderColor: ds.isComparison ? comparisonColor.value : primaryColor.value,
-                backgroundColor: ds.isComparison ? comparisonColor.value + '10' : primaryColor.value + '20',
-                fill: lineFill.value && !ds.isComparison, // Only fill the primary line when enabled
-                tension: 0.3,
-                pointRadius: ds.isComparison ? 2 : 4,
-                pointHoverRadius: ds.isComparison ? 4 : 6,
-                borderWidth: ds.isComparison ? 2 : 3,
-                borderDash: ds.isComparison ? [5, 5] : [], // Dashed line for comparison
-                order: ds.isComparison ? 1 : 0 // Primary line on top
-            }))
+            datasets: chartData.value.datasets.map((ds, i) => {
+                const color = periodColors[i]
+                const isComparison = i > 0
+                return {
+                    label: `${ds.label} (${(ds.total || 0).toLocaleString('de-CH')})`,
+                    data: ds.data || [],
+                    borderColor: color,
+                    backgroundColor: color + '20',
+                    fill: lineFill.value && !isComparison, // Only fill the primary line when enabled
+                    tension: 0.3,
+                    pointRadius: isComparison ? 2 : 4,
+                    pointHoverRadius: isComparison ? 4 : 6,
+                    borderWidth: isComparison ? 2 : 3,
+                    borderDash: isComparison ? [5, 5] : [], // Dashed line for comparison
+                    order: isComparison ? 1 : 0 // Primary line on top
+                }
+            })
         }
     }
 
@@ -782,16 +830,28 @@ const legendItems = computed(() => {
     const mode = chartData.value.mode
     const datasets = chartData.value.datasets
 
-    // For timeseries, totals, stacked - use dataset labels
-    if ((mode === 'timeseries' || mode === 'totals' || mode === 'stacked') && datasets?.length > 0) {
+    // For totals mode (period comparison) - use period-based colors
+    if (mode === 'totals' && datasets?.length > 0) {
+        const numPeriods = datasets.length
+        const periodColors = getPeriodColors(primaryColor.value, numPeriods)
         return datasets.map((ds, i) => ({
             label: ds.label,
-            color: colors.value[i % colors.value.length]
+            color: periodColors[i]
         }))
     }
 
-    // For aggregate-compare mode
+    // For aggregate-compare mode (period comparison) - use period-based colors
     if (mode === 'aggregate-compare' && datasets?.length > 0) {
+        const numPeriods = datasets.length
+        const periodColors = getPeriodColors(primaryColor.value, numPeriods)
+        return datasets.map((ds, i) => ({
+            label: ds.label,
+            color: periodColors[i]
+        }))
+    }
+
+    // For timeseries, stacked - use distinct colors for each value
+    if ((mode === 'timeseries' || mode === 'stacked') && datasets?.length > 0) {
         return datasets.map((ds, i) => ({
             label: ds.label,
             color: colors.value[i % colors.value.length]
