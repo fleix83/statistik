@@ -572,23 +572,37 @@ const lineChartData = computed(() => {
         }
     }
 
-    // Timeseries mode - specific values over time
+    // Timeseries mode - specific values over time (with multi-period support)
     if (chartData.value.mode === 'timeseries') {
         if (!chartData.value.datasets || chartData.value.datasets.length === 0) {
             return null
         }
+        const numPeriods = chartData.value.numPeriods || 1
         return {
             labels: chartData.value.labels || [],
-            datasets: chartData.value.datasets.map((ds, i) => ({
-                label: ds.label,
-                data: ds.data || [],
-                borderColor: colors.value[i % colors.value.length],
-                backgroundColor: colorsBg.value[i % colorsBg.value.length],
-                fill: lineFill.value,
-                tension: 0.3,
-                pointRadius: 3,
-                pointHoverRadius: 5
-            }))
+            datasets: chartData.value.datasets.map((ds) => {
+                // Get base color from value index
+                const valueIndex = ds.valueIndex ?? 0
+                const periodIndex = ds.periodIndex ?? 0
+                const baseColor = colors.value[valueIndex % colors.value.length]
+                // Apply lighter shade for comparison periods
+                const color = getColorForPeriod(baseColor, periodIndex, numPeriods)
+                const isComparison = periodIndex > 0
+
+                return {
+                    label: ds.label,
+                    data: ds.data || [],
+                    borderColor: color,
+                    backgroundColor: color + '20',
+                    fill: lineFill.value && !isComparison,
+                    tension: 0.3,
+                    pointRadius: isComparison ? 2 : 3,
+                    pointHoverRadius: isComparison ? 4 : 5,
+                    borderWidth: isComparison ? 2 : 3,
+                    borderDash: isComparison ? [5, 5] : [],
+                    order: isComparison ? 1 : 0
+                }
+            })
         }
     }
 
@@ -850,8 +864,23 @@ const legendItems = computed(() => {
         }))
     }
 
-    // For timeseries, stacked - use distinct colors for each value
-    if ((mode === 'timeseries' || mode === 'stacked') && datasets?.length > 0) {
+    // For timeseries - use value colors with period shading
+    if (mode === 'timeseries' && datasets?.length > 0) {
+        const numPeriods = chartData.value.numPeriods || 1
+        return datasets.map((ds) => {
+            const valueIndex = ds.valueIndex ?? 0
+            const periodIndex = ds.periodIndex ?? 0
+            const baseColor = colors.value[valueIndex % colors.value.length]
+            const color = getColorForPeriod(baseColor, periodIndex, numPeriods)
+            return {
+                label: ds.label,
+                color: color
+            }
+        })
+    }
+
+    // For stacked - use distinct colors for each value
+    if (mode === 'stacked' && datasets?.length > 0) {
         return datasets.map((ds, i) => ({
             label: ds.label,
             color: colors.value[i % colors.value.length]
