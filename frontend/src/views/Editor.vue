@@ -550,31 +550,35 @@ function confirmDeleteUser(user) {
 
             <!-- Users Tab -->
             <TabPanel header="Benutzer">
-                <div class="mb-3">
-                    <Button
-                        label="Neuer Benutzer"
-                        icon="pi pi-plus"
-                        @click="openNewUser"
-                    />
+                <div class="users-tab-content">
+                    <div class="users-toolbar">
+                        <Button
+                            label="Neu"
+                            icon="pi pi-plus"
+                            @click="openNewUser"
+                        />
+                    </div>
+                    <div class="users-table-wrapper">
+                        <DataTable
+                            :value="usersList"
+                            :loading="usersLoading"
+                        >
+                            <Column field="username" header="Benutzername" sortable />
+                            <Column field="role" header="Rolle">
+                                <template #body="{ data }">
+                                    {{ data.role === 'admin' ? 'Admin' : 'Benutzer' }}
+                                </template>
+                            </Column>
+                            <Column field="created_at" header="Erstellt" sortable />
+                            <Column header="Aktionen" style="width: 150px">
+                                <template #body="{ data }">
+                                    <Button icon="pi pi-pencil" severity="secondary" text @click="editUser(data)" />
+                                    <Button icon="pi pi-trash" severity="danger" text @click="confirmDeleteUser(data)" />
+                                </template>
+                            </Column>
+                        </DataTable>
+                    </div>
                 </div>
-                <DataTable
-                    :value="usersList"
-                    :loading="usersLoading"
-                >
-                    <Column field="username" header="Benutzername" sortable />
-                    <Column field="role" header="Rolle">
-                        <template #body="{ data }">
-                            {{ data.role === 'admin' ? 'Admin' : 'Benutzer' }}
-                        </template>
-                    </Column>
-                    <Column field="created_at" header="Erstellt" sortable />
-                    <Column header="Aktionen" style="width: 150px">
-                        <template #body="{ data }">
-                            <Button icon="pi pi-pencil" severity="secondary" text @click="editUser(data)" />
-                            <Button icon="pi pi-trash" severity="danger" text @click="confirmDeleteUser(data)" />
-                        </template>
-                    </Column>
-                </DataTable>
             </TabPanel>
         </TabView>
 
@@ -730,6 +734,70 @@ function confirmDeleteUser(user) {
 
 .field label {
     font-weight: 500;
+}
+
+/* Users tab content container */
+.users-tab-content {
+    max-width: 1300px;
+    margin: 0 auto;
+}
+
+.users-toolbar {
+    margin-bottom: 16px;
+}
+
+.users-table-wrapper {
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.users-table-wrapper :deep(.p-datatable) {
+    border-radius: 12px;
+    border: none;
+}
+
+.users-table-wrapper :deep(.p-datatable-header),
+.users-table-wrapper :deep(.p-datatable-thead > tr > th:first-child) {
+    border-top-left-radius: 12px;
+}
+
+.users-table-wrapper :deep(.p-datatable-header),
+.users-table-wrapper :deep(.p-datatable-thead > tr > th:last-child) {
+    border-top-right-radius: 12px;
+}
+
+/* Tab styling - selected tab with white background */
+.editor-tabs :deep(.p-tabview-tablist) {
+    background: transparent;
+    border: none;
+    gap: 4px;
+}
+
+.editor-tabs :deep(.p-tabview-tablist-item) {
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.editor-tabs :deep(.p-tabview-tab-header) {
+    border: none;
+    background: transparent;
+    border-radius: 8px;
+    transition: background-color 0.2s;
+}
+
+.editor-tabs :deep(.p-tabview-tablist-item[data-p-active="true"] .p-tabview-tab-header) {
+    background: white;
+}
+
+.editor-tabs :deep(.p-tabview-tablist-item[data-p-active="true"] .p-tabview-tab-title) {
+    color: #333;
+}
+
+/* Remove default active indicator line */
+.editor-tabs :deep(.p-tabview-ink-bar) {
+    display: none;
 }
 
 @media (max-width: 1024px) {

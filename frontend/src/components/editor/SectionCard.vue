@@ -68,7 +68,7 @@ function onDragEnd() {
 <style scoped>
 .section-container {
     background: #FFF;
-    border-radius: 10px;
+    border-radius: 12px;
     padding: 24px 28px;
 }
 
