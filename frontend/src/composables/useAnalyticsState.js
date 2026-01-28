@@ -171,8 +171,8 @@ export function useAnalyticsState() {
             // Adding a value
             current.push(value)
 
-            // Track in ordered selections for subset drilling
-            orderedSelections.value.push({ section, value })
+            // Track in ordered selections for subset drilling (include param_group)
+            orderedSelections.value.push({ section, value, group: effectiveGroup })
 
             // Track in hierarchy
             const hierarchyEntry = selectionHierarchy.value.find(h => h.group === effectiveGroup)
@@ -558,27 +558,71 @@ export function useAnalyticsState() {
                     console.log('useSubsetMode:', useSubsetMode)
 
                     if (useSubsetMode) {
-                        // SUBSET DRILLING MODE: Show cumulative subset lines
-                        // Each line shows entries matching all values up to that point
+                        // SUBSET DRILLING MODE: Show base + parallel subsets
+                        // Group selections by param_group:
+                        // - First group = base (shown as first line)
+                        // - Subsequent groups = parallel subsets (each value is base AND value)
+                        // - Values in the SAME group are parallel to each other (not nested)
+
+                        // Group selections by param_group
+                        const selectionsByGroup = {}
+                        const groupOrder = []
+                        for (const sel of sectionSelections) {
+                            const group = sel.group || sel.section
+                            if (!selectionsByGroup[group]) {
+                                selectionsByGroup[group] = []
+                                groupOrder.push(group)
+                            }
+                            selectionsByGroup[group].push(sel.value)
+                        }
+
+                        console.log('selectionsByGroup:', JSON.stringify(selectionsByGroup))
+                        console.log('groupOrder:', JSON.stringify(groupOrder))
+
+                        // First group = base values (OR'd together)
+                        const baseGroup = groupOrder[0]
+                        const baseValues = selectionsByGroup[baseGroup] || []
+
+                        // Remaining groups = subset values (each creates a parallel subset line)
+                        const subsetGroups = groupOrder.slice(1)
+                        const subsetValues = subsetGroups.flatMap(g => selectionsByGroup[g])
+
+                        console.log('baseValues:', JSON.stringify(baseValues))
+                        console.log('subsetValues:', JSON.stringify(subsetValues))
 
                         for (let periodIndex = 0; periodIndex < periods.value.length; periodIndex++) {
                             const period = periods.value[periodIndex]
 
-                            // Create a line for each cumulative subset
-                            for (let subsetIndex = 0; subsetIndex < sectionSelections.length; subsetIndex++) {
-                                // Build cumulative filter: all values from 0 to subsetIndex
-                                const cumulativeValues = sectionSelections
-                                    .slice(0, subsetIndex + 1)
-                                    .map(s => s.value)
+                            // Line 0: Base selection (all base values OR'd)
+                            // Lines 1+: Each subset value creates (base AND subset_value)
+                            const linesToCreate = subsetValues.length > 0
+                                ? [{ type: 'base', values: baseValues }, ...subsetValues.map(v => ({ type: 'subset', value: v }))]
+                                : sectionSelections.map((s, i) => i === 0
+                                    ? { type: 'base', values: [s.value] }
+                                    : { type: 'subset', value: s.value, baseValues: sectionSelections.slice(0, i).map(x => x.value) })
 
-                                // Use intersection filter (AND logic within section)
+                            for (let lineIndex = 0; lineIndex < linesToCreate.length; lineIndex++) {
+                                const lineConfig = linesToCreate[lineIndex]
+                                let filterValues, displayValue
+
+                                if (lineConfig.type === 'base') {
+                                    // Base line: just the base values (OR'd)
+                                    filterValues = lineConfig.values
+                                    displayValue = filterValues.join(' / ')
+                                } else {
+                                    // Subset line: base AND this subset value
+                                    filterValues = [...baseValues, lineConfig.value]
+                                    displayValue = lineConfig.value
+                                }
+
+                                // Use intersection filter (AND logic)
                                 const intersectionFilter = {
                                     intersection: {
-                                        [activeSection.value]: cumulativeValues
+                                        [activeSection.value]: filterValues
                                     }
                                 }
 
-                                console.log(`Fetching subset ${subsetIndex}: cumulativeValues=${JSON.stringify(cumulativeValues)}, filter=${JSON.stringify(intersectionFilter)}`)
+                                console.log(`Fetching line ${lineIndex}: displayValue=${displayValue}, filter=${JSON.stringify(intersectionFilter)}`)
 
                                 const params = {
                                     start_date: formatDateForApi(period.start),
@@ -623,27 +667,25 @@ export function useAnalyticsState() {
                                     })
                                 }
 
-                                // Build label for this subset line
-                                // For subsets, only show the last (current) value, not all cumulative values
-                                // e.g., "unter 55" instead of "Mann + unter 55"
-                                const displayValue = cumulativeValues[cumulativeValues.length - 1]
+                                // Build label for this line
                                 const fullLabel = periods.value.length > 1
                                     ? `${displayValue} (${period.label})`
                                     : displayValue
 
-                                console.log(`Dataset ${allDatasets.length}: ${fullLabel}, total=${response.data.total}, valueIndex=${subsetIndex}`)
+                                console.log(`Dataset ${allDatasets.length}: ${fullLabel}, total=${response.data.total}, lineIndex=${lineIndex}`)
 
                                 allDatasets.push({
                                     label: fullLabel,
                                     data: response.data.data,
                                     valueLabel: displayValue,
-                                    cumulativeValues: cumulativeValues,  // Keep full list for reference
-                                    valueIndex: subsetIndex,  // Index determines color
+                                    filterValues: filterValues,  // Keep full filter list for reference
+                                    valueIndex: lineIndex,  // Index determines color
                                     periodIndex: periodIndex,
                                     periodLabel: period.label,
                                     total: response.data.total,
                                     isComparison: periodIndex > 0,
-                                    isSubset: subsetIndex > 0  // Mark as subset for styling
+                                    isBase: lineConfig.type === 'base',
+                                    isSubset: lineConfig.type === 'subset'
                                 })
                             }
                         }
@@ -741,21 +783,24 @@ export function useAnalyticsState() {
                         numValues: useSubsetMode ? sectionSelections.length : activeValues.value.length
                     }
 
-                    // For subset mode, show the most specific (last) subset's total
-                    // This is the result of all the drilling down
+                    // For subset mode, sum all subset totals (parallel subsets add up)
+                    // The base is not included since subsets partition the base
                     summaryData.value = {
                         total: 0,
                         periods: periods.value.map((period, i) => {
                             const periodDatasets = allDatasets.filter(ds => ds.periodIndex === i)
 
-                            // In subset mode, use the last (most specific) dataset's total
-                            // In standard mode, sum all datasets
                             let periodTotal
                             if (useSubsetMode) {
-                                // Find the dataset with the highest valueIndex (most specific subset)
-                                const mostSpecificDataset = periodDatasets.reduce((most, ds) =>
-                                    (ds.valueIndex > (most?.valueIndex ?? -1)) ? ds : most, null)
-                                periodTotal = mostSpecificDataset?.total || 0
+                                // Sum only the subset datasets (not the base)
+                                const subsetDatasets = periodDatasets.filter(ds => ds.isSubset)
+                                if (subsetDatasets.length > 0) {
+                                    periodTotal = subsetDatasets.reduce((sum, ds) => sum + (ds.total || 0), 0)
+                                } else {
+                                    // If no subsets (only base), use the base total
+                                    const baseDataset = periodDatasets.find(ds => ds.isBase)
+                                    periodTotal = baseDataset?.total || 0
+                                }
                             } else {
                                 periodTotal = periodDatasets.reduce((sum, ds) =>
                                     sum + (ds.total || ds.data.reduce((a, b) => a + b, 0)), 0)
