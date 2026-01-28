@@ -271,21 +271,38 @@ export function useAnalyticsState() {
     // Uses hierarchy for proper OR/AND logic:
     // - Values within same group: OR (add up)
     // - Values from different groups: AND (filter/subtract)
-    function buildFilters() {
+    // @param excludeSection - section to exclude from filters (used in timeseries to avoid filtering the visualized section)
+    function buildFilters(excludeSection = null) {
         // If we have a hierarchy, use it for structured filtering
         if (selectionHierarchy.value.length > 0) {
-            return {
-                hierarchy: selectionHierarchy.value.map(h => ({
-                    group: h.group,
-                    filters: h.selections
-                }))
+            // Filter out the excluded section from hierarchy
+            const filteredHierarchy = selectionHierarchy.value
+                .map(h => {
+                    if (!excludeSection) return { group: h.group, filters: h.selections }
+
+                    // Remove excluded section from this hierarchy entry's selections
+                    const filteredSelections = {}
+                    for (const [section, values] of Object.entries(h.selections)) {
+                        if (section !== excludeSection) {
+                            filteredSelections[section] = values
+                        }
+                    }
+                    return { group: h.group, filters: filteredSelections }
+                })
+                .filter(h => Object.keys(h.filters).length > 0) // Remove empty groups
+
+            if (filteredHierarchy.length > 0) {
+                return {
+                    hierarchy: filteredHierarchy
+                }
             }
+            return {}
         }
 
         // Fallback: flat filters for options without groups
         const filters = {}
         for (const [section, values] of Object.entries(selectedParams.value)) {
-            if (values.length > 0) {
+            if (values.length > 0 && section !== excludeSection) {
                 filters[section] = values
             }
         }
@@ -304,6 +321,9 @@ export function useAnalyticsState() {
 
     // Fetch chart data based on current state
     async function fetchData() {
+        console.log('=== FETCH DATA CALLED ===')
+        console.log('orderedSelections at start:', JSON.stringify(orderedSelections.value))
+
         if (periods.value.length === 0) return
 
         loading.value = true
@@ -504,13 +524,38 @@ export function useAnalyticsState() {
                     let granularityUsed = 'month'
 
                     // Get ordered selections for the active section (for subset drilling)
-                    const sectionSelections = orderedSelections.value.filter(
+                    let sectionSelections = orderedSelections.value.filter(
                         s => s.section === activeSection.value
                     )
+
+                    // Fallback: if orderedSelections is missing values that are in selectedParams,
+                    // rebuild from selectedParams (order will be alphabetical as fallback)
+                    const selectedValues = selectedParams.value[activeSection.value] || []
+                    if (sectionSelections.length < selectedValues.length) {
+                        console.log('Rebuilding sectionSelections from selectedParams')
+                        sectionSelections = selectedValues.map(value => ({
+                            section: activeSection.value,
+                            value
+                        }))
+                        // Also update orderedSelections for future consistency
+                        orderedSelections.value = [
+                            ...orderedSelections.value.filter(s => s.section !== activeSection.value),
+                            ...sectionSelections
+                        ]
+                    }
+
+                    // DEBUG: Log selection state
+                    console.log('=== SUBSET MODE DEBUG ===')
+                    console.log('activeSection:', activeSection.value)
+                    console.log('selectedValues:', JSON.stringify(selectedValues))
+                    console.log('orderedSelections:', JSON.stringify(orderedSelections.value))
+                    console.log('sectionSelections:', JSON.stringify(sectionSelections))
+                    console.log('sectionSelections.length:', sectionSelections.length)
 
                     // Check if we should use subset drilling mode:
                     // Multiple values selected from the same section
                     const useSubsetMode = sectionSelections.length > 1
+                    console.log('useSubsetMode:', useSubsetMode)
 
                     if (useSubsetMode) {
                         // SUBSET DRILLING MODE: Show cumulative subset lines
@@ -532,6 +577,8 @@ export function useAnalyticsState() {
                                         [activeSection.value]: cumulativeValues
                                     }
                                 }
+
+                                console.log(`Fetching subset ${subsetIndex}: cumulativeValues=${JSON.stringify(cumulativeValues)}, filter=${JSON.stringify(intersectionFilter)}`)
 
                                 const params = {
                                     start_date: formatDateForApi(period.start),
@@ -582,6 +629,8 @@ export function useAnalyticsState() {
                                     ? `${subsetLabel} (${period.label})`
                                     : subsetLabel
 
+                                console.log(`Dataset ${allDatasets.length}: ${fullLabel}, total=${response.data.total}, valueIndex=${subsetIndex}`)
+
                                 allDatasets.push({
                                     label: fullLabel,
                                     data: response.data.data,
@@ -595,8 +644,20 @@ export function useAnalyticsState() {
                                 })
                             }
                         }
+                        console.log('Total datasets created:', allDatasets.length)
+                        console.log('Datasets:', allDatasets.map(d => ({ label: d.label, total: d.total })))
                     } else {
                         // STANDARD MODE: Show each value as a separate line
+                        // IMPORTANT: Exclude active section from filters so each value shows its own count
+                        // (not filtered by other values from the same section)
+                        const standardFilters = buildFilters(activeSection.value)
+                        const standardFiltersJson = Object.keys(standardFilters).length > 0
+                            ? JSON.stringify(standardFilters)
+                            : undefined
+
+                        console.log('STANDARD MODE: excluding section', activeSection.value, 'from filters')
+                        console.log('standardFilters:', JSON.stringify(standardFilters))
+
                         for (let periodIndex = 0; periodIndex < periods.value.length; periodIndex++) {
                             const period = periods.value[periodIndex]
                             const params = {
@@ -605,7 +666,7 @@ export function useAnalyticsState() {
                                 start_date: formatDateForApi(period.start),
                                 end_date: formatDateForApi(period.end),
                                 granularity: 'auto',
-                                filters: filtersJson
+                                filters: standardFiltersJson
                             }
 
                             const response = await analytics.timeseries(params)
@@ -660,6 +721,11 @@ export function useAnalyticsState() {
                             })
                         }
                     }
+
+                    console.log('=== CHART DATA ASSIGNMENT ===')
+                    console.log('mode: timeseries, subsetMode:', useSubsetMode)
+                    console.log('allDatasets.length:', allDatasets.length)
+                    console.log('numValues:', useSubsetMode ? sectionSelections.length : activeValues.value.length)
 
                     chartData.value = {
                         mode: 'timeseries',
