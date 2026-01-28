@@ -741,19 +741,21 @@ export function useAnalyticsState() {
                         numValues: useSubsetMode ? sectionSelections.length : activeValues.value.length
                     }
 
-                    // For subset mode, only count the base selection (first subset) to avoid double-counting
-                    // Subsets are nested within the base, so we only show the base total
+                    // For subset mode, show the most specific (last) subset's total
+                    // This is the result of all the drilling down
                     summaryData.value = {
                         total: 0,
                         periods: periods.value.map((period, i) => {
                             const periodDatasets = allDatasets.filter(ds => ds.periodIndex === i)
 
-                            // In subset mode, only use the first (base) dataset's total
+                            // In subset mode, use the last (most specific) dataset's total
                             // In standard mode, sum all datasets
                             let periodTotal
                             if (useSubsetMode) {
-                                const baseDataset = periodDatasets.find(ds => ds.valueIndex === 0)
-                                periodTotal = baseDataset?.total || 0
+                                // Find the dataset with the highest valueIndex (most specific subset)
+                                const mostSpecificDataset = periodDatasets.reduce((most, ds) =>
+                                    (ds.valueIndex > (most?.valueIndex ?? -1)) ? ds : most, null)
+                                periodTotal = mostSpecificDataset?.total || 0
                             } else {
                                 periodTotal = periodDatasets.reduce((sum, ds) =>
                                     sum + (ds.total || ds.data.reduce((a, b) => a + b, 0)), 0)
