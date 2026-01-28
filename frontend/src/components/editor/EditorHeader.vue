@@ -121,6 +121,23 @@ function onReset() {
     gap: 8px;
 }
 
+/* Veröffentlichen button - primary yellow style */
+.header-actions :deep(.p-button:not(.p-button-outlined):not(.p-button-secondary):not(.p-button-danger)) {
+    background: var(--color-primary) !important;
+    border-color: transparent !important;
+    color: var(--color-primary-text) !important;
+}
+
+.header-actions :deep(.p-button:not(.p-button-outlined):not(.p-button-secondary):not(.p-button-danger):hover) {
+    background: var(--color-primary-hover) !important;
+    border-color: transparent !important;
+}
+
+.header-actions :deep(.p-button:not(.p-button-outlined):not(.p-button-secondary):not(.p-button-danger):disabled) {
+    background: #e0e0e0 !important;
+    color: #999 !important;
+}
+
 @media (max-width: 768px) {
     .header-controls {
         flex-direction: column;
