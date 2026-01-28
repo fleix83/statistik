@@ -96,9 +96,14 @@ $sql = "
 ";
 
 $queryParams = array_merge([$dateFormat], $filterParams, [$startDate, $endDate]);
-$stmt = $db->prepare($sql);
-$stmt->execute($queryParams);
-$results = $stmt->fetchAll();
+
+try {
+    $stmt = $db->prepare($sql);
+    $stmt->execute($queryParams);
+    $results = $stmt->fetchAll();
+} catch (PDOException $e) {
+    errorResponse('Query failed: ' . $e->getMessage() . ' | SQL: ' . $sql . ' | Params: ' . json_encode($queryParams), 500);
+}
 
 // Map results to labels
 $dataByPeriod = [];
@@ -116,9 +121,14 @@ $totalFilterParams = [];
 $totalFilterJoins = buildFilterJoins($parsedFilters, $totalFilterParams);
 $totalSql = "SELECT COUNT(DISTINCT se.id) FROM stats_entries se {$totalFilterJoins} WHERE DATE(se.created_at) >= ? AND DATE(se.created_at) <= ?";
 $totalParams = array_merge($totalFilterParams, [$startDate, $endDate]);
-$stmt = $db->prepare($totalSql);
-$stmt->execute($totalParams);
-$total = intval($stmt->fetchColumn());
+
+try {
+    $stmt = $db->prepare($totalSql);
+    $stmt->execute($totalParams);
+    $total = intval($stmt->fetchColumn());
+} catch (PDOException $e) {
+    errorResponse('Total query failed: ' . $e->getMessage(), 500);
+}
 
 jsonResponse([
     'granularity' => $granularity,
