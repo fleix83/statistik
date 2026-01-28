@@ -38,6 +38,10 @@ const selectedParams = ref({
 // First group = base (visualized), subsequent groups = filters (AND logic)
 const selectionHierarchy = ref([])
 
+// Ordered selections for subset drilling - tracks the order in which values were selected
+// Each entry: { section: string, value: string }
+const orderedSelections = ref([])
+
 const chartType = ref('line') // 'line' | 'bar' | 'pie' - default to line
 const activeSection = ref('thema') // Which section to visualize
 const loading = ref(false)
@@ -167,6 +171,9 @@ export function useAnalyticsState() {
             // Adding a value
             current.push(value)
 
+            // Track in ordered selections for subset drilling
+            orderedSelections.value.push({ section, value })
+
             // Track in hierarchy
             const hierarchyEntry = selectionHierarchy.value.find(h => h.group === effectiveGroup)
             if (hierarchyEntry) {
@@ -190,6 +197,14 @@ export function useAnalyticsState() {
         } else {
             // Removing a value
             current.splice(index, 1)
+
+            // Remove from ordered selections
+            const orderedIndex = orderedSelections.value.findIndex(
+                s => s.section === section && s.value === value
+            )
+            if (orderedIndex !== -1) {
+                orderedSelections.value.splice(orderedIndex, 1)
+            }
 
             // Remove from hierarchy
             const hierarchyEntry = selectionHierarchy.value.find(h => h.group === effectiveGroup)
@@ -217,6 +232,9 @@ export function useAnalyticsState() {
     function clearSection(section) {
         selectedParams.value[section] = []
 
+        // Clear from ordered selections
+        orderedSelections.value = orderedSelections.value.filter(s => s.section !== section)
+
         // Clear from hierarchy too
         selectionHierarchy.value.forEach(h => {
             if (h.selections[section]) {
@@ -238,6 +256,8 @@ export function useAnalyticsState() {
         }
         // Clear hierarchy completely
         selectionHierarchy.value = []
+        // Clear ordered selections
+        orderedSelections.value = []
 
         debouncedFetch()
     }
@@ -477,86 +497,179 @@ export function useAnalyticsState() {
                         }))
                     }
                 } else {
-                    // Show selected values over time - fetch for ALL periods
+                    // Show selected values over time
                     const allDatasets = []
                     let displayLabels = []
                     let rawLabels = []
                     let granularityUsed = 'month'
 
-                    // Fetch timeseries for each period
-                    for (let periodIndex = 0; periodIndex < periods.value.length; periodIndex++) {
-                        const period = periods.value[periodIndex]
-                        const params = {
-                            section: activeSection.value,
-                            values: activeValues.value.join(','),
-                            start_date: formatDateForApi(period.start),
-                            end_date: formatDateForApi(period.end),
-                            granularity: 'auto',
-                            filters: filtersJson
-                        }
+                    // Get ordered selections for the active section (for subset drilling)
+                    const sectionSelections = orderedSelections.value.filter(
+                        s => s.section === activeSection.value
+                    )
 
-                        const response = await analytics.timeseries(params)
-                        granularityUsed = response.data.granularity
+                    // Check if we should use subset drilling mode:
+                    // Multiple values selected from the same section
+                    const useSubsetMode = sectionSelections.length > 1
 
-                        // Use labels from first period (they should align for comparison)
-                        if (periodIndex === 0) {
-                            // Create rawLabels for tooltip display
-                            rawLabels = response.data.labels.map(l => {
-                                if (granularityUsed === 'day') {
-                                    const date = new Date(l)
-                                    return format(date, 'd. MMMM yyyy', { locale: de })
-                                } else if (granularityUsed === 'week') {
-                                    const [year, week] = l.split('-W')
-                                    const jan4 = new Date(parseInt(year), 0, 4)
-                                    const weekStart = new Date(jan4)
-                                    weekStart.setDate(jan4.getDate() - jan4.getDay() + 1 + (parseInt(week) - 1) * 7)
-                                    return format(weekStart, 'd. MMMM yyyy', { locale: de })
-                                } else {
-                                    const [year, month] = l.split('-')
-                                    const date = new Date(parseInt(year), parseInt(month) - 1, 1)
-                                    return format(date, 'MMMM yyyy', { locale: de })
+                    if (useSubsetMode) {
+                        // SUBSET DRILLING MODE: Show cumulative subset lines
+                        // Each line shows entries matching all values up to that point
+
+                        for (let periodIndex = 0; periodIndex < periods.value.length; periodIndex++) {
+                            const period = periods.value[periodIndex]
+
+                            // Create a line for each cumulative subset
+                            for (let subsetIndex = 0; subsetIndex < sectionSelections.length; subsetIndex++) {
+                                // Build cumulative filter: all values from 0 to subsetIndex
+                                const cumulativeValues = sectionSelections
+                                    .slice(0, subsetIndex + 1)
+                                    .map(s => s.value)
+
+                                // Use intersection filter (AND logic within section)
+                                const intersectionFilter = {
+                                    intersection: {
+                                        [activeSection.value]: cumulativeValues
+                                    }
                                 }
-                            })
 
-                            // Format display labels
-                            displayLabels = response.data.labels.map(l => {
-                                if (granularityUsed === 'day') {
-                                    const parts = l.split('-')
-                                    return `${parts[2]}.${parts[1]}.`
-                                } else if (granularityUsed === 'week') {
-                                    return l.replace(/^\d{4}-W/, 'KW')
-                                } else {
-                                    const monthNames = ['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez']
-                                    const parts = l.split('-')
-                                    return monthNames[parseInt(parts[1]) - 1] || l
+                                const params = {
+                                    start_date: formatDateForApi(period.start),
+                                    end_date: formatDateForApi(period.end),
+                                    granularity: 'auto',
+                                    filters: JSON.stringify(intersectionFilter)
                                 }
+
+                                const response = await analytics.totals(params)
+                                granularityUsed = response.data.granularity
+
+                                // Format labels (only for first dataset)
+                                if (allDatasets.length === 0) {
+                                    rawLabels = response.data.labels.map(l => {
+                                        if (granularityUsed === 'day') {
+                                            const date = new Date(l)
+                                            return format(date, 'd. MMMM yyyy', { locale: de })
+                                        } else if (granularityUsed === 'week') {
+                                            const [year, week] = l.split('-W')
+                                            const jan4 = new Date(parseInt(year), 0, 4)
+                                            const weekStart = new Date(jan4)
+                                            weekStart.setDate(jan4.getDate() - jan4.getDay() + 1 + (parseInt(week) - 1) * 7)
+                                            return format(weekStart, 'd. MMMM yyyy', { locale: de })
+                                        } else {
+                                            const [year, month] = l.split('-')
+                                            const date = new Date(parseInt(year), parseInt(month) - 1, 1)
+                                            return format(date, 'MMMM yyyy', { locale: de })
+                                        }
+                                    })
+
+                                    displayLabels = response.data.labels.map(l => {
+                                        if (granularityUsed === 'day') {
+                                            const parts = l.split('-')
+                                            return `${parts[2]}.${parts[1]}.`
+                                        } else if (granularityUsed === 'week') {
+                                            return l.replace(/^\d{4}-W/, 'KW')
+                                        } else {
+                                            const monthNames = ['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez']
+                                            const parts = l.split('-')
+                                            return monthNames[parseInt(parts[1]) - 1] || l
+                                        }
+                                    })
+                                }
+
+                                // Build label for this subset line
+                                const subsetLabel = cumulativeValues.join(' + ')
+                                const fullLabel = periods.value.length > 1
+                                    ? `${subsetLabel} (${period.label})`
+                                    : subsetLabel
+
+                                allDatasets.push({
+                                    label: fullLabel,
+                                    data: response.data.data,
+                                    valueLabel: subsetLabel,
+                                    valueIndex: subsetIndex,  // Index determines color
+                                    periodIndex: periodIndex,
+                                    periodLabel: period.label,
+                                    total: response.data.total,
+                                    isComparison: periodIndex > 0,
+                                    isSubset: subsetIndex > 0  // Mark as subset for styling
+                                })
+                            }
+                        }
+                    } else {
+                        // STANDARD MODE: Show each value as a separate line
+                        for (let periodIndex = 0; periodIndex < periods.value.length; periodIndex++) {
+                            const period = periods.value[periodIndex]
+                            const params = {
+                                section: activeSection.value,
+                                values: activeValues.value.join(','),
+                                start_date: formatDateForApi(period.start),
+                                end_date: formatDateForApi(period.end),
+                                granularity: 'auto',
+                                filters: filtersJson
+                            }
+
+                            const response = await analytics.timeseries(params)
+                            granularityUsed = response.data.granularity
+
+                            // Use labels from first period
+                            if (periodIndex === 0) {
+                                rawLabels = response.data.labels.map(l => {
+                                    if (granularityUsed === 'day') {
+                                        const date = new Date(l)
+                                        return format(date, 'd. MMMM yyyy', { locale: de })
+                                    } else if (granularityUsed === 'week') {
+                                        const [year, week] = l.split('-W')
+                                        const jan4 = new Date(parseInt(year), 0, 4)
+                                        const weekStart = new Date(jan4)
+                                        weekStart.setDate(jan4.getDate() - jan4.getDay() + 1 + (parseInt(week) - 1) * 7)
+                                        return format(weekStart, 'd. MMMM yyyy', { locale: de })
+                                    } else {
+                                        const [year, month] = l.split('-')
+                                        const date = new Date(parseInt(year), parseInt(month) - 1, 1)
+                                        return format(date, 'MMMM yyyy', { locale: de })
+                                    }
+                                })
+
+                                displayLabels = response.data.labels.map(l => {
+                                    if (granularityUsed === 'day') {
+                                        const parts = l.split('-')
+                                        return `${parts[2]}.${parts[1]}.`
+                                    } else if (granularityUsed === 'week') {
+                                        return l.replace(/^\d{4}-W/, 'KW')
+                                    } else {
+                                        const monthNames = ['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez']
+                                        const parts = l.split('-')
+                                        return monthNames[parseInt(parts[1]) - 1] || l
+                                    }
+                                })
+                            }
+
+                            // Add datasets with period info
+                            response.data.datasets.forEach((ds, valueIndex) => {
+                                allDatasets.push({
+                                    label: periods.value.length > 1
+                                        ? `${ds.label} (${period.label})`
+                                        : ds.label,
+                                    data: ds.data,
+                                    valueLabel: ds.label,
+                                    valueIndex: valueIndex,
+                                    periodIndex: periodIndex,
+                                    periodLabel: period.label,
+                                    isComparison: periodIndex > 0
+                                })
                             })
                         }
-
-                        // Add datasets with period info
-                        response.data.datasets.forEach((ds, valueIndex) => {
-                            allDatasets.push({
-                                label: periods.value.length > 1
-                                    ? `${ds.label} (${period.label})`
-                                    : ds.label,
-                                data: ds.data,
-                                valueLabel: ds.label,  // Original value name
-                                valueIndex: valueIndex,  // Index of the value (for color)
-                                periodIndex: periodIndex,  // Index of the period (for shade)
-                                periodLabel: period.label,
-                                isComparison: periodIndex > 0
-                            })
-                        })
                     }
 
                     chartData.value = {
                         mode: 'timeseries',
+                        subsetMode: useSubsetMode,
                         granularity: granularityUsed,
                         labels: displayLabels,
                         rawLabels: rawLabels,
                         datasets: allDatasets,
                         numPeriods: periods.value.length,
-                        numValues: activeValues.value.length
+                        numValues: useSubsetMode ? sectionSelections.length : activeValues.value.length
                     }
 
                     summaryData.value = {
@@ -566,7 +679,7 @@ export function useAnalyticsState() {
                             return {
                                 label: period.label,
                                 total: periodDatasets.reduce((sum, ds) =>
-                                    sum + ds.data.reduce((a, b) => a + b, 0), 0),
+                                    sum + (ds.total || ds.data.reduce((a, b) => a + b, 0)), 0),
                                 isComparison: i > 0
                             }
                         })
@@ -795,6 +908,7 @@ export function useAnalyticsState() {
         periods,
         selectedParams,
         selectionHierarchy,
+        orderedSelections,
         chartType,
         activeSection,
         loading,

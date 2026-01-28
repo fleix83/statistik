@@ -10,7 +10,7 @@
  */
 
 /**
- * Parse filters from JSON string, handling both flat and hierarchy formats
+ * Parse filters from JSON string, handling flat, hierarchy, and intersection formats
  */
 function parseFilters($filtersJson) {
     $filters = json_decode($filtersJson, true) ?: [];
@@ -20,6 +20,14 @@ function parseFilters($filtersJson) {
         return [
             'type' => 'hierarchy',
             'data' => $filters['hierarchy']
+        ];
+    }
+
+    // Check if this is an intersection format (AND within section)
+    if (isset($filters['intersection'])) {
+        return [
+            'type' => 'intersection',
+            'data' => $filters['intersection']
         ];
     }
 
@@ -114,12 +122,48 @@ function buildHierarchyFilterJoins($hierarchy, &$params, $startIndex = 0) {
 }
 
 /**
+ * Build filter JOINs for intersection filters (AND within same section)
+ * Used for subset drilling where multiple values must ALL be present
+ *
+ * Intersection format:
+ * { section: [value1, value2, value3] }
+ *
+ * This requires ALL values to be present (value1 AND value2 AND value3)
+ *
+ * @param int $startIndex Starting index for alias naming
+ */
+function buildIntersectionFilterJoins($intersection, &$params, $startIndex = 0) {
+    $joins = '';
+    $i = $startIndex;
+
+    foreach ($intersection as $section => $values) {
+        if (empty($values)) continue;
+
+        // Each value gets its own JOIN - entry must have ALL values
+        foreach ($values as $value) {
+            $alias = "int{$i}";
+            $joins .= " JOIN stats_entry_values {$alias} ON se.id = {$alias}.entry_id
+                        AND {$alias}.section = ? AND {$alias}.value_text = ?";
+            $params[] = $section;
+            $params[] = $value;
+            $i++;
+        }
+    }
+
+    return $joins;
+}
+
+/**
  * Build filter JOINs based on parsed filter structure
  * @param int $startIndex Starting index for alias naming (to avoid conflicts)
  */
 function buildFilterJoins($parsedFilters, &$params, $startIndex = 0) {
     if ($parsedFilters['type'] === 'hierarchy') {
         return buildHierarchyFilterJoins($parsedFilters['data'], $params, $startIndex);
+    }
+
+    if ($parsedFilters['type'] === 'intersection') {
+        return buildIntersectionFilterJoins($parsedFilters['data'], $params, $startIndex);
     }
 
     return buildFlatFilterJoins($parsedFilters['data'], $params, $startIndex);
