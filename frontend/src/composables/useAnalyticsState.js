@@ -558,11 +558,14 @@ export function useAnalyticsState() {
                     console.log('useSubsetMode:', useSubsetMode)
 
                     if (useSubsetMode) {
-                        // SUBSET DRILLING MODE: Show base + parallel subsets
-                        // Group selections by param_group:
-                        // - First group = base (shown as first line)
-                        // - Subsequent groups = parallel subsets (each value is base AND value)
-                        // - Values in the SAME group are parallel to each other (not nested)
+                        // SUBSET DRILLING MODE: Show base + subsets
+                        // Behavior depends on param_group:
+                        // - ADDITIVE groups: values are parallel subsets, totals sum
+                        // - SUBTRACTIVE groups: values are nested filters, total is intersection
+
+                        // Define which param_groups are additive (parallel) vs subtractive (nested)
+                        const additiveGroups = new Set(['gender', 'age', 'affected'])
+                        // Subtractive: contact, background, duration (and anything not in additiveGroups)
 
                         // Group selections by param_group
                         const selectionsByGroup = {}
@@ -579,41 +582,71 @@ export function useAnalyticsState() {
                         console.log('selectionsByGroup:', JSON.stringify(selectionsByGroup))
                         console.log('groupOrder:', JSON.stringify(groupOrder))
 
-                        // First group = base values (OR'd together)
-                        const baseGroup = groupOrder[0]
-                        const baseValues = selectionsByGroup[baseGroup] || []
+                        // Separate groups into additive and subtractive
+                        const additiveGroupsInSelection = groupOrder.filter(g => additiveGroups.has(g))
+                        const subtractiveGroupsInSelection = groupOrder.filter(g => !additiveGroups.has(g))
 
-                        // Remaining groups = subset values (each creates a parallel subset line)
-                        const subsetGroups = groupOrder.slice(1)
-                        const subsetValues = subsetGroups.flatMap(g => selectionsByGroup[g])
+                        console.log('additiveGroupsInSelection:', JSON.stringify(additiveGroupsInSelection))
+                        console.log('subtractiveGroupsInSelection:', JSON.stringify(subtractiveGroupsInSelection))
 
-                        console.log('baseValues:', JSON.stringify(baseValues))
-                        console.log('subsetValues:', JSON.stringify(subsetValues))
+                        // Build base filter from subtractive groups (AND logic - these narrow down)
+                        const baseFilterValues = subtractiveGroupsInSelection.flatMap(g => selectionsByGroup[g])
+
+                        // Additive groups create parallel lines (each value shown separately)
+                        const additiveValues = additiveGroupsInSelection.flatMap(g =>
+                            selectionsByGroup[g].map(v => ({ value: v, group: g }))
+                        )
+
+                        console.log('baseFilterValues (subtractive):', JSON.stringify(baseFilterValues))
+                        console.log('additiveValues:', JSON.stringify(additiveValues))
 
                         for (let periodIndex = 0; periodIndex < periods.value.length; periodIndex++) {
                             const period = periods.value[periodIndex]
 
-                            // Line 0: Base selection (all base values OR'd)
-                            // Lines 1+: Each subset value creates (base AND subset_value)
-                            const linesToCreate = subsetValues.length > 0
-                                ? [{ type: 'base', values: baseValues }, ...subsetValues.map(v => ({ type: 'subset', value: v }))]
-                                : sectionSelections.map((s, i) => i === 0
-                                    ? { type: 'base', values: [s.value] }
-                                    : { type: 'subset', value: s.value, baseValues: sectionSelections.slice(0, i).map(x => x.value) })
+                            // Build lines to create based on additive/subtractive logic:
+                            // - Subtractive values form the base filter (AND'd together)
+                            // - Each additive value creates a separate line (base AND additive_value)
+                            // - If no additive values, show one line with just base
+                            // - If no subtractive values, show parallel lines for additive values
+
+                            let linesToCreate = []
+
+                            if (additiveValues.length === 0) {
+                                // Only subtractive values: one line with all values AND'd
+                                linesToCreate = [{
+                                    type: 'base',
+                                    filterValues: baseFilterValues,
+                                    displayValue: baseFilterValues.join(' ∩ ')
+                                }]
+                            } else if (baseFilterValues.length === 0) {
+                                // Only additive values: parallel lines for each
+                                linesToCreate = additiveValues.map((av, i) => ({
+                                    type: i === 0 ? 'base' : 'subset',
+                                    filterValues: [av.value],
+                                    displayValue: av.value
+                                }))
+                            } else {
+                                // Both: base line + subset lines for each additive value
+                                linesToCreate = [
+                                    // Base line (subtractive values only)
+                                    {
+                                        type: 'base',
+                                        filterValues: baseFilterValues,
+                                        displayValue: baseFilterValues.join(' ∩ ')
+                                    },
+                                    // Subset lines (base AND each additive value)
+                                    ...additiveValues.map(av => ({
+                                        type: 'subset',
+                                        filterValues: [...baseFilterValues, av.value],
+                                        displayValue: av.value
+                                    }))
+                                ]
+                            }
 
                             for (let lineIndex = 0; lineIndex < linesToCreate.length; lineIndex++) {
                                 const lineConfig = linesToCreate[lineIndex]
-                                let filterValues, displayValue
-
-                                if (lineConfig.type === 'base') {
-                                    // Base line: just the base values (OR'd)
-                                    filterValues = lineConfig.values
-                                    displayValue = filterValues.join(' / ')
-                                } else {
-                                    // Subset line: base AND this subset value
-                                    filterValues = [...baseValues, lineConfig.value]
-                                    displayValue = lineConfig.value
-                                }
+                                const filterValues = lineConfig.filterValues
+                                const displayValue = lineConfig.displayValue
 
                                 // Use intersection filter (AND logic)
                                 const intersectionFilter = {
@@ -674,6 +707,11 @@ export function useAnalyticsState() {
 
                                 console.log(`Dataset ${allDatasets.length}: ${fullLabel}, total=${response.data.total}, lineIndex=${lineIndex}`)
 
+                                // Track if this is an additive line (should be summed in total)
+                                // Additive if: we have additive values AND this line includes one
+                                const isAdditiveLine = additiveValues.length > 0 &&
+                                    (baseFilterValues.length === 0 || lineConfig.type === 'subset')
+
                                 allDatasets.push({
                                     label: fullLabel,
                                     data: response.data.data,
@@ -685,7 +723,8 @@ export function useAnalyticsState() {
                                     total: response.data.total,
                                     isComparison: periodIndex > 0,
                                     isBase: lineConfig.type === 'base',
-                                    isSubset: lineConfig.type === 'subset'
+                                    isSubset: lineConfig.type === 'subset',
+                                    isAdditive: isAdditiveLine  // Should be included in sum
                                 })
                             }
                         }
@@ -783,8 +822,9 @@ export function useAnalyticsState() {
                         numValues: useSubsetMode ? sectionSelections.length : activeValues.value.length
                     }
 
-                    // For subset mode, sum all subset totals (parallel subsets add up)
-                    // The base is not included since subsets partition the base
+                    // Calculate totals based on additive/subtractive logic:
+                    // - Additive datasets: sum their totals
+                    // - Subtractive only: use the base (intersection) total
                     summaryData.value = {
                         total: 0,
                         periods: periods.value.map((period, i) => {
@@ -792,12 +832,13 @@ export function useAnalyticsState() {
 
                             let periodTotal
                             if (useSubsetMode) {
-                                // Sum only the subset datasets (not the base)
-                                const subsetDatasets = periodDatasets.filter(ds => ds.isSubset)
-                                if (subsetDatasets.length > 0) {
-                                    periodTotal = subsetDatasets.reduce((sum, ds) => sum + (ds.total || 0), 0)
+                                // Check if we have additive datasets
+                                const additiveDatasets = periodDatasets.filter(ds => ds.isAdditive)
+                                if (additiveDatasets.length > 0) {
+                                    // Sum all additive datasets
+                                    periodTotal = additiveDatasets.reduce((sum, ds) => sum + (ds.total || 0), 0)
                                 } else {
-                                    // If no subsets (only base), use the base total
+                                    // Only subtractive: use the base (intersection) total
                                     const baseDataset = periodDatasets.find(ds => ds.isBase)
                                     periodTotal = baseDataset?.total || 0
                                 }
