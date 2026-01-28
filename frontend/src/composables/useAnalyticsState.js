@@ -558,16 +558,18 @@ export function useAnalyticsState() {
                     console.log('useSubsetMode:', useSubsetMode)
 
                     if (useSubsetMode) {
-                        // SUBSET DRILLING MODE: Show base + subsets
-                        // Behavior depends on param_group:
-                        // - ADDITIVE groups: values are parallel subsets, totals sum
-                        // - SUBTRACTIVE groups: values are nested filters, total is intersection
+                        // SUBSET DRILLING MODE:
+                        // - First group = BASE (highest count)
+                        // - Subsequent groups = SUBTRACT from base (AND logic)
+                        // - Within same group = PARALLEL (values add together)
+                        //
+                        // Example: Mann + unter55 + über55
+                        // - Mann (gender) = base
+                        // - unter55, über55 (age) = subtract from base, but parallel to each other
+                        // - Lines: Mann, Mann∩unter55, Mann∩über55
+                        // - Total: (Mann∩unter55) + (Mann∩über55)
 
-                        // Define which param_groups are additive (parallel) vs subtractive (nested)
-                        const additiveGroups = new Set(['gender', 'age', 'affected'])
-                        // Subtractive: contact, background, duration (and anything not in additiveGroups)
-
-                        // Group selections by param_group
+                        // Group selections by param_group in order of first appearance
                         const selectionsByGroup = {}
                         const groupOrder = []
                         for (const sel of sectionSelections) {
@@ -582,66 +584,71 @@ export function useAnalyticsState() {
                         console.log('selectionsByGroup:', JSON.stringify(selectionsByGroup))
                         console.log('groupOrder:', JSON.stringify(groupOrder))
 
-                        // Separate groups into additive and subtractive
-                        const additiveGroupsInSelection = groupOrder.filter(g => additiveGroups.has(g))
-                        const subtractiveGroupsInSelection = groupOrder.filter(g => !additiveGroups.has(g))
+                        // First group = base, subsequent groups = filters that subtract
+                        // Within each group, values are parallel (shown separately, totals sum)
+                        const baseGroup = groupOrder[0]
+                        const baseValues = selectionsByGroup[baseGroup]
+                        const filterGroups = groupOrder.slice(1)
 
-                        console.log('additiveGroupsInSelection:', JSON.stringify(additiveGroupsInSelection))
-                        console.log('subtractiveGroupsInSelection:', JSON.stringify(subtractiveGroupsInSelection))
-
-                        // Build base filter from subtractive groups (AND logic - these narrow down)
-                        const baseFilterValues = subtractiveGroupsInSelection.flatMap(g => selectionsByGroup[g])
-
-                        // Additive groups create parallel lines (each value shown separately)
-                        const additiveValues = additiveGroupsInSelection.flatMap(g =>
-                            selectionsByGroup[g].map(v => ({ value: v, group: g }))
-                        )
-
-                        console.log('baseFilterValues (subtractive):', JSON.stringify(baseFilterValues))
-                        console.log('additiveValues:', JSON.stringify(additiveValues))
+                        console.log('baseGroup:', baseGroup, 'baseValues:', JSON.stringify(baseValues))
+                        console.log('filterGroups:', JSON.stringify(filterGroups))
 
                         for (let periodIndex = 0; periodIndex < periods.value.length; periodIndex++) {
                             const period = periods.value[periodIndex]
 
-                            // Build lines to create based on additive/subtractive logic:
-                            // - Subtractive values form the base filter (AND'd together)
-                            // - Each additive value creates a separate line (base AND additive_value)
-                            // - If no additive values, show one line with just base
-                            // - If no subtractive values, show parallel lines for additive values
+                            // Build lines:
+                            // 1. Base line: first group's values (if multiple, they're parallel - show each)
+                            // 2. For subsequent groups: each value is a filter that subtracts from base
+                            //    Values within the same group are parallel (shown separately)
+                            //
+                            // The LAST group contains the "leaf" values - their totals sum up
+                            // All previous groups form the "filter prefix"
 
                             let linesToCreate = []
 
-                            if (additiveValues.length === 0) {
-                                // Only subtractive values: one line with all values AND'd
-                                linesToCreate = [{
-                                    type: 'base',
-                                    filterValues: baseFilterValues,
-                                    displayValue: baseFilterValues.join(' ∩ ')
-                                }]
-                            } else if (baseFilterValues.length === 0) {
-                                // Only additive values: parallel lines for each
-                                linesToCreate = additiveValues.map((av, i) => ({
-                                    type: i === 0 ? 'base' : 'subset',
-                                    filterValues: [av.value],
-                                    displayValue: av.value
+                            if (filterGroups.length === 0) {
+                                // Only one group: show parallel lines for each base value
+                                linesToCreate = baseValues.map((v, i) => ({
+                                    type: i === 0 ? 'base' : 'parallel',
+                                    filterValues: [v],
+                                    displayValue: v,
+                                    isLeaf: true  // These are the leaf values to sum
                                 }))
                             } else {
-                                // Both: base line + subset lines for each additive value
-                                linesToCreate = [
-                                    // Base line (subtractive values only)
-                                    {
-                                        type: 'base',
-                                        filterValues: baseFilterValues,
-                                        displayValue: baseFilterValues.join(' ∩ ')
-                                    },
-                                    // Subset lines (base AND each additive value)
-                                    ...additiveValues.map(av => ({
+                                // Multiple groups:
+                                // - First show base (first group values)
+                                // - Then for each value in the LAST group, show (prefix AND value)
+                                // - Prefix = all values from groups between base and last, AND'd together
+
+                                // Build prefix from intermediate groups (between first and last)
+                                const intermediateGroups = filterGroups.slice(0, -1)
+                                const prefixValues = intermediateGroups.flatMap(g => selectionsByGroup[g])
+
+                                // Last group values are the parallel "leaves"
+                                const lastGroup = filterGroups[filterGroups.length - 1]
+                                const lastGroupValues = selectionsByGroup[lastGroup]
+
+                                // Base line (first group, potentially with prefix)
+                                const baseFilterValues = [...baseValues, ...prefixValues]
+                                linesToCreate.push({
+                                    type: 'base',
+                                    filterValues: baseFilterValues,
+                                    displayValue: baseValues.join(' / '),
+                                    isLeaf: false
+                                })
+
+                                // Leaf lines (base + prefix + each last group value)
+                                for (const leafValue of lastGroupValues) {
+                                    linesToCreate.push({
                                         type: 'subset',
-                                        filterValues: [...baseFilterValues, av.value],
-                                        displayValue: av.value
-                                    }))
-                                ]
+                                        filterValues: [...baseFilterValues, leafValue],
+                                        displayValue: leafValue,
+                                        isLeaf: true  // These sum up for total
+                                    })
+                                }
                             }
+
+                            console.log('linesToCreate:', JSON.stringify(linesToCreate.map(l => ({ type: l.type, displayValue: l.displayValue, isLeaf: l.isLeaf }))))
 
                             for (let lineIndex = 0; lineIndex < linesToCreate.length; lineIndex++) {
                                 const lineConfig = linesToCreate[lineIndex]
@@ -707,24 +714,19 @@ export function useAnalyticsState() {
 
                                 console.log(`Dataset ${allDatasets.length}: ${fullLabel}, total=${response.data.total}, lineIndex=${lineIndex}`)
 
-                                // Track if this is an additive line (should be summed in total)
-                                // Additive if: we have additive values AND this line includes one
-                                const isAdditiveLine = additiveValues.length > 0 &&
-                                    (baseFilterValues.length === 0 || lineConfig.type === 'subset')
-
                                 allDatasets.push({
                                     label: fullLabel,
                                     data: response.data.data,
                                     valueLabel: displayValue,
-                                    filterValues: filterValues,  // Keep full filter list for reference
-                                    valueIndex: lineIndex,  // Index determines color
+                                    filterValues: filterValues,
+                                    valueIndex: lineIndex,
                                     periodIndex: periodIndex,
                                     periodLabel: period.label,
                                     total: response.data.total,
                                     isComparison: periodIndex > 0,
                                     isBase: lineConfig.type === 'base',
-                                    isSubset: lineConfig.type === 'subset',
-                                    isAdditive: isAdditiveLine  // Should be included in sum
+                                    isSubset: lineConfig.type === 'subset' || lineConfig.type === 'parallel',
+                                    isLeaf: lineConfig.isLeaf  // Leaf values sum up for total
                                 })
                             }
                         }
@@ -822,23 +824,22 @@ export function useAnalyticsState() {
                         numValues: useSubsetMode ? sectionSelections.length : activeValues.value.length
                     }
 
-                    // Calculate totals based on additive/subtractive logic:
-                    // - Additive datasets: sum their totals
-                    // - Subtractive only: use the base (intersection) total
-                    summaryData.value = {
-                        total: 0,
-                        periods: periods.value.map((period, i) => {
+                    // Calculate totals based on leaf/base logic:
+                    // - Leaf datasets (last group's parallel values): sum their totals
+                    // - If no leaf datasets, use the base total
+                    const periodSummaries = periods.value.map((period, i) => {
                             const periodDatasets = allDatasets.filter(ds => ds.periodIndex === i)
 
                             let periodTotal
                             if (useSubsetMode) {
-                                // Check if we have additive datasets
-                                const additiveDatasets = periodDatasets.filter(ds => ds.isAdditive)
-                                if (additiveDatasets.length > 0) {
-                                    // Sum all additive datasets
-                                    periodTotal = additiveDatasets.reduce((sum, ds) => sum + (ds.total || 0), 0)
+                                // Sum only leaf datasets (the most specific/drilled-down values)
+                                const leafDatasets = periodDatasets.filter(ds => ds.isLeaf)
+                                console.log(`Period ${i}: leafDatasets =`, leafDatasets.map(d => ({ label: d.label, total: d.total })))
+                                if (leafDatasets.length > 0) {
+                                    // Sum all leaf datasets
+                                    periodTotal = leafDatasets.reduce((sum, ds) => sum + (ds.total || 0), 0)
                                 } else {
-                                    // Only subtractive: use the base (intersection) total
+                                    // Fallback: use the base total
                                     const baseDataset = periodDatasets.find(ds => ds.isBase)
                                     periodTotal = baseDataset?.total || 0
                                 }
@@ -853,6 +854,12 @@ export function useAnalyticsState() {
                                 isComparison: i > 0
                             }
                         })
+
+                    // Use primary period's total (first period, not comparison)
+                    const primaryPeriodSummary = periodSummaries.find(p => !p.isComparison) || periodSummaries[0]
+                    summaryData.value = {
+                        total: primaryPeriodSummary?.total || 0,
+                        periods: periodSummaries
                     }
                 }
             }
