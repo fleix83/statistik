@@ -71,9 +71,9 @@ function toggle() {
     display: flex;
     align-items: center;
     width: 36px;
-    height: 18px;
+    height: 20px;
     background: #E5E5E5;
-    border-radius: 9px;
+    border-radius: 10px;
     padding: 0 2px;
     transition: background 0.2s ease;
 }
@@ -90,11 +90,11 @@ function toggle() {
 }
 
 .toggle-thumb svg {
-    width: 14px;
-    height: 14px;
+    width: 16px;
+    height: 16px;
 }
 
 .custom-toggle.is-active .toggle-thumb {
-    transform: translateX(16px);
+    transform: translateX(14px);
 }
 </style>

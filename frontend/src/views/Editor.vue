@@ -453,8 +453,7 @@ function confirmDeleteUser(user) {
                         Person: {{ personSectionOptions.length }} |
                         Thema: {{ themaOptions.length }} |
                         Zeitfenster: {{ zeitfensterOptions.length }} |
-                        Referenz: {{ referenzOptions.length }} |
-                        Loading: {{ loading }}
+                        Referenz: {{ referenzOptions.length }}
                     </div>
                 </div>
                 <div class="options-layout" v-if="!loading">
@@ -744,6 +743,35 @@ function confirmDeleteUser(user) {
 
 .users-toolbar {
     margin-bottom: 16px;
+}
+
+/* Primary button styling to match DataEntry */
+.users-toolbar :deep(.p-button) {
+    background: var(--color-primary) !important;
+    border-color: transparent !important;
+    color: var(--color-primary-text) !important;
+}
+
+.users-toolbar :deep(.p-button:hover) {
+    background: var(--color-primary-hover) !important;
+    border-color: transparent !important;
+}
+
+/* Dialog primary button styling */
+:deep(.p-dialog-footer .p-button:not(.p-button-secondary)) {
+    background: var(--color-primary) !important;
+    border-color: transparent !important;
+    color: var(--color-primary-text) !important;
+}
+
+:deep(.p-dialog-footer .p-button:not(.p-button-secondary):hover) {
+    background: var(--color-primary-hover) !important;
+    border-color: transparent !important;
+}
+
+/* Dialog secondary button - remove border */
+:deep(.p-dialog-footer .p-button-secondary) {
+    border-color: transparent !important;
 }
 
 .users-table-wrapper {
