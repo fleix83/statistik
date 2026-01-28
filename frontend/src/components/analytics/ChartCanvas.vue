@@ -927,6 +927,25 @@ const canShowStream = computed(() => {
 
 <template>
     <div class="chart-canvas">
+        <!-- Export menu - positioned at top edge -->
+        <div class="export-menu-top">
+            <button
+                class="export-btn"
+                @click="toggleExportMenu"
+                title="Daten exportieren"
+            >
+                <i class="pi pi-file-export"></i>
+                <span>Export</span>
+                <i class="pi pi-chevron-down chevron"></i>
+            </button>
+            <Menu
+                ref="exportMenu"
+                :model="exportMenuItems"
+                :popup="true"
+                class="export-dropdown"
+            />
+        </div>
+
         <Card class="chart-card">
             <template #content>
                 <!-- KPI Header -->
@@ -950,28 +969,9 @@ const canShowStream = computed(() => {
                         </div>
                     </div>
 
-                    <!-- Right: Export menu + Chart type selector -->
+                    <!-- Right: Chart type selector -->
                     <div class="header-right">
                         <div class="header-right-controls">
-                            <!-- Export menu -->
-                            <div class="export-menu-wrapper">
-                                <button
-                                    class="export-btn"
-                                    @click="toggleExportMenu"
-                                    title="Daten exportieren"
-                                >
-                                    <i class="pi pi-file-export"></i>
-                                    <span>Export</span>
-                                    <i class="pi pi-chevron-down chevron"></i>
-                                </button>
-                                <Menu
-                                    ref="exportMenu"
-                                    :model="exportMenuItems"
-                                    :popup="true"
-                                    class="export-dropdown"
-                                />
-                            </div>
-
                             <!-- Chart type selector -->
                             <div class="chart-type-wrapper">
                                 <SelectButton
@@ -1108,6 +1108,15 @@ const canShowStream = computed(() => {
     overflow-y: auto;
     display: flex;
     flex-direction: column;
+    position: relative;
+}
+
+/* Export menu at top edge */
+.export-menu-top {
+    position: absolute;
+    top: 0;
+    right: 1.5rem;
+    z-index: 10;
 }
 
 .chart-card {
