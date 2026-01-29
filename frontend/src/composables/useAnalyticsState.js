@@ -338,89 +338,195 @@ export function useAnalyticsState() {
 
             // Bar, Stacked, and Pie charts use aggregate data
             if (chartType.value === 'bar' || chartType.value === 'stacked' || chartType.value === 'pie') {
-                // Fetch aggregate data for all periods (for grouped bar comparison)
-                const periodDatasets = []
-                let allLabels = new Set()
+                // Check if stacked chart should use subset mode
+                // Get ordered selections for the active section
+                let sectionSelections = orderedSelections.value.filter(
+                    s => s.section === activeSection.value
+                )
 
-                for (const period of periods.value) {
-                    const params = {
+                // Fallback: rebuild from selectedParams if needed
+                const selectedValues = selectedParams.value[activeSection.value] || []
+                if (sectionSelections.length < selectedValues.length) {
+                    sectionSelections = selectedValues.map(value => ({
                         section: activeSection.value,
-                        start_date: formatDateForApi(period.start),
-                        end_date: formatDateForApi(period.end),
-                        filters: filtersJson
-                    }
-
-                    const response = await analytics.aggregate(params)
-
-                    // Filter to selected values if any
-                    let items = response.data.items
-                    if (activeValues.value.length > 0) {
-                        items = items.filter(item =>
-                            activeValues.value.includes(item.label)
-                        )
-                    }
-
-                    // Collect all labels
-                    items.forEach(item => allLabels.add(item.label))
-
-                    periodDatasets.push({
-                        label: period.label,
-                        items: items,
-                        total: response.data.total,
-                        isComparison: period.isComparison
-                    })
+                        value,
+                        group: activeSection.value
+                    }))
                 }
 
-                // Convert labels to array and sort
-                const labels = Array.from(allLabels)
+                // Check for subset mode: multiple values from different param_groups
+                const selectionsByGroup = {}
+                const groupOrder = []
+                for (const sel of sectionSelections) {
+                    const group = sel.group || sel.section
+                    if (!selectionsByGroup[group]) {
+                        selectionsByGroup[group] = []
+                        groupOrder.push(group)
+                    }
+                    selectionsByGroup[group].push(sel.value)
+                }
 
-                // Stacked bar chart mode - X-axis is periods, bars stacked by values
-                if (chartType.value === 'stacked') {
+                const useStackedSubsetMode = chartType.value === 'stacked' && groupOrder.length > 1
+
+                if (useStackedSubsetMode) {
+                    // STACKED SUBSET MODE: Only show leaf values (last group)
+                    // Base values are excluded - they represent the combined total
+
+                    const baseGroup = groupOrder[0]
+                    const baseValues = selectionsByGroup[baseGroup]
+                    const filterGroups = groupOrder.slice(1)
+
+                    // Build prefix from intermediate groups
+                    const intermediateGroups = filterGroups.slice(0, -1)
+                    const prefixValues = intermediateGroups.flatMap(g => selectionsByGroup[g])
+
+                    // Last group values are the leaves to display
+                    const lastGroup = filterGroups[filterGroups.length - 1]
+                    const leafValues = selectionsByGroup[lastGroup]
+
+                    // Base filter = base values + prefix values
+                    const baseFilterValues = [...baseValues, ...prefixValues]
+
+                    console.log('STACKED SUBSET MODE')
+                    console.log('baseValues:', baseValues)
+                    console.log('leafValues:', leafValues)
+                    console.log('baseFilterValues:', baseFilterValues)
+
+                    // Fetch data for each leaf value with intersection filter
+                    const stackedDatasets = []
+
+                    for (const leafValue of leafValues) {
+                        const leafData = []
+
+                        for (const period of periods.value) {
+                            // Use intersection filter: base + leaf value
+                            const intersectionFilter = {
+                                intersection: {
+                                    [activeSection.value]: [...baseFilterValues, leafValue]
+                                }
+                            }
+
+                            const params = {
+                                start_date: formatDateForApi(period.start),
+                                end_date: formatDateForApi(period.end),
+                                filters: JSON.stringify(intersectionFilter)
+                            }
+
+                            const response = await analytics.totals(params)
+                            leafData.push(response.data.total)
+                        }
+
+                        stackedDatasets.push({
+                            label: leafValue,
+                            data: leafData
+                        })
+                    }
+
+                    // Calculate total (sum of leaf values for primary period)
+                    const primaryPeriodTotal = stackedDatasets.reduce((sum, ds) => sum + (ds.data[0] || 0), 0)
+
                     chartData.value = {
                         mode: 'stacked',
-                        labels: periods.value.map(p => p.label),  // Period labels on X-axis
-                        datasets: labels.map(value => ({
-                            label: value,
-                            data: periods.value.map(p => {
-                                const periodData = periodDatasets.find(d => d.label === p.label)
-                                const item = periodData?.items.find(item => item.label === value)
-                                return item?.count ?? 0
-                            })
-                        })),
-                        total: periodDatasets[0].total
+                        subsetMode: true,
+                        labels: periods.value.map(p => p.label),
+                        datasets: stackedDatasets,
+                        total: primaryPeriodTotal,
+                        baseLabel: baseValues.join(' / ')
                     }
-                }
-                // For single period or pie chart, use simple mode
-                else if (periods.value.length === 1 || chartType.value === 'pie') {
-                    chartData.value = {
-                        mode: 'aggregate',
-                        items: periodDatasets[0].items,
-                        total: periodDatasets[0].total
+
+                    summaryData.value = {
+                        total: primaryPeriodTotal,
+                        periods: periods.value.map((p, i) => ({
+                            label: p.label,
+                            total: stackedDatasets.reduce((sum, ds) => sum + (ds.data[i] || 0), 0),
+                            isComparison: p.isComparison
+                        }))
                     }
                 } else {
-                    // Multiple periods - use grouped bar mode
-                    chartData.value = {
-                        mode: 'aggregate-compare',
-                        labels: labels,
-                        datasets: periodDatasets.map(ds => ({
-                            label: ds.label,
-                            data: labels.map(lbl => {
-                                const item = ds.items.find(i => i.label === lbl)
-                                return item ? item.count : 0
-                            }),
-                            isComparison: ds.isComparison
-                        })),
-                        total: periodDatasets[0].total
-                    }
-                }
+                    // Standard aggregate mode for bar/pie/stacked without subset drilling
+                    const periodDatasets = []
+                    let allLabels = new Set()
 
-                summaryData.value = {
-                    total: periodDatasets[0].total,
-                    periods: periodDatasets.map(ds => ({
-                        label: ds.label,
-                        total: ds.total,
-                        isComparison: ds.isComparison
-                    }))
+                    for (const period of periods.value) {
+                        const params = {
+                            section: activeSection.value,
+                            start_date: formatDateForApi(period.start),
+                            end_date: formatDateForApi(period.end),
+                            filters: filtersJson
+                        }
+
+                        const response = await analytics.aggregate(params)
+
+                        // Filter to selected values if any
+                        let items = response.data.items
+                        if (activeValues.value.length > 0) {
+                            items = items.filter(item =>
+                                activeValues.value.includes(item.label)
+                            )
+                        }
+
+                        // Collect all labels
+                        items.forEach(item => allLabels.add(item.label))
+
+                        periodDatasets.push({
+                            label: period.label,
+                            items: items,
+                            total: response.data.total,
+                            isComparison: period.isComparison
+                        })
+                    }
+
+                    // Convert labels to array and sort
+                    const labels = Array.from(allLabels)
+
+                    // Stacked bar chart mode - X-axis is periods, bars stacked by values
+                    if (chartType.value === 'stacked') {
+                        chartData.value = {
+                            mode: 'stacked',
+                            labels: periods.value.map(p => p.label),  // Period labels on X-axis
+                            datasets: labels.map(value => ({
+                                label: value,
+                                data: periods.value.map(p => {
+                                    const periodData = periodDatasets.find(d => d.label === p.label)
+                                    const item = periodData?.items.find(item => item.label === value)
+                                    return item?.count ?? 0
+                                })
+                            })),
+                            total: periodDatasets[0].total
+                        }
+                    }
+                    // For single period or pie chart, use simple mode
+                    else if (periods.value.length === 1 || chartType.value === 'pie') {
+                        chartData.value = {
+                            mode: 'aggregate',
+                            items: periodDatasets[0].items,
+                            total: periodDatasets[0].total
+                        }
+                    } else {
+                        // Multiple periods - use grouped bar mode
+                        chartData.value = {
+                            mode: 'aggregate-compare',
+                            labels: labels,
+                            datasets: periodDatasets.map(ds => ({
+                                label: ds.label,
+                                data: labels.map(lbl => {
+                                    const item = ds.items.find(i => i.label === lbl)
+                                    return item ? item.count : 0
+                                }),
+                                isComparison: ds.isComparison
+                            })),
+                            total: periodDatasets[0].total
+                        }
+                    }
+
+                    summaryData.value = {
+                        total: periodDatasets[0].total,
+                        periods: periodDatasets.map(ds => ({
+                            label: ds.label,
+                            total: ds.total,
+                            isComparison: ds.isComparison
+                        }))
+                    }
                 }
             } else if (chartType.value === 'line' || chartType.value === 'stream') {
                 // Line chart and Stream graph mode
