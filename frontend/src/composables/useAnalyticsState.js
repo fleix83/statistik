@@ -339,25 +339,46 @@ export function useAnalyticsState() {
             // Bar, Stacked, and Pie charts use aggregate data
             if (chartType.value === 'bar' || chartType.value === 'stacked' || chartType.value === 'pie') {
                 // Check if stacked chart should use subset mode
-                // Get ordered selections for the active section
-                let sectionSelections = orderedSelections.value.filter(
-                    s => s.section === activeSection.value
-                )
+                // For stacked charts: use ALL ordered selections (cross-section subset drilling)
+                // For bar/pie: use only active section selections
+                let allSelections = []
 
-                // Fallback: rebuild from selectedParams if needed
-                const selectedValues = selectedParams.value[activeSection.value] || []
-                if (sectionSelections.length < selectedValues.length) {
-                    sectionSelections = selectedValues.map(value => ({
-                        section: activeSection.value,
-                        value,
-                        group: activeSection.value
-                    }))
+                if (chartType.value === 'stacked') {
+                    // Stacked: use all selections across all sections
+                    allSelections = [...orderedSelections.value]
+
+                    // Fallback: rebuild from all selectedParams if orderedSelections is incomplete
+                    const totalSelectedCount = Object.values(selectedParams.value)
+                        .reduce((sum, vals) => sum + vals.length, 0)
+                    if (allSelections.length < totalSelectedCount) {
+                        allSelections = []
+                        for (const [section, values] of Object.entries(selectedParams.value)) {
+                            for (const value of values) {
+                                allSelections.push({ section, value, group: section })
+                            }
+                        }
+                    }
+                } else {
+                    // Bar/Pie: use only active section selections
+                    allSelections = orderedSelections.value.filter(
+                        s => s.section === activeSection.value
+                    )
+
+                    // Fallback: rebuild from selectedParams if needed
+                    const selectedValues = selectedParams.value[activeSection.value] || []
+                    if (allSelections.length < selectedValues.length) {
+                        allSelections = selectedValues.map(value => ({
+                            section: activeSection.value,
+                            value,
+                            group: activeSection.value
+                        }))
+                    }
                 }
 
                 // Check for subset mode: multiple values from different param_groups
                 const selectionsByGroup = {}
                 const groupOrder = []
-                for (const sel of sectionSelections) {
+                for (const sel of allSelections) {
                     const group = sel.group || sel.section
                     if (!selectionsByGroup[group]) {
                         selectionsByGroup[group] = []
@@ -373,38 +394,68 @@ export function useAnalyticsState() {
                     // Base values are excluded - they represent the combined total
 
                     const baseGroup = groupOrder[0]
-                    const baseValues = selectionsByGroup[baseGroup]
                     const filterGroups = groupOrder.slice(1)
 
-                    // Build prefix from intermediate groups
-                    const intermediateGroups = filterGroups.slice(0, -1)
-                    const prefixValues = intermediateGroups.flatMap(g => selectionsByGroup[g])
-
-                    // Last group values are the leaves to display
+                    // Last group contains the leaf values to display
                     const lastGroup = filterGroups[filterGroups.length - 1]
-                    const leafValues = selectionsByGroup[lastGroup]
 
-                    // Base filter = base values + prefix values
-                    const baseFilterValues = [...baseValues, ...prefixValues]
+                    // Build a map of group -> section for lookup
+                    // (we need to know which section each selection belongs to)
+                    const groupToSelections = {}
+                    for (const sel of allSelections) {
+                        const group = sel.group || sel.section
+                        if (!groupToSelections[group]) {
+                            groupToSelections[group] = []
+                        }
+                        groupToSelections[group].push({ section: sel.section, value: sel.value })
+                    }
+
+                    // Get base values and their section
+                    const baseSelections = groupToSelections[baseGroup] || []
+                    const baseValues = baseSelections.map(s => s.value)
+
+                    // Get intermediate (prefix) selections
+                    const intermediateGroups = filterGroups.slice(0, -1)
+                    const prefixSelections = intermediateGroups.flatMap(g => groupToSelections[g] || [])
+
+                    // Get leaf selections (last group)
+                    const leafSelections = groupToSelections[lastGroup] || []
+                    const leafValues = leafSelections.map(s => s.value)
 
                     console.log('STACKED SUBSET MODE')
-                    console.log('baseValues:', baseValues)
-                    console.log('leafValues:', leafValues)
-                    console.log('baseFilterValues:', baseFilterValues)
+                    console.log('baseGroup:', baseGroup, 'baseSelections:', baseSelections)
+                    console.log('prefixSelections:', prefixSelections)
+                    console.log('lastGroup:', lastGroup, 'leafSelections:', leafSelections)
 
                     // Fetch data for each leaf value with intersection filter
                     const stackedDatasets = []
 
-                    for (const leafValue of leafValues) {
+                    for (const leafSel of leafSelections) {
                         const leafData = []
 
                         for (const period of periods.value) {
-                            // Use intersection filter: base + leaf value
-                            const intersectionFilter = {
-                                intersection: {
-                                    [activeSection.value]: [...baseFilterValues, leafValue]
+                            // Build intersection filter grouped by section
+                            // Combine base + prefix + this leaf value
+                            const allFilterSelections = [
+                                ...baseSelections,
+                                ...prefixSelections,
+                                leafSel
+                            ]
+
+                            // Group by section for the intersection filter
+                            const intersectionBySection = {}
+                            for (const sel of allFilterSelections) {
+                                if (!intersectionBySection[sel.section]) {
+                                    intersectionBySection[sel.section] = []
                                 }
+                                intersectionBySection[sel.section].push(sel.value)
                             }
+
+                            const intersectionFilter = {
+                                intersection: intersectionBySection
+                            }
+
+                            console.log(`Fetching leaf ${leafSel.value}:`, JSON.stringify(intersectionFilter))
 
                             const params = {
                                 start_date: formatDateForApi(period.start),
@@ -417,7 +468,7 @@ export function useAnalyticsState() {
                         }
 
                         stackedDatasets.push({
-                            label: leafValue,
+                            label: leafSel.value,
                             data: leafData
                         })
                     }
