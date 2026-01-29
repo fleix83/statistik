@@ -1182,8 +1182,7 @@ const canShowStream = computed(() => {
 
 .period-main {
     display: flex;
-    align-items: baseline;
-    gap: 0.75rem;
+    align-items: flex-start;
 }
 
 .period-label {
@@ -1191,6 +1190,7 @@ const canShowStream = computed(() => {
     font-size: 0.875rem;
     color: var(--text-color);
     min-width: 120px;
+    margin-right: 2.75rem;
 }
 
 .period-count {
@@ -1198,6 +1198,7 @@ const canShowStream = computed(() => {
     font-weight: 700;
     color: #1e293b;
     line-height: 1;
+    margin-right: 0.75rem;
 }
 
 .period-count-label {
@@ -1205,6 +1206,7 @@ const canShowStream = computed(() => {
     color: var(--text-color-secondary);
     text-transform: uppercase;
     letter-spacing: 0.05em;
+    line-height: 1.5rem;
 }
 
 .period-dates {
