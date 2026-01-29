@@ -185,14 +185,18 @@ const chartTypes = [
 // Line chart fill toggle
 const lineFill = ref(true)
 
-// Format periods as date ranges
+// Format periods as date ranges with their counts
 const formattedPeriods = computed(() => {
-    return periods.value.map(p => {
+    return periods.value.map((p, index) => {
         const startDate = format(p.start, 'dd.MM.yyyy', { locale: de })
         const endDate = format(p.end, 'dd.MM.yyyy', { locale: de })
+        // Get the count for this period from summaryData
+        const periodSummary = summaryData.value.periods?.[index]
+        const count = periodSummary?.total ?? 0
         return {
             ...p,
-            dateRange: `${startDate} – ${endDate}`
+            dateRange: `${startDate} – ${endDate}`,
+            count: count
         }
     })
 })
@@ -950,7 +954,7 @@ const canShowStream = computed(() => {
             <template #content>
                 <!-- KPI Header -->
                 <div class="kpi-header">
-                    <!-- Left: Time periods + Total count -->
+                    <!-- Left: Time periods with their counts -->
                     <div class="header-left">
                         <div class="periods-group">
                             <div
@@ -959,13 +963,13 @@ const canShowStream = computed(() => {
                                 class="period-item"
                                 :class="{ 'comparison': period.isComparison }"
                             >
-                                <span class="period-label">{{ period.label }}</span>
+                                <div class="period-main">
+                                    <span class="period-label">{{ period.label }}</span>
+                                    <span class="period-count">{{ period.count.toLocaleString('de-CH') }}</span>
+                                    <span class="period-count-label">Anfragen</span>
+                                </div>
                                 <span class="period-dates">{{ period.dateRange }}</span>
                             </div>
-                        </div>
-                        <div class="total-group">
-                            <div class="total-count">{{ primaryTotal.toLocaleString('de-CH') }}</div>
-                            <div class="total-label">Anfragen in Selektion</div>
                         </div>
                     </div>
 
@@ -1169,42 +1173,44 @@ const canShowStream = computed(() => {
 .period-item {
     display: flex;
     flex-direction: column;
+    gap: 0.125rem;
 }
 
 .period-item.comparison {
     opacity: 0.6;
 }
 
+.period-main {
+    display: flex;
+    align-items: baseline;
+    gap: 0.75rem;
+}
+
 .period-label {
     font-weight: 600;
     font-size: 0.875rem;
     color: var(--text-color);
+    min-width: 120px;
 }
 
-.period-dates {
-    font-size: 0.8rem;
-    color: var(--text-color-secondary);
-}
-
-.total-group {
-    display: flex;
-    flex-direction: column;
-}
-
-.total-count {
-    font-size: 2rem;
+.period-count {
+    font-size: 1.5rem;
     font-weight: 700;
     color: #1e293b;
     line-height: 1;
 }
 
-.total-label {
+.period-count-label {
     font-size: 0.75rem;
     color: var(--text-color-secondary);
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    margin-top: 0.25rem;
-    line-height: 1.3;
+}
+
+.period-dates {
+    font-size: 0.8rem;
+    color: var(--text-color-secondary);
+    margin-left: 0;
 }
 
 .header-right {
