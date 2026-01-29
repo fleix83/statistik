@@ -160,22 +160,33 @@ export function useAnalyticsState() {
     }
 
     // Toggle a parameter value with group tracking for hierarchy
-    function toggleParam(section, value, group) {
+    // behavior: 'standard' (default) or 'subtract_only' (always creates new group)
+    function toggleParam(section, value, group, behavior = 'standard') {
         const current = selectedParams.value[section]
         const index = current.indexOf(value)
 
         // Use section as fallback group if no group provided
         const effectiveGroup = group || section
 
+        // For subtract_only behavior, always use a unique group key to force subtraction
+        // This ensures it never joins an existing group (always subtracts)
+        const hierarchyGroup = behavior === 'subtract_only'
+            ? `${effectiveGroup}_${value}`  // Unique key per value
+            : effectiveGroup
+
         if (index === -1) {
             // Adding a value
             current.push(value)
 
-            // Track in ordered selections for subset drilling (include param_group)
-            orderedSelections.value.push({ section, value, group: effectiveGroup })
+            // Track in ordered selections for subset drilling (include param_group and behavior)
+            orderedSelections.value.push({ section, value, group: effectiveGroup, behavior })
 
             // Track in hierarchy
-            const hierarchyEntry = selectionHierarchy.value.find(h => h.group === effectiveGroup)
+            // For subtract_only: always create new group (never join existing)
+            const hierarchyEntry = behavior === 'subtract_only'
+                ? null  // Force new group
+                : selectionHierarchy.value.find(h => h.group === hierarchyGroup)
+
             if (hierarchyEntry) {
                 // Group already in hierarchy - add to existing level (OR logic)
                 if (!hierarchyEntry.selections[section]) {
@@ -185,8 +196,9 @@ export function useAnalyticsState() {
             } else {
                 // New group - add new level to hierarchy (AND logic)
                 selectionHierarchy.value.push({
-                    group: effectiveGroup,
-                    selections: { [section]: [value] }
+                    group: hierarchyGroup,
+                    selections: { [section]: [value] },
+                    behavior: behavior
                 })
 
                 // First group determines the active section for visualization
@@ -206,8 +218,8 @@ export function useAnalyticsState() {
                 orderedSelections.value.splice(orderedIndex, 1)
             }
 
-            // Remove from hierarchy
-            const hierarchyEntry = selectionHierarchy.value.find(h => h.group === effectiveGroup)
+            // Remove from hierarchy (use hierarchyGroup which may be unique for subtract_only)
+            const hierarchyEntry = selectionHierarchy.value.find(h => h.group === hierarchyGroup)
             if (hierarchyEntry && hierarchyEntry.selections[section]) {
                 const valIndex = hierarchyEntry.selections[section].indexOf(value)
                 if (valIndex !== -1) {
@@ -219,7 +231,7 @@ export function useAnalyticsState() {
                 }
                 // Remove group from hierarchy if no selections left
                 if (Object.keys(hierarchyEntry.selections).length === 0) {
-                    selectionHierarchy.value = selectionHierarchy.value.filter(h => h.group !== effectiveGroup)
+                    selectionHierarchy.value = selectionHierarchy.value.filter(h => h.group !== hierarchyGroup)
                 }
             }
         }

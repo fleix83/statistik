@@ -175,8 +175,8 @@ const SUBTRACT_ONLY_GROUPS = ['background', 'duration']
 | Different group = SUBTRACT | ✅ Implemented | Works correctly |
 | Cross-section stacked chart | ✅ Implemented | Fixed in recent commit |
 | Stacked shows only leaves | ✅ Implemented | Base shown as heading |
-| `background` always subtracts | ❌ Not implemented | Needs special handling |
-| `duration` always subtracts | ❌ Not implemented | Needs special handling |
+| `background` always subtracts | ✅ Implemented | Uses `behavior` column in DB |
+| `duration` always subtracts | ✅ Implemented | Uses `behavior` column in DB |
 | Line graph display toggle | ❌ Not implemented | Needs UI toggle |
 
 ---

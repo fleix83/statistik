@@ -104,6 +104,11 @@ function getOptionLabel(opt) {
 function getOptionGroup(opt) {
     return typeof opt === 'object' ? opt.group : null
 }
+
+// Helper to get option behavior (supports both string and object format)
+function getOptionBehavior(opt) {
+    return typeof opt === 'object' ? (opt.behavior || 'standard') : 'standard'
+}
 </script>
 
 <template>
@@ -152,7 +157,7 @@ function getOptionGroup(opt) {
                         :key="getOptionLabel(opt)"
                         :label="getOptionLabel(opt)"
                         :class="{ 'chip-selected': isSelected(groupSection, getOptionLabel(opt)) }"
-                        @click="toggleParam(groupSection, getOptionLabel(opt), getOptionGroup(opt))"
+                        @click="toggleParam(groupSection, getOptionLabel(opt), getOptionGroup(opt), getOptionBehavior(opt))"
                     />
                 </div>
             </div>
@@ -166,7 +171,7 @@ function getOptionGroup(opt) {
                     :key="getOptionLabel(opt)"
                     :label="getOptionLabel(opt)"
                     :class="{ 'chip-selected': isSelected(section, getOptionLabel(opt)) }"
-                    @click="toggleParam(section, getOptionLabel(opt), getOptionGroup(opt))"
+                    @click="toggleParam(section, getOptionLabel(opt), getOptionGroup(opt), getOptionBehavior(opt))"
                 />
             </div>
         </template>

@@ -16,9 +16,9 @@ if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
 
 $db = getDB();
 
-// Get all active options with their param_group
+// Get all active options with their param_group and behavior
 $stmt = $db->query('
-    SELECT section, label, param_group
+    SELECT section, label, param_group, behavior
     FROM option_definitions
     WHERE is_active = 1
     ORDER BY section, sort_order, label
@@ -34,7 +34,8 @@ foreach ($options as $opt) {
     }
     $grouped[$section][] = [
         'label' => $opt['label'],
-        'group' => $opt['param_group']
+        'group' => $opt['param_group'],
+        'behavior' => $opt['behavior'] ?? 'standard'
     ];
 }
 
