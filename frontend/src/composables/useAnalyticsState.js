@@ -899,7 +899,7 @@ export function useAnalyticsState() {
                                     label: fullLabel,
                                     data: response.data.data,
                                     valueLabel: displayValue,
-                                    filterValues: filterValues,
+                                    selections: selections,
                                     valueIndex: lineIndex,
                                     periodIndex: periodIndex,
                                     periodLabel: period.label,
