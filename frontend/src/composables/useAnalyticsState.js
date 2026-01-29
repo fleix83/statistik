@@ -830,26 +830,34 @@ export function useAnalyticsState() {
                                 const selections = lineConfig.selections
                                 const displayValue = lineConfig.displayValue
 
-                                // Build intersection filter grouped by section (for cross-section support)
-                                const intersectionBySection = {}
+                                // Build hierarchy filter: OR within same section, AND across sections
+                                // This is correct for: (Besuch OR Telefon) AND unter55
+                                // Group selections by section
+                                const selectionsBySection = {}
                                 for (const sel of selections) {
-                                    if (!intersectionBySection[sel.section]) {
-                                        intersectionBySection[sel.section] = []
+                                    if (!selectionsBySection[sel.section]) {
+                                        selectionsBySection[sel.section] = []
                                     }
-                                    intersectionBySection[sel.section].push(sel.value)
+                                    selectionsBySection[sel.section].push(sel.value)
                                 }
 
-                                const intersectionFilter = {
-                                    intersection: intersectionBySection
+                                // Build hierarchy array (one entry per section)
+                                const hierarchyArray = Object.entries(selectionsBySection).map(([section, values]) => ({
+                                    group: section,
+                                    filters: { [section]: values }
+                                }))
+
+                                const hierarchyFilter = {
+                                    hierarchy: hierarchyArray
                                 }
 
-                                console.log(`Fetching line ${lineIndex}: displayValue=${displayValue}, filter=${JSON.stringify(intersectionFilter)}`)
+                                console.log(`Fetching line ${lineIndex}: displayValue=${displayValue}, filter=${JSON.stringify(hierarchyFilter)}`)
 
                                 const params = {
                                     start_date: formatDateForApi(period.start),
                                     end_date: formatDateForApi(period.end),
                                     granularity: 'auto',
-                                    filters: JSON.stringify(intersectionFilter)
+                                    filters: JSON.stringify(hierarchyFilter)
                                 }
 
                                 const response = await analytics.totals(params)
