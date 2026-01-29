@@ -692,38 +692,33 @@ export function useAnalyticsState() {
                     let rawLabels = []
                     let granularityUsed = 'month'
 
-                    // Get ordered selections for the active section (for subset drilling)
-                    let sectionSelections = orderedSelections.value.filter(
-                        s => s.section === activeSection.value
-                    )
+                    // Get ALL ordered selections for subset drilling (cross-section support)
+                    let allSelections = [...orderedSelections.value]
 
-                    // Fallback: if orderedSelections is missing values that are in selectedParams,
-                    // rebuild from selectedParams (order will be alphabetical as fallback)
-                    const selectedValues = selectedParams.value[activeSection.value] || []
-                    if (sectionSelections.length < selectedValues.length) {
-                        console.log('Rebuilding sectionSelections from selectedParams')
-                        sectionSelections = selectedValues.map(value => ({
-                            section: activeSection.value,
-                            value
-                        }))
-                        // Also update orderedSelections for future consistency
-                        orderedSelections.value = [
-                            ...orderedSelections.value.filter(s => s.section !== activeSection.value),
-                            ...sectionSelections
-                        ]
+                    // Fallback: if orderedSelections is incomplete, rebuild from all selectedParams
+                    const totalSelectedCount = Object.values(selectedParams.value)
+                        .reduce((sum, vals) => sum + vals.length, 0)
+                    if (allSelections.length < totalSelectedCount) {
+                        console.log('Rebuilding allSelections from selectedParams')
+                        allSelections = []
+                        for (const [section, values] of Object.entries(selectedParams.value)) {
+                            for (const value of values) {
+                                allSelections.push({ section, value, group: section })
+                            }
+                        }
                     }
 
                     // DEBUG: Log selection state
                     console.log('=== SUBSET MODE DEBUG ===')
                     console.log('activeSection:', activeSection.value)
-                    console.log('selectedValues:', JSON.stringify(selectedValues))
+                    console.log('totalSelectedCount:', totalSelectedCount)
                     console.log('orderedSelections:', JSON.stringify(orderedSelections.value))
-                    console.log('sectionSelections:', JSON.stringify(sectionSelections))
-                    console.log('sectionSelections.length:', sectionSelections.length)
+                    console.log('allSelections:', JSON.stringify(allSelections))
+                    console.log('allSelections.length:', allSelections.length)
 
                     // Check if we should use subset drilling mode:
-                    // Multiple values selected from the same section
-                    const useSubsetMode = sectionSelections.length > 1
+                    // Multiple values selected (can be cross-section)
+                    const useSubsetMode = allSelections.length > 1
                     console.log('useSubsetMode:', useSubsetMode)
 
                     if (useSubsetMode) {
@@ -741,7 +736,7 @@ export function useAnalyticsState() {
                         // Group selections by param_group in order of first appearance
                         const selectionsByGroup = {}
                         const groupOrder = []
-                        for (const sel of sectionSelections) {
+                        for (const sel of allSelections) {
                             const group = sel.group || sel.section
                             if (!selectionsByGroup[group]) {
                                 selectionsByGroup[group] = []
@@ -753,13 +748,24 @@ export function useAnalyticsState() {
                         console.log('selectionsByGroup:', JSON.stringify(selectionsByGroup))
                         console.log('groupOrder:', JSON.stringify(groupOrder))
 
+                        // Build a map of group -> selections (with section info for cross-section filters)
+                        const groupToSelections = {}
+                        for (const sel of allSelections) {
+                            const group = sel.group || sel.section
+                            if (!groupToSelections[group]) {
+                                groupToSelections[group] = []
+                            }
+                            groupToSelections[group].push({ section: sel.section, value: sel.value })
+                        }
+
                         // First group = base, subsequent groups = filters that subtract
                         // Within each group, values are parallel (shown separately, totals sum)
                         const baseGroup = groupOrder[0]
-                        const baseValues = selectionsByGroup[baseGroup]
+                        const baseSelections = groupToSelections[baseGroup] || []
+                        const baseValues = baseSelections.map(s => s.value)
                         const filterGroups = groupOrder.slice(1)
 
-                        console.log('baseGroup:', baseGroup, 'baseValues:', JSON.stringify(baseValues))
+                        console.log('baseGroup:', baseGroup, 'baseSelections:', JSON.stringify(baseSelections))
                         console.log('filterGroups:', JSON.stringify(filterGroups))
 
                         for (let periodIndex = 0; periodIndex < periods.value.length; periodIndex++) {
@@ -777,10 +783,10 @@ export function useAnalyticsState() {
 
                             if (filterGroups.length === 0) {
                                 // Only one group: show parallel lines for each base value
-                                linesToCreate = baseValues.map((v, i) => ({
+                                linesToCreate = baseSelections.map((sel, i) => ({
                                     type: i === 0 ? 'base' : 'parallel',
-                                    filterValues: [v],
-                                    displayValue: v,
+                                    selections: [sel],  // Track section info
+                                    displayValue: sel.value,
                                     isLeaf: true  // These are the leaf values to sum
                                 }))
                             } else {
@@ -791,27 +797,27 @@ export function useAnalyticsState() {
 
                                 // Build prefix from intermediate groups (between first and last)
                                 const intermediateGroups = filterGroups.slice(0, -1)
-                                const prefixValues = intermediateGroups.flatMap(g => selectionsByGroup[g])
+                                const prefixSelections = intermediateGroups.flatMap(g => groupToSelections[g] || [])
 
-                                // Last group values are the parallel "leaves"
+                                // Last group selections are the parallel "leaves"
                                 const lastGroup = filterGroups[filterGroups.length - 1]
-                                const lastGroupValues = selectionsByGroup[lastGroup]
+                                const leafSelections = groupToSelections[lastGroup] || []
 
                                 // Base line (first group, potentially with prefix)
-                                const baseFilterValues = [...baseValues, ...prefixValues]
+                                const baseFilterSelections = [...baseSelections, ...prefixSelections]
                                 linesToCreate.push({
                                     type: 'base',
-                                    filterValues: baseFilterValues,
+                                    selections: baseFilterSelections,
                                     displayValue: baseValues.join(' / '),
                                     isLeaf: false
                                 })
 
                                 // Leaf lines (base + prefix + each last group value)
-                                for (const leafValue of lastGroupValues) {
+                                for (const leafSel of leafSelections) {
                                     linesToCreate.push({
                                         type: 'subset',
-                                        filterValues: [...baseFilterValues, leafValue],
-                                        displayValue: leafValue,
+                                        selections: [...baseFilterSelections, leafSel],
+                                        displayValue: leafSel.value,
                                         isLeaf: true  // These sum up for total
                                     })
                                 }
@@ -821,14 +827,20 @@ export function useAnalyticsState() {
 
                             for (let lineIndex = 0; lineIndex < linesToCreate.length; lineIndex++) {
                                 const lineConfig = linesToCreate[lineIndex]
-                                const filterValues = lineConfig.filterValues
+                                const selections = lineConfig.selections
                                 const displayValue = lineConfig.displayValue
 
-                                // Use intersection filter (AND logic)
-                                const intersectionFilter = {
-                                    intersection: {
-                                        [activeSection.value]: filterValues
+                                // Build intersection filter grouped by section (for cross-section support)
+                                const intersectionBySection = {}
+                                for (const sel of selections) {
+                                    if (!intersectionBySection[sel.section]) {
+                                        intersectionBySection[sel.section] = []
                                     }
+                                    intersectionBySection[sel.section].push(sel.value)
+                                }
+
+                                const intersectionFilter = {
+                                    intersection: intersectionBySection
                                 }
 
                                 console.log(`Fetching line ${lineIndex}: displayValue=${displayValue}, filter=${JSON.stringify(intersectionFilter)}`)
@@ -980,7 +992,7 @@ export function useAnalyticsState() {
                     console.log('=== CHART DATA ASSIGNMENT ===')
                     console.log('mode: timeseries, subsetMode:', useSubsetMode)
                     console.log('allDatasets.length:', allDatasets.length)
-                    console.log('numValues:', useSubsetMode ? sectionSelections.length : activeValues.value.length)
+                    console.log('numValues:', useSubsetMode ? allSelections.length : activeValues.value.length)
 
                     chartData.value = {
                         mode: 'timeseries',
@@ -990,7 +1002,7 @@ export function useAnalyticsState() {
                         rawLabels: rawLabels,
                         datasets: allDatasets,
                         numPeriods: periods.value.length,
-                        numValues: useSubsetMode ? sectionSelections.length : activeValues.value.length
+                        numValues: useSubsetMode ? allSelections.length : activeValues.value.length
                     }
 
                     // Calculate totals based on leaf/base logic:
