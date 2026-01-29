@@ -1023,6 +1023,11 @@ const canShowStream = computed(() => {
                     <p>Wählen Sie Filter aus und klicken Sie auf "Anzeigen"</p>
                 </div>
 
+                <!-- Base Label Heading (stacked chart in subset mode only) -->
+                <div v-if="chartType === 'stacked' && chartData?.subsetMode && chartData?.baseLabel" class="stacked-base-heading">
+                    {{ chartData.baseLabel }}
+                </div>
+
                 <!-- Custom HTML Legend -->
                 <div v-if="showCustomLegend && chartReady" class="custom-legend" :class="{ 'pie-legend': chartType === 'pie' }">
                     <div
@@ -1360,6 +1365,16 @@ const canShowStream = computed(() => {
 }
 
 /* Chart Content */
+/* Stacked Base Heading (subset mode) */
+.stacked-base-heading {
+    text-align: center;
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--text-color);
+    margin-top: 70px;
+    margin-bottom: 0.5rem;
+}
+
 /* Custom HTML Legend */
 .custom-legend {
     display: flex;
@@ -1367,6 +1382,11 @@ const canShowStream = computed(() => {
     gap: 2rem;
     margin-top: 70px;
     margin-bottom: 1rem;
+}
+
+/* When stacked base heading is present, reduce legend margin */
+.stacked-base-heading + .custom-legend {
+    margin-top: 0.5rem;
 }
 
 .custom-legend.pie-legend {
