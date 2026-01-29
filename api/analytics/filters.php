@@ -16,14 +16,25 @@ if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
 
 $db = getDB();
 
-// Get all active options with their param_group and behavior
-$stmt = $db->query('
-    SELECT section, label, param_group, behavior
-    FROM option_definitions
-    WHERE is_active = 1
-    ORDER BY section, sort_order, label
-');
+// Check if behavior column exists
+$behaviorColumnExists = false;
+try {
+    $checkStmt = $db->query("SHOW COLUMNS FROM option_definitions LIKE 'behavior'");
+    $behaviorColumnExists = $checkStmt->rowCount() > 0;
+} catch (PDOException $e) {
+    // Column check failed, assume it doesn't exist
+}
+
+// Get all active options with their param_group (and behavior if it exists)
+$sql = $behaviorColumnExists
+    ? 'SELECT section, label, param_group, behavior FROM option_definitions WHERE is_active = 1 ORDER BY section, sort_order, label'
+    : 'SELECT section, label, param_group FROM option_definitions WHERE is_active = 1 ORDER BY section, sort_order, label';
+
+$stmt = $db->query($sql);
 $options = $stmt->fetchAll();
+
+// Define subtract_only groups as fallback if column doesn't exist
+$subtractOnlyGroups = ['background', 'duration'];
 
 // Group by section (for UI display)
 $grouped = [];
@@ -32,10 +43,19 @@ foreach ($options as $opt) {
     if (!isset($grouped[$section])) {
         $grouped[$section] = [];
     }
+
+    // Determine behavior: from column if exists, otherwise from fallback
+    $behavior = 'standard';
+    if ($behaviorColumnExists && isset($opt['behavior'])) {
+        $behavior = $opt['behavior'];
+    } elseif (in_array($opt['param_group'], $subtractOnlyGroups)) {
+        $behavior = 'subtract_only';
+    }
+
     $grouped[$section][] = [
         'label' => $opt['label'],
         'group' => $opt['param_group'],
-        'behavior' => $opt['behavior'] ?? 'standard'
+        'behavior' => $behavior
     ];
 }
 
