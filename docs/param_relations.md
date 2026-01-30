@@ -138,12 +138,14 @@ Two display modes (toggle below chart):
 
 ---
 
-## Implementation Considerations
+## Implementation Details
 
-### Option A: Database Column
+### Database Schema (Option A - Implemented)
 
-Add a `behavior` column to `option_definitions`:
+The `behavior` column was added to `option_definitions`:
+
 ```sql
+-- Migration: db/migrations/002_add_behavior_column.sql
 ALTER TABLE option_definitions
 ADD COLUMN behavior ENUM('standard', 'subtract_only') DEFAULT 'standard';
 
@@ -151,18 +153,95 @@ UPDATE option_definitions SET behavior = 'subtract_only'
 WHERE param_group IN ('background', 'duration');
 ```
 
-**Pros**: Flexible, maintainable, data-driven
-**Cons**: Requires schema change, migration, API update
+### API Filter Types
 
-### Option B: Hardcoded Logic
+The backend (`api/config/filters.php`) supports three filter formats:
 
-Define special groups in frontend code:
+#### 1. Flat Filters (Legacy)
+```json
+{ "kontaktart": ["Besuch", "Telefon"], "person": ["Mann"] }
+```
+- OR within same section, AND across sections
+- Used for simple filtering
+
+#### 2. Hierarchy Filters (Primary)
+```json
+{
+  "hierarchy": [
+    { "group": "kontaktart", "filters": { "kontaktart": ["Besuch", "Telefon"] } },
+    { "group": "person", "filters": { "person": ["unter 55"] } }
+  ]
+}
+```
+- **OR within same group** (even across sections)
+- **AND across different groups**
+- Used for subset drilling with multiple base values
+- Example: `(Besuch OR Telefon) AND unter 55`
+
+#### 3. Intersection Filters
+```json
+{
+  "intersection": { "kontaktart": ["Besuch"], "person": ["Mann", "unter 55"] }
+}
+```
+- AND for ALL values (strict intersection)
+- Used for stacked chart leaf calculations
+
+### Frontend Filter Logic
+
+The frontend (`useAnalyticsState.js`) builds hierarchy filters for line charts:
+
 ```javascript
-const SUBTRACT_ONLY_GROUPS = ['background', 'duration']
+// Build hierarchy filter: OR within same section, AND across sections
+const selectionsBySection = {}
+for (const sel of selections) {
+    if (!selectionsBySection[sel.section]) {
+        selectionsBySection[sel.section] = []
+    }
+    selectionsBySection[sel.section].push(sel.value)
+}
+
+const hierarchyArray = Object.entries(selectionsBySection).map(([section, values]) => ({
+    group: section,
+    filters: { [section]: values }
+}))
+
+const hierarchyFilter = { hierarchy: hierarchyArray }
 ```
 
-**Pros**: Quick to implement, no database changes
-**Cons**: Less flexible, logic split between DB and code
+### Filter Flow Example
+
+**User Selection**: Besuch + Telefon + unter 55
+
+1. Frontend groups by section:
+   - `kontaktart`: [Besuch, Telefon]
+   - `person`: [unter 55]
+
+2. Builds hierarchy filter:
+   ```json
+   {
+     "hierarchy": [
+       { "group": "kontaktart", "filters": { "kontaktart": ["Besuch", "Telefon"] } },
+       { "group": "person", "filters": { "person": ["unter 55"] } }
+     ]
+   }
+   ```
+
+3. Backend generates SQL:
+   ```sql
+   SELECT ... FROM stats_entries se
+   JOIN (
+     SELECT DISTINCT entry_id FROM stats_entry_values
+     WHERE (section = 'kontaktart' AND value_text IN ('Besuch', 'Telefon'))
+   ) AS hg0 ON se.id = hg0.entry_id
+   JOIN (
+     SELECT DISTINCT entry_id FROM stats_entry_values
+     WHERE (section = 'person' AND value_text IN ('unter 55'))
+   ) AS hg1 ON se.id = hg1.entry_id
+   WHERE ...
+   ```
+
+4. Result: Entries that have (Besuch OR Telefon) AND unter 55
 
 ---
 
@@ -171,19 +250,34 @@ const SUBTRACT_ONLY_GROUPS = ['background', 'duration']
 | Feature | Status | Notes |
 |---------|--------|-------|
 | First group = base | ✅ Implemented | Works correctly |
-| Same group = ADD | ✅ Implemented | Works correctly |
-| Different group = SUBTRACT | ✅ Implemented | Works correctly |
-| Cross-section stacked chart | ✅ Implemented | Fixed in recent commit |
+| Same group = ADD | ✅ Implemented | Uses hierarchy filter (OR) |
+| Different group = SUBTRACT | ✅ Implemented | Uses hierarchy filter (AND) |
+| Cross-section stacked chart | ✅ Implemented | Uses intersection filter |
+| Cross-section line chart | ✅ Implemented | Uses hierarchy filter |
 | Stacked shows only leaves | ✅ Implemented | Base shown as heading |
 | `background` always subtracts | ✅ Implemented | Uses `behavior` column in DB |
 | `duration` always subtracts | ✅ Implemented | Uses `behavior` column in DB |
+| API fallback for missing column | ✅ Implemented | Graceful degradation |
 | Line graph display toggle | ❌ Not implemented | Needs UI toggle |
+
+---
+
+## Files Reference
+
+| File | Purpose |
+|------|---------|
+| `db/migrations/002_add_behavior_column.sql` | Database migration for behavior column |
+| `api/config/filters.php` | Filter parsing and SQL generation |
+| `api/analytics/filters.php` | Returns filter options with behavior field |
+| `api/analytics/totals.php` | Time-series data with filter support |
+| `frontend/src/composables/useAnalyticsState.js` | Frontend state and filter logic |
+| `frontend/src/components/analytics/ParameterSection.vue` | Filter UI with behavior support |
 
 ---
 
 ## Next Steps
 
-1. Decide on implementation approach (Option A or B)
-2. Implement special handling for `background` and `duration` param_groups
-3. Add line graph display mode toggle
+1. ~~Decide on implementation approach (Option A or B)~~ → Option A implemented
+2. ~~Implement special handling for `background` and `duration` param_groups~~ → Done
+3. Add line graph display mode toggle (all params vs result only)
 4. Test all parameter combinations
