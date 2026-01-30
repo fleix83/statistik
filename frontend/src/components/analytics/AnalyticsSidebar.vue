@@ -149,6 +149,8 @@ function onFetch() {
     padding: 1rem;
     height: 100%;
     overflow-y: auto;
+    display: flex;
+    flex-direction: column;
 }
 
 .sidebar-toggle {
@@ -197,6 +199,7 @@ function onFetch() {
     border-radius: 12px;
     margin-bottom: 1rem;
     overflow: hidden;
+    flex-shrink: 0;
 }
 
 .sidebar-card:first-child {
@@ -362,8 +365,15 @@ function onFetch() {
     text-decoration: underline;
 }
 
+.filters-section {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
 .filters-section .sidebar-card-content {
-    max-height: 50vh;
+    flex: 1;
     overflow-y: auto;
 }
 
@@ -371,6 +381,8 @@ function onFetch() {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
+    flex-shrink: 0;
+    margin-top: auto;
 }
 
 :deep(.action-btn-primary.p-button) {
