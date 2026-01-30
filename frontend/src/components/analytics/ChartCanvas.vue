@@ -478,29 +478,35 @@ function getWeekNumber(date) {
 const barChartData = computed(() => {
     if (!chartData.value) return null
 
-    // Single period aggregate mode
+    // Single period aggregate mode - different color per parameter
     if (chartData.value.mode === 'aggregate') {
         return {
             labels: chartData.value.items.map(d => d.label),
             datasets: [{
                 label: 'Anzahl',
                 data: chartData.value.items.map(d => d.count),
-                backgroundColor: primaryColor.value,
+                backgroundColor: chartData.value.items.map((_, i) => colors.value[i % colors.value.length]),
                 borderRadius: 4
             }]
         }
     }
 
     // Multiple periods comparison mode - grouped bars
+    // Each parameter gets its own color, with lighter shades for comparison periods
     if (chartData.value.mode === 'aggregate-compare') {
         const numPeriods = chartData.value.datasets.length
-        const periodColors = getPeriodColors(primaryColor.value, numPeriods)
+        const labels = chartData.value.labels // Parameter labels (e.g., Besuch, Telefon)
+
         return {
-            labels: chartData.value.labels,
-            datasets: chartData.value.datasets.map((ds, i) => ({
-                label: ds.label,
+            labels: labels,
+            datasets: chartData.value.datasets.map((ds, periodIndex) => ({
+                label: ds.label, // Period label (e.g., 2025, 2024)
                 data: ds.data,
-                backgroundColor: periodColors[i],
+                // Each bar gets its parameter's color, lightened for comparison periods
+                backgroundColor: labels.map((_, valueIndex) => {
+                    const baseColor = colors.value[valueIndex % colors.value.length]
+                    return getColorForPeriod(baseColor, periodIndex, numPeriods)
+                }),
                 borderRadius: 4
             }))
         }
@@ -858,13 +864,13 @@ const legendItems = computed(() => {
         }))
     }
 
-    // For aggregate-compare mode (period comparison) - use period-based colors
-    if (mode === 'aggregate-compare' && datasets?.length > 0) {
-        const numPeriods = datasets.length
-        const periodColors = getPeriodColors(primaryColor.value, numPeriods)
-        return datasets.map((ds, i) => ({
-            label: ds.label,
-            color: periodColors[i]
+    // For aggregate-compare mode (bar chart with periods) - show parameter colors
+    // Each parameter gets its own color; lighter shades indicate comparison periods
+    if (mode === 'aggregate-compare' && chartData.value.labels?.length > 0) {
+        const labels = chartData.value.labels // Parameter labels
+        return labels.map((label, i) => ({
+            label: label,
+            color: colors.value[i % colors.value.length]
         }))
     }
 
