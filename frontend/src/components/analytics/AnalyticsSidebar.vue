@@ -10,6 +10,7 @@ const emit = defineEmits(['fetch', 'toggle'])
 
 const collapsed = ref(false)
 const activeTab = ref('period') // 'period' | 'markers'
+const periodCardCollapsed = ref(false)
 
 const {
     filterOptions,
@@ -46,7 +47,7 @@ function onFetch() {
 
         <div class="sidebar-content" v-show="!collapsed">
             <!-- Period & Markers Card with Tabs -->
-            <div class="sidebar-card">
+            <div class="sidebar-card" :class="{ 'card-collapsed': periodCardCollapsed }">
                 <div class="sidebar-card-tabs">
                     <button
                         class="tab-btn"
@@ -65,10 +66,18 @@ function onFetch() {
                         Markierungen
                     </button>
                 </div>
-                <div class="sidebar-card-content">
+                <div class="sidebar-card-content" v-show="!periodCardCollapsed">
                     <PeriodSelector v-if="activeTab === 'period'" />
                     <MarkerManager v-else />
                 </div>
+                <!-- Collapse Toggle -->
+                <button
+                    class="card-collapse-toggle"
+                    @click="periodCardCollapsed = !periodCardCollapsed"
+                    :title="periodCardCollapsed ? 'Erweitern' : 'Einklappen'"
+                >
+                    <span class="double-line"></span>
+                </button>
             </div>
 
             <!-- Filter & Anzeige Card -->
@@ -277,6 +286,64 @@ function onFetch() {
 
 .sidebar-card-content {
     padding: 1rem;
+}
+
+/* Card Collapse Toggle */
+.card-collapse-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    padding: 0.5rem;
+    background: none;
+    border: none;
+    border-top: 1px solid #e2e8f0;
+    cursor: pointer;
+    transition: background-color 0.15s;
+}
+
+.card-collapse-toggle:hover {
+    background: #f8fafc;
+}
+
+.double-line {
+    display: block;
+    width: 32px;
+    height: 8px;
+    position: relative;
+}
+
+.double-line::before,
+.double-line::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: #cbd5e1;
+    border-radius: 1px;
+}
+
+.double-line::before {
+    top: 0;
+}
+
+.double-line::after {
+    bottom: 0;
+}
+
+.card-collapse-toggle:hover .double-line::before,
+.card-collapse-toggle:hover .double-line::after {
+    background: #94a3b8;
+}
+
+/* Collapsed card state */
+.sidebar-card.card-collapsed .sidebar-card-content {
+    display: none;
+}
+
+.sidebar-card.card-collapsed .card-collapse-toggle {
+    border-top: none;
 }
 
 .reset-link {
