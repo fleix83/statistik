@@ -726,22 +726,53 @@ const lineChartOptions = computed(() => ({
     }
 }))
 
-// Pie/Doughnut chart data
-const pieChartData = computed(() => {
-    if (!chartData.value) return null
+// Pie/Doughnut chart data - supports multiple periods
+const pieChartsData = computed(() => {
+    if (!chartData.value) return []
 
+    // Single period mode
     if (chartData.value.mode === 'aggregate') {
         const items = chartData.value.items.slice(0, 10)
-        return {
-            labels: items.map(d => d.label),
-            datasets: [{
-                data: items.map(d => d.count),
-                backgroundColor: colors.value.slice(0, items.length)
-            }]
-        }
+        return [{
+            periodLabel: periods.value[0]?.label || '',
+            data: {
+                labels: items.map(d => d.label),
+                datasets: [{
+                    data: items.map(d => d.count),
+                    backgroundColor: colors.value.slice(0, items.length)
+                }]
+            }
+        }]
     }
 
-    return null
+    // Multiple periods mode
+    if (chartData.value.mode === 'aggregate-compare') {
+        const labels = chartData.value.labels
+        return chartData.value.datasets.map((ds, i) => {
+            const items = labels.map((label, j) => ({
+                label: label,
+                count: ds.data[j]
+            })).slice(0, 10)
+
+            return {
+                periodLabel: ds.label,
+                data: {
+                    labels: items.map(d => d.label),
+                    datasets: [{
+                        data: items.map(d => d.count),
+                        backgroundColor: colors.value.slice(0, items.length)
+                    }]
+                }
+            }
+        })
+    }
+
+    return []
+})
+
+// Legacy single pie chart data (for backwards compatibility)
+const pieChartData = computed(() => {
+    return pieChartsData.value[0]?.data || null
 })
 
 const pieChartOptions = computed(() => ({
@@ -918,7 +949,10 @@ const showCustomLegend = computed(() => {
 
 // Check if pie chart is applicable
 const canShowPie = computed(() => {
-    return chartData.value?.mode === 'aggregate' && chartData.value?.items?.length > 0
+    const mode = chartData.value?.mode
+    if (mode === 'aggregate' && chartData.value?.items?.length > 0) return true
+    if (mode === 'aggregate-compare' && chartData.value?.datasets?.length > 0) return true
+    return false
 })
 
 // Check if stacked bar chart is applicable
@@ -1083,12 +1117,21 @@ const canShowStream = computed(() => {
 
                     <!-- Pie Chart -->
                     <template v-else-if="chartType === 'pie'">
-                        <div v-if="canShowPie && pieChartData" class="pie-chart-wrapper">
-                            <Doughnut
-                                :key="'pie-' + chartKey"
-                                :data="pieChartData"
-                                :options="pieChartOptions"
-                            />
+                        <div v-if="canShowPie && pieChartsData.length > 0" class="pie-charts-container">
+                            <div
+                                v-for="(pieChart, index) in pieChartsData"
+                                :key="'pie-container-' + index"
+                                class="pie-chart-item"
+                            >
+                                <h4 class="pie-chart-title">{{ pieChart.periodLabel }}</h4>
+                                <div class="pie-chart-wrapper">
+                                    <Doughnut
+                                        :key="'pie-' + chartKey + '-' + index"
+                                        :data="pieChart.data"
+                                        :options="pieChartOptions"
+                                    />
+                                </div>
+                            </div>
                         </div>
                         <div v-else class="chart-notice">
                             <i class="pi pi-info-circle"></i>
@@ -1404,7 +1447,7 @@ const canShowStream = computed(() => {
 }
 
 .custom-legend.pie-legend {
-    margin-left: -50px;
+    margin-left: 0;
 }
 
 .legend-item {
@@ -1431,10 +1474,38 @@ const canShowStream = computed(() => {
     margin-top: 30px;
 }
 
+.pie-charts-container {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    height: 100%;
+    width: 100%;
+}
+
+.pie-chart-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
+    max-width: 400px;
+}
+
+.pie-chart-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-color);
+    margin: 0 0 0.5rem 0;
+    text-align: center;
+}
+
 .pie-chart-wrapper {
     height: 100%;
     width: 100%;
     position: relative;
+}
+
+/* Single pie chart offset (legacy) */
+.pie-charts-container:has(.pie-chart-item:only-child) .pie-chart-wrapper {
     left: -50px;
 }
 
