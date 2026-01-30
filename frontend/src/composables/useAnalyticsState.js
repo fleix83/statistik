@@ -558,15 +558,15 @@ export function useAnalyticsState() {
                             total: periodDatasets[0].total
                         }
                     }
-                    // For single period or pie chart, use simple mode
-                    else if (periods.value.length === 1 || chartType.value === 'pie') {
+                    // For single period, use simple aggregate mode
+                    else if (periods.value.length === 1) {
                         chartData.value = {
                             mode: 'aggregate',
                             items: periodDatasets[0].items,
                             total: periodDatasets[0].total
                         }
                     } else {
-                        // Multiple periods - use grouped bar mode
+                        // Multiple periods - use aggregate-compare mode (for both bar and pie)
                         chartData.value = {
                             mode: 'aggregate-compare',
                             labels: labels,
