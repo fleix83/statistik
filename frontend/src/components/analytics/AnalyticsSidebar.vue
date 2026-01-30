@@ -171,8 +171,10 @@ function onFetch() {
 }
 
 .collapsed .sidebar-toggle {
+    position: fixed;
     left: 0;
     right: auto;
+    top: 70px;
 }
 
 .sidebar-section {
