@@ -170,6 +170,11 @@ function onFetch() {
     color: var(--text-color);
 }
 
+.collapsed .sidebar-toggle {
+    left: 0;
+    right: auto;
+}
+
 .sidebar-section {
     margin-bottom: 0.5rem;
 }
