@@ -748,14 +748,15 @@ export function useAnalyticsState() {
                         console.log('selectionsByGroup:', JSON.stringify(selectionsByGroup))
                         console.log('groupOrder:', JSON.stringify(groupOrder))
 
-                        // Build a map of group -> selections (with section info for cross-section filters)
+                        // Build a map of group -> selections (with section and group info for filters)
                         const groupToSelections = {}
                         for (const sel of allSelections) {
                             const group = sel.group || sel.section
                             if (!groupToSelections[group]) {
                                 groupToSelections[group] = []
                             }
-                            groupToSelections[group].push({ section: sel.section, value: sel.value })
+                            // Include group so hierarchy filter can group by param_group
+                            groupToSelections[group].push({ section: sel.section, value: sel.value, group: group })
                         }
 
                         // First group = base, subsequent groups = filters that subtract
@@ -830,22 +831,35 @@ export function useAnalyticsState() {
                                 const selections = lineConfig.selections
                                 const displayValue = lineConfig.displayValue
 
-                                // Build hierarchy filter: OR within same section, AND across sections
+                                // Build hierarchy filter: OR within same param_group, AND across param_groups
                                 // This is correct for: (Besuch OR Telefon) AND unter55
-                                // Group selections by section
-                                const selectionsBySection = {}
+                                // Group selections by param_group (not section!)
+                                // Example: Mann (gender) + unter 55 (age) → different groups → AND
+                                const selectionsByParamGroup = {}
                                 for (const sel of selections) {
-                                    if (!selectionsBySection[sel.section]) {
-                                        selectionsBySection[sel.section] = []
+                                    const paramGroup = sel.group || sel.section
+                                    if (!selectionsByParamGroup[paramGroup]) {
+                                        selectionsByParamGroup[paramGroup] = []
                                     }
-                                    selectionsBySection[sel.section].push(sel.value)
+                                    selectionsByParamGroup[paramGroup].push(sel)
                                 }
 
-                                // Build hierarchy array (one entry per section)
-                                const hierarchyArray = Object.entries(selectionsBySection).map(([section, values]) => ({
-                                    group: section,
-                                    filters: { [section]: values }
-                                }))
+                                // Build hierarchy array (one entry per param_group)
+                                // Each group can have values from different sections
+                                const hierarchyArray = Object.entries(selectionsByParamGroup).map(([paramGroup, sels]) => {
+                                    // Group by section within this param_group
+                                    const filtersBySection = {}
+                                    for (const sel of sels) {
+                                        if (!filtersBySection[sel.section]) {
+                                            filtersBySection[sel.section] = []
+                                        }
+                                        filtersBySection[sel.section].push(sel.value)
+                                    }
+                                    return {
+                                        group: paramGroup,
+                                        filters: filtersBySection
+                                    }
+                                })
 
                                 const hierarchyFilter = {
                                     hierarchy: hierarchyArray

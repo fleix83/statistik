@@ -157,7 +157,7 @@ function onFetch() {
     border-radius: 0 6px 6px 0;
     cursor: pointer;
     color: var(--text-color-secondary);
-    transition: background-color 0.2s, color 0.2s;
+    transition: background-color 0.2s, color 0.2s, left 0.3s ease, right 0.3s ease;
     z-index: 10;
 }
 
@@ -168,12 +168,6 @@ function onFetch() {
 .sidebar-toggle:hover {
     background: #f8fafc;
     color: var(--text-color);
-    width: 16px;
-}
-
-.collapsed .sidebar-toggle {
-    right: -12px;
-    top: 16px;
 }
 
 .sidebar-section {
