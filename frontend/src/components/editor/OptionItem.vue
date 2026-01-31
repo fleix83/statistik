@@ -224,6 +224,9 @@ function onDelete() {
 .label-text {
     display: block;
     padding: 0.25rem 0;
+    font-size: 17px;
+    font-weight: 500;
+    color: #1B1B1B;
 }
 
 .label-text.strikethrough {
