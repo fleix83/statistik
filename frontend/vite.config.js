@@ -2,9 +2,11 @@ import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 
 // https://vite.dev/config/
-export default defineConfig({
+export default defineConfig(({ command }) => ({
     plugins: [vue()],
-    base: '/statistik/', // Deployed to subdirectory
+    // Dev: base '/' so API calls go to /api/* (intercepted by proxy)
+    // Build: base '/statistik/' for production deployment
+    base: command === 'serve' ? '/' : '/statistik/',
     server: {
         port: 5173,
         proxy: {
@@ -22,4 +24,4 @@ export default defineConfig({
             '@': '/src'
         }
     }
-})
+}))
