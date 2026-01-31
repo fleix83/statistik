@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, nextTick } from 'vue'
+import { ref, computed, nextTick, onMounted, watch } from 'vue'
 import InputText from 'primevue/inputtext'
 import CustomToggle from './CustomToggle.vue'
 
@@ -21,11 +21,70 @@ const isEditing = ref(false)
 const editLabel = ref('')
 const inputRef = ref(null)
 
+// Keywords overflow detection
+const keywordsSectionRef = ref(null)
+const measureContainerRef = ref(null)
+const visibleKeywordCount = ref(null) // null = show all (measuring mode)
+const hasOverflow = ref(false)
+
 // Computed
 const isActive = computed(() => props.option.is_active)
 const isMarkedForDelete = computed(() => props.option.draft_action === 'delete')
 const isNew = computed(() => props.option.label === 'Neues Feld')
 const keywords = computed(() => props.option.keywords || [])
+const visibleKeywords = computed(() => {
+    if (visibleKeywordCount.value === null) return keywords.value
+    return keywords.value.slice(0, visibleKeywordCount.value)
+})
+
+// Calculate how many keywords fit on one line using the hidden measurement container
+function calculateVisibleKeywords() {
+    if (!measureContainerRef.value || !keywordsSectionRef.value || keywords.value.length === 0) {
+        visibleKeywordCount.value = keywords.value.length
+        hasOverflow.value = false
+        return
+    }
+
+    const sectionWidth = keywordsSectionRef.value.offsetWidth
+    const tags = measureContainerRef.value.querySelectorAll('.keyword-tag-measure')
+    const gap = 8 // gap between tags
+
+    let totalWidth = 0
+    let count = 0
+
+    for (const tag of tags) {
+        const tagWidth = tag.offsetWidth
+        if (totalWidth + tagWidth + (count > 0 ? gap : 0) <= sectionWidth) {
+            totalWidth += tagWidth + (count > 0 ? gap : 0)
+            count++
+        } else {
+            break
+        }
+    }
+
+    // If not all fit, we have overflow
+    if (count < keywords.value.length) {
+        hasOverflow.value = true
+        visibleKeywordCount.value = Math.max(1, count) // Show at least 1
+    } else {
+        hasOverflow.value = false
+        visibleKeywordCount.value = keywords.value.length
+    }
+}
+
+// Initial calculation after mount and on keyword changes
+onMounted(() => {
+    nextTick(() => {
+        calculateVisibleKeywords()
+    })
+})
+
+watch(() => props.option.keywords, () => {
+    visibleKeywordCount.value = null // Reset to measure all
+    nextTick(() => {
+        calculateVisibleKeywords()
+    })
+}, { deep: true })
 
 // Methods
 function startEditing() {
@@ -97,18 +156,46 @@ function onEditKeywords() {
                 </template>
             </div>
 
-            <!-- Keywords displayed inline -->
-            <div class="keywords-inline" v-if="keywords.length > 0" @click.stop="onEditKeywords">
-                <span
-                    v-for="keyword in keywords"
-                    :key="keyword"
-                    class="keyword-tag"
+            <!-- Keywords section -->
+            <div ref="keywordsSectionRef" class="keywords-section">
+                <!-- Hidden measurement container (renders all keywords for width calculation) -->
+                <div ref="measureContainerRef" class="keywords-measure" aria-hidden="true">
+                    <span
+                        v-for="keyword in keywords"
+                        :key="'measure-' + keyword"
+                        class="keyword-tag-measure"
+                    >
+                        {{ keyword }}
+                    </span>
+                </div>
+
+                <!-- Keywords displayed inline (limited to one line) -->
+                <div
+                    class="keywords-inline"
+                    v-if="keywords.length > 0"
+                    @click.stop="onEditKeywords"
                 >
-                    {{ keyword }}
-                </span>
-            </div>
-            <div class="keywords-placeholder" v-else @click.stop="onEditKeywords">
-                Bitte mit Keywords differenzieren
+                    <span
+                        v-for="keyword in visibleKeywords"
+                        :key="keyword"
+                        class="keyword-tag"
+                    >
+                        {{ keyword }}
+                    </span>
+                </div>
+                <div class="keywords-placeholder" v-else @click.stop="onEditKeywords">
+                    Bitte mit Keywords differenzieren
+                </div>
+
+                <!-- Overflow chevron -->
+                <div
+                    v-if="hasOverflow"
+                    class="keywords-overflow-chevron"
+                    @click.stop="onEditKeywords"
+                    :title="`${keywords.length - visibleKeywordCount} weitere Keywords`"
+                >
+                    <i class="pi pi-chevron-down"></i>
+                </div>
             </div>
 
             <!-- Toggle (always right-aligned) -->
@@ -207,7 +294,7 @@ function onEditKeywords() {
 }
 
 .label-text {
-    font-size: 16px;
+    font-size: 17px;
     font-weight: 500;
     color: #1B1B1B;
     white-space: nowrap;
@@ -229,21 +316,70 @@ function onEditKeywords() {
     font-weight: 500;
 }
 
+.keywords-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
+    min-width: 0;
+    gap: 4px;
+    position: relative;
+}
+
+/* Hidden container for measuring keyword widths */
+.keywords-measure {
+    position: absolute;
+    visibility: hidden;
+    white-space: nowrap;
+    display: flex;
+    gap: 8px;
+    pointer-events: none;
+}
+
+.keyword-tag-measure {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 12px;
+    font-size: 13px;
+    white-space: nowrap;
+}
+
 .keywords-inline {
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     align-items: center;
     gap: 8px;
-    flex: 1;
+    width: 100%;
+    overflow: hidden;
     cursor: pointer;
 }
 
 .keywords-placeholder {
-    flex: 1;
+    width: 100%;
     font-style: italic;
     color: #8c8c8c;
     cursor: pointer;
     font-size: 14px;
+}
+
+.keywords-overflow-chevron {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: #888;
+    padding: 2px 8px;
+    border-radius: 4px;
+    transition: all 0.2s;
+}
+
+.keywords-overflow-chevron:hover {
+    background: #f0f0f0;
+    color: #555;
+}
+
+.keywords-overflow-chevron i {
+    font-size: 12px;
 }
 
 .toggle-wrapper {

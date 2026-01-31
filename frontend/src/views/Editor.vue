@@ -655,6 +655,7 @@ function confirmDeleteUser(user) {
     display: flex;
     flex-direction: column;
     gap: 24px;
+    max-width: 803px;
 }
 
 .options-column-right {
