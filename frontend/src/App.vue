@@ -12,7 +12,7 @@ const authStore = useAuthStore()
 const navbarVisible = ref(true)
 let hideTimer = null
 
-const isAnalyticsView = computed(() => route.path === '/analytics' || route.path === '/editor')
+const isAnalyticsView = computed(() => route.path === '/analytics' || route.path === '/editor' || route.path === '/')
 
 function showNavbar() {
     navbarVisible.value = true

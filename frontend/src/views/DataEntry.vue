@@ -720,10 +720,10 @@ function handleClickOutside(event) {
 @import url('https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap');
 
 .data-entry {
-    max-width: 1200px;
+    max-width: 1000px;
     margin: 0 auto;
     padding: 1rem 50px;
-    background: #f8f7f5;
+    background: linear-gradient(180deg, #ffffff, transparent);
     min-height: 100vh;
     border-radius: 30px;
 }
@@ -884,7 +884,7 @@ function handleClickOutside(event) {
 /* Cards Grid - Two columns layout */
 .cards-grid {
     display: grid;
-    grid-template-columns: 2.3fr 2fr;
+    grid-template-columns: 3.9fr 2fr;
     gap: 1rem;
     align-items: start;
 }
@@ -897,10 +897,8 @@ function handleClickOutside(event) {
 
 /* Card Base Styles */
 .card {
-    border: 1px solid var(--surface-border);
-    border-radius: 8px;
+    border-radius: 25px;
     padding: 1.4rem;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
 .card-title {
@@ -928,7 +926,7 @@ function handleClickOutside(event) {
 .card-thema,
 .card-zeitfenster,
 .card-referenz {
-    background-color: #ffffffad;
+    background: linear-gradient(180deg, #f5f3ef, transparent);
 }
 
 /* Checkbox Row */
@@ -1374,6 +1372,7 @@ function handleClickOutside(event) {
 
 .save-btn-full {
     width: 100%;
+    max-width: 400px;
     background: var(--color-primary) !important;
     border-color: transparent !important;
     color: var(--color-primary-text) !important;
