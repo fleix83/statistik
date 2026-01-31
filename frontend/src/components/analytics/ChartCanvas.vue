@@ -24,6 +24,7 @@ import { useToast } from 'primevue/usetoast'
 import StreamGraph from './StreamGraph.vue'
 import SelectionHierarchy from './SelectionHierarchy.vue'
 import { useAnalyticsState } from '../../composables/useAnalyticsState'
+import { usePdfExport } from '../../composables/usePdfExport'
 import { analytics } from '../../services/api'
 import { format, parseISO, isWithinInterval } from 'date-fns'
 import { de } from 'date-fns/locale'
@@ -63,6 +64,9 @@ Tooltip.positioners.customOffset = function(elements, eventPosition) {
 }
 
 const toast = useToast()
+const { exportToPdf } = usePdfExport()
+const pdfExportArea = ref(null)
+const isExporting = ref(false)
 
 const {
     chartType,
@@ -89,6 +93,14 @@ const exportMenuItems = ref([
         label: 'Gesamte Datenbank',
         icon: 'pi pi-database',
         command: () => handleExportFullDatabase()
+    },
+    {
+        separator: true
+    },
+    {
+        label: 'PDF exportieren',
+        icon: 'pi pi-file-pdf',
+        command: () => handleExportPdf()
     }
 ])
 
@@ -170,6 +182,77 @@ async function handleExportFullDatabase() {
             detail: 'Export fehlgeschlagen',
             life: 3000
         })
+    }
+}
+
+async function handleExportPdf() {
+    if (isExporting.value || !pdfExportArea.value) return
+    isExporting.value = true
+
+    const element = pdfExportArea.value
+
+    // Add class to hide UI controls and apply export styling
+    element.classList.add('exporting')
+
+    // Wait for DOM to update
+    await nextTick()
+
+    try {
+        const filename = `${chartTitle.value}-${periods.value[0]?.label || ''}-${format(new Date(), 'yyyy-MM-dd')}.pdf`
+        const isPortrait = chartType.value === 'pie'
+
+        // A4 dimensions: 297x210mm (landscape) or 210x297mm (portrait)
+        const marginMm = 10
+        const pageWidthMm = isPortrait ? 210 : 297
+        const pageHeightMm = isPortrait ? 297 : 210
+        const contentWidthMm = pageWidthMm - (2 * marginMm)
+        const contentHeightMm = pageHeightMm - (2 * marginMm)
+
+        // Convert mm to px (96 DPI)
+        const mmToPx = 96 / 25.4
+        const maxWidthPx = contentWidthMm * mmToPx
+        const maxHeightPx = contentHeightMm * mmToPx
+
+        // Get element's natural dimensions
+        const elementWidth = element.scrollWidth
+        const elementHeight = element.scrollHeight
+
+        // Calculate scale to fit content on page
+        const scaleX = maxWidthPx / elementWidth
+        const scaleY = maxHeightPx / elementHeight
+        const fitScale = Math.min(scaleX, scaleY, 1)
+
+        // Use html2canvas scale to control the output size
+        // Lower scale = smaller output image = fits on page
+        await exportToPdf(element, {
+            filename,
+            margin: [marginMm, marginMm, marginMm, marginMm],
+            jsPDF: { unit: 'mm', format: 'a4', orientation: isPortrait ? 'portrait' : 'landscape' },
+            html2canvas: {
+                scale: fitScale,
+                useCORS: true,
+                backgroundColor: '#ffffff',
+                logging: false
+            }
+        })
+
+        toast.add({
+            severity: 'success',
+            summary: 'PDF Export',
+            detail: 'Diagramm exportiert',
+            life: 3000
+        })
+    } catch (error) {
+        console.error('PDF export error:', error)
+        toast.add({
+            severity: 'error',
+            summary: 'Fehler',
+            detail: 'PDF Export fehlgeschlagen',
+            life: 3000
+        })
+    } finally {
+        element.classList.remove('exporting')
+        isExporting.value = false
     }
 }
 
@@ -990,6 +1073,7 @@ const canShowStream = computed(() => {
             />
         </div>
 
+        <div ref="pdfExportArea" class="pdf-export-area">
         <Card class="chart-card">
             <template #content>
                 <!-- KPI Header -->
@@ -1155,6 +1239,7 @@ const canShowStream = computed(() => {
 
             </template>
         </Card>
+        </div>
 
     </div>
 </template>
@@ -1526,6 +1611,17 @@ const canShowStream = computed(() => {
     border-radius: 8px;
     padding: 2rem;
     margin: 0 2rem 2rem;
+}
+
+/* PDF Export - hide controls during capture */
+.pdf-export-area.exporting {
+    background: #ffffff;
+}
+
+.pdf-export-area.exporting .chart-type-selector,
+.pdf-export-area.exporting .fill-toggle,
+.pdf-export-area.exporting .header-right-controls {
+    visibility: hidden !important;
 }
 
 /* Responsive */
