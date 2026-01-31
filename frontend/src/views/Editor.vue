@@ -57,28 +57,15 @@ const resetting = ref(false)
 const keywordEditorVisible = ref(false)
 const keywordEditorOption = ref(null)
 
-// Add option dialog state (for Person section choice)
-const addOptionDialogVisible = ref(false)
-const addOptionSelectedSection = ref('person')
-const personSectionChoices = [
-    { label: 'Kontaktart', value: 'kontaktart' },
-    { label: 'Person', value: 'person' },
-    { label: 'Dauer', value: 'dauer' }
-]
-
 const roles = [
     { label: 'Benutzer', value: 'user' },
     { label: 'Admin', value: 'admin' }
 ]
 
-// Computed: merge kontaktart, person, dauer into one "Person" section
-const personSectionOptions = computed(() => {
-    const kontaktart = optionsBySection.value['kontaktart'] || []
-    const person = optionsBySection.value['person'] || []
-    const dauer = optionsBySection.value['dauer'] || []
-    return [...kontaktart, ...person, ...dauer]
-})
-
+// Computed: separate options for each section
+const kontaktartOptions = computed(() => optionsBySection.value['kontaktart'] || [])
+const personOptions = computed(() => optionsBySection.value['person'] || [])
+const dauerOptions = computed(() => optionsBySection.value['dauer'] || [])
 const themaOptions = computed(() => optionsBySection.value['thema'] || [])
 const zeitfensterOptions = computed(() => optionsBySection.value['zeitfenster'] || [])
 const referenzOptions = computed(() => optionsBySection.value['referenz'] || [])
@@ -118,11 +105,6 @@ async function loadUsers() {
     } finally {
         usersLoading.value = false
     }
-}
-
-// Determine which actual section an option belongs to based on its section property
-function getActualSection(option) {
-    return option.section || 'kontaktart'
 }
 
 // Options CRUD
@@ -171,63 +153,17 @@ async function onReorderSection(section, items) {
     }
 }
 
-// Handle reorder for the combined Person section
-async function onReorderPersonSection(section, items) {
-    // Group items back by their actual section
-    const grouped = {
-        kontaktart: [],
-        person: [],
-        dauer: []
-    }
-
-    for (const item of items) {
-        const actualSection = item.section || 'kontaktart'
-        if (grouped[actualSection]) {
-            grouped[actualSection].push(item)
-        }
-    }
-
-    // Update each section's sort order
-    try {
-        for (const [sec, secItems] of Object.entries(grouped)) {
-            if (secItems.length > 0) {
-                await reorderSection(sec, secItems)
-            }
-        }
-    } catch (error) {
-        toast.add({
-            severity: 'error',
-            summary: 'Fehler',
-            detail: 'Neuordnung fehlgeschlagen',
-            life: 3000
-        })
-    }
-}
-
 // Add new option to a section
 async function onAddOption(section) {
-    // For the combined person section, show dialog to choose subsection
-    if (section === 'person-combined') {
-        addOptionSelectedSection.value = 'person'
-        addOptionDialogVisible.value = true
-        return
-    }
-
-    // For other sections, add directly
-    await doCreateOption(section)
-}
-
-// Actually create the option (called directly or from dialog)
-async function doCreateOption(dbSection) {
     try {
         // Set sort_order to put new option first in the list
-        const currentOptions = optionsBySection.value[dbSection] || []
+        const currentOptions = optionsBySection.value[section] || []
         const minSortOrder = currentOptions.length > 0
             ? Math.min(...currentOptions.map(o => o.sort_order))
             : 0
         const sortOrder = minSortOrder - 1
 
-        await createOption(dbSection, 'Neues Feld', sortOrder)
+        await createOption(section, 'Neues Feld', sortOrder)
         toast.add({
             severity: 'success',
             summary: 'Erstellt',
@@ -242,12 +178,6 @@ async function doCreateOption(dbSection) {
             life: 3000
         })
     }
-}
-
-// Confirm adding option from dialog
-async function confirmAddPersonOption() {
-    addOptionDialogVisible.value = false
-    await doCreateOption(addOptionSelectedSection.value)
 }
 
 // Keywords
@@ -450,7 +380,9 @@ function confirmDeleteUser(user) {
                 <div class="tab-content-container">
                     <!-- Debug info -->
                     <div class="debug-info">
-                        Person: {{ personSectionOptions.length }} |
+                        Kontaktart: {{ kontaktartOptions.length }} |
+                        Person: {{ personOptions.length }} |
+                        Dauer: {{ dauerOptions.length }} |
                         Thema: {{ themaOptions.length }} |
                         Zeitfenster: {{ zeitfensterOptions.length }} |
                         Referenz: {{ referenzOptions.length }}
@@ -459,19 +391,57 @@ function confirmDeleteUser(user) {
                 <div class="options-layout" v-if="!loading">
                     <!-- Left Column -->
                     <div class="options-column-left">
-                        <!-- Person Section (combined kontaktart + person + dauer) -->
+                        <!-- Kontaktart Section -->
                         <SectionCard
-                            title="Person"
-                            section="person-combined"
-                            :options="personSectionOptions"
+                            title="Kontaktart"
+                            section="kontaktart"
+                            :options="kontaktartOptions"
                             layout="grid"
-                            @reorder="onReorderPersonSection"
+                            @reorder="onReorderSection"
                             @add="onAddOption"
                         >
                             <template #item="{ element }">
                                 <OptionShort
                                     :option="element"
-                                    :section="element.section"
+                                    section="kontaktart"
+                                    @update="onUpdateOption"
+                                    @delete="onDeleteOption"
+                                />
+                            </template>
+                        </SectionCard>
+
+                        <!-- Person Section -->
+                        <SectionCard
+                            title="Person"
+                            section="person"
+                            :options="personOptions"
+                            layout="grid"
+                            @reorder="onReorderSection"
+                            @add="onAddOption"
+                        >
+                            <template #item="{ element }">
+                                <OptionShort
+                                    :option="element"
+                                    section="person"
+                                    @update="onUpdateOption"
+                                    @delete="onDeleteOption"
+                                />
+                            </template>
+                        </SectionCard>
+
+                        <!-- Dauer Section -->
+                        <SectionCard
+                            title="Dauer"
+                            section="dauer"
+                            :options="dauerOptions"
+                            layout="grid"
+                            @reorder="onReorderSection"
+                            @add="onAddOption"
+                        >
+                            <template #item="{ element }">
+                                <OptionShort
+                                    :option="element"
+                                    section="dauer"
                                     @update="onUpdateOption"
                                     @delete="onDeleteOption"
                                 />
@@ -610,26 +580,6 @@ function confirmDeleteUser(user) {
             </template>
         </Dialog>
 
-        <!-- Add Option Dialog (for Person section) -->
-        <Dialog v-model:visible="addOptionDialogVisible" header="Feld hinzufügen" modal style="width: 350px">
-            <div class="flex flex-column gap-3 pt-3">
-                <div class="field">
-                    <label for="section-choice">Kategorie wählen</label>
-                    <Select
-                        id="section-choice"
-                        v-model="addOptionSelectedSection"
-                        :options="personSectionChoices"
-                        optionLabel="label"
-                        optionValue="value"
-                        class="w-full"
-                    />
-                </div>
-            </div>
-            <template #footer>
-                <Button label="Abbrechen" severity="secondary" @click="addOptionDialogVisible = false" />
-                <Button label="Hinzufügen" @click="confirmAddPersonOption" />
-            </template>
-        </Dialog>
     </div>
 </template>
 
