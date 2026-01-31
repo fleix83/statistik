@@ -182,19 +182,18 @@ function onEditKeywords() {
                     >
                         {{ keyword }}
                     </span>
+                    <!-- Overflow chevron (inline after last keyword) -->
+                    <span
+                        v-if="hasOverflow"
+                        class="keywords-overflow-chevron"
+                        @click.stop="onEditKeywords"
+                        :title="`${keywords.length - visibleKeywordCount} weitere Keywords`"
+                    >
+                        <i class="pi pi-chevron-down"></i>
+                    </span>
                 </div>
                 <div class="keywords-placeholder" v-else @click.stop="onEditKeywords">
                     Bitte mit Keywords differenzieren
-                </div>
-
-                <!-- Overflow chevron -->
-                <div
-                    v-if="hasOverflow"
-                    class="keywords-overflow-chevron"
-                    @click.stop="onEditKeywords"
-                    :title="`${keywords.length - visibleKeywordCount} weitere Keywords`"
-                >
-                    <i class="pi pi-chevron-down"></i>
                 </div>
             </div>
 
@@ -318,11 +317,10 @@ function onEditKeywords() {
 
 .keywords-section {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     align-items: center;
     flex: 1;
     min-width: 0;
-    gap: 4px;
     position: relative;
 }
 
@@ -363,14 +361,15 @@ function onEditKeywords() {
 }
 
 .keywords-overflow-chevron {
-    display: flex;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
     color: #888;
-    padding: 2px 8px;
+    padding: 4px 6px;
     border-radius: 4px;
     transition: all 0.2s;
+    flex-shrink: 0;
 }
 
 .keywords-overflow-chevron:hover {
@@ -379,7 +378,7 @@ function onEditKeywords() {
 }
 
 .keywords-overflow-chevron i {
-    font-size: 12px;
+    font-size: 11px;
 }
 
 .toggle-wrapper {

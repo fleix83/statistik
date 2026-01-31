@@ -186,7 +186,8 @@ function toggleActive() {
 }
 
 .label-text {
-    font-size: 14px;
+    font-size: 17px;
+    font-weight: 500;
     color: #1B1B1B;
     white-space: nowrap;
 }

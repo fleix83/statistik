@@ -618,7 +618,7 @@ function confirmDeleteUser(user) {
 
 .editor-tabs :deep(.p-tabview-tablist-container),
 .editor-tabs :deep(.p-tabview-nav-container) {
-    max-width: 1300px;
+    max-width: 1177px;
     margin: 0 auto;
 }
 
@@ -630,7 +630,7 @@ function confirmDeleteUser(user) {
 }
 
 .tab-content-container {
-    max-width: 1300px;
+    max-width: 1177px;
     margin: 0 auto;
 }
 
@@ -640,14 +640,17 @@ function confirmDeleteUser(user) {
     margin-bottom: 16px;
     border-radius: 4px;
     font-size: 12px;
+    max-width: 1177px;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 .options-layout {
     display: grid;
-    grid-template-columns: 1fr auto;
+    grid-template-columns: minmax(0, 803px) 350px;
     gap: 24px;
     align-items: start;
-    max-width: 1300px;
+    max-width: 1177px; /* 803 + 24 + 350 */
     margin: 0 auto;
 }
 
@@ -655,15 +658,12 @@ function confirmDeleteUser(user) {
     display: flex;
     flex-direction: column;
     gap: 24px;
-    max-width: 803px;
 }
 
 .options-column-right {
     display: flex;
     flex-direction: column;
     gap: 24px;
-    min-width: 372px;
-    max-width: 473px;
 }
 
 .loading-state {
