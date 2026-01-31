@@ -199,7 +199,7 @@ async function handleExportPdf() {
 
     try {
         const filename = `${chartTitle.value}-${periods.value[0]?.label || ''}-${format(new Date(), 'yyyy-MM-dd')}.pdf`
-        const isPortrait = chartType.value === 'pie'
+        const isPortrait = false // Always use landscape
 
         // A4 dimensions: 297x210mm (landscape) or 210x297mm (portrait)
         const marginMm = 10
