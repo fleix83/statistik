@@ -184,7 +184,7 @@ async function removeMarker(id, event) {
             <div class="form-row">
                 <InputText
                     v-model="formData.name"
-                    placeholder="Name (z.B. Facebook Ads)"
+                    placeholder="Name (z.B. Tramwerbung)"
                     class="w-full"
                 />
             </div>
