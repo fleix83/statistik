@@ -104,7 +104,7 @@ function isActive(item) {
                 </router-link>
             </template>
             <template #end>
-                <div class="flex align-items-center gap-2">
+                <div class="auth-buttons flex align-items-center gap-2">
                     <Button
                         v-if="authStore.isAuthenticated"
                         icon="pi pi-sign-out"
@@ -212,5 +212,10 @@ button, input, select, textarea {
 
 .year-buttons .year-selected.p-button:hover {
     background-color: #2563eb !important;
+}
+
+/* Navbar auth buttons icon spacing */
+.auth-buttons .p-button .pi {
+    margin-right: 5px;
 }
 </style>
