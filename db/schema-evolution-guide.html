@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Schema Evolution: Single-Select → Multi-Select</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: #e4e4e7;
+            padding: 40px 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+        
+        .header h1 {
+            font-size: 36px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .header p {
+            color: #94a3b8;
+            font-size: 16px;
+        }
+        
+        .comparison {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 50px;
+        }
+        
+        .schema-card {
+            background: rgba(30, 41, 59, 0.6);
+            border: 2px solid rgba(148, 163, 184, 0.2);
+            border-radius: 16px;
+            overflow: hidden;
+        }
+        
+        .schema-card.old {
+            border-color: rgba(239, 68, 68, 0.4);
+        }
+        
+        .schema-card.new {
+            border-color: rgba(16, 185, 129, 0.4);
+        }
+        
+        .schema-header {
+            padding: 24px;
+            border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+        }
+        
+        .schema-header.old {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(220, 38, 38, 0.1) 100%);
+        }
+        
+        .schema-header.new {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(5, 150, 105, 0.1) 100%);
+        }
+        
+        .schema-title {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        
+        .schema-title.old {
+            color: #fca5a5;
+        }
+        
+        .schema-title.new {
+            color: #6ee7b7;
+        }
+        
+        .schema-subtitle {
+            color: #94a3b8;
+            font-size: 14px;
+        }
+        
+        .schema-content {
+            padding: 24px;
+        }
+        
+        .table-block {
+            background: rgba(15, 23, 42, 0.5);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 16px;
+        }
+        
+        .table-name {
+            font-family: 'Courier New', monospace;
+            font-size: 16px;
+            font-weight: 600;
+            color: #e2e8f0;
+            margin-bottom: 12px;
+        }
+        
+        .columns {
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            color: #94a3b8;
+            line-height: 1.8;
+        }
+        
+        .columns div {
+            padding-left: 16px;
+        }
+        
+        .highlight {
+            color: #fbbf24;
+            font-weight: 600;
+        }
+        
+        .benefits {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(5, 150, 105, 0.1) 100%);
+            border: 2px solid rgba(16, 185, 129, 0.3);
+            border-radius: 16px;
+            padding: 32px;
+            margin-bottom: 40px;
+        }
+        
+        .benefits-title {
+            font-size: 24px;
+            font-weight: 600;
+            color: #6ee7b7;
+            margin-bottom: 24px;
+            text-align: center;
+        }
+        
+        .benefits-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        
+        .benefit-item {
+            background: rgba(15, 23, 42, 0.5);
+            padding: 20px;
+            border-radius: 12px;
+            border-left: 4px solid #10b981;
+        }
+        
+        .benefit-icon {
+            font-size: 24px;
+            margin-bottom: 12px;
+        }
+        
+        .benefit-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #e2e8f0;
+            margin-bottom: 8px;
+        }
+        
+        .benefit-desc {
+            color: #94a3b8;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        
+        .example {
+            background: rgba(30, 41, 59, 0.6);
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            border-radius: 16px;
+            padding: 32px;
+            margin-bottom: 40px;
+        }
+        
+        .example-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #f8fafc;
+            margin-bottom: 20px;
+        }
+        
+        .code-block {
+            background: #0f172a;
+            border-radius: 8px;
+            padding: 20px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            color: #94a3b8;
+            overflow-x: auto;
+            margin-bottom: 20px;
+        }
+        
+        .code-block .comment {
+            color: #64748b;
+        }
+        
+        .code-block .keyword {
+            color: #a78bfa;
+        }
+        
+        .code-block .string {
+            color: #6ee7b7;
+        }
+        
+        .code-block .number {
+            color: #fbbf24;
+        }
+        
+        .workflow {
+            background: rgba(30, 41, 59, 0.6);
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            border-radius: 16px;
+            padding: 32px;
+        }
+        
+        .workflow-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #f8fafc;
+            margin-bottom: 24px;
+            text-align: center;
+        }
+        
+        .steps {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        
+        .step {
+            display: flex;
+            gap: 16px;
+            align-items: flex-start;
+        }
+        
+        .step-number {
+            min-width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+        
+        .step-content {
+            flex: 1;
+            padding-top: 8px;
+        }
+        
+        .step-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #e2e8f0;
+            margin-bottom: 6px;
+        }
+        
+        .step-desc {
+            color: #94a3b8;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        
+        @media (max-width: 768px) {
+            .comparison {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>✨ Schema Evolution</h1>
+            <p>Von Single-Select zu Multi-Select mit Administrations-Flexibilität</p>
+        </div>
+        
+        <div class="comparison">
+            <!-- Old Schema -->
+            <div class="schema-card old">
+                <div class="schema-header old">
+                    <div class="schema-title old">❌ Ursprüngliches Design</div>
+                    <div class="schema-subtitle">4-Spalten-Modell (Single-Select)</div>
+                </div>
+                <div class="schema-content">
+                    <div class="table-block">
+                        <div class="table-name">stats_entries</div>
+                        <div class="columns">
+                            <div>id</div>
+                            <div>user_id</div>
+                            <div>created_at</div>
+                            <div class="highlight">person_value</div>
+                            <div class="highlight">topic_value</div>
+                            <div class="highlight">time_value</div>
+                            <div class="highlight">reference_value</div>
+                        </div>
+                    </div>
+                    
+                    <div style="color: #fca5a5; font-size: 14px; line-height: 1.6;">
+                        <strong>Probleme:</strong><br>
+                        • Nur 1 Wert pro Kategorie<br>
+                        • CSV hat Multi-Select<br>
+                        • Datenverlust beim Import<br>
+                        • Nicht erweiterbar
+                    </div>
+                </div>
+            </div>
+            
+            <!-- New Schema -->
+            <div class="schema-card new">
+                <div class="schema-header new">
+                    <div class="schema-title new">✅ Neues Design</div>
+                    <div class="schema-subtitle">Many-to-Many mit Text Storage</div>
+                </div>
+                <div class="schema-content">
+                    <div class="table-block">
+                        <div class="table-name">stats_entries</div>
+                        <div class="columns">
+                            <div>id</div>
+                            <div>user_id</div>
+                            <div>created_at</div>
+                            <div>reference_remarks</div>
+                        </div>
+                    </div>
+                    
+                    <div class="table-block">
+                        <div class="table-name">stats_entry_values</div>
+                        <div class="columns">
+                            <div>id</div>
+                            <div>entry_id → stats_entries.id</div>
+                            <div class="highlight">section (kontaktart, person, ...)</div>
+                            <div class="highlight">value_text (actual value)</div>
+                        </div>
+                    </div>
+                    
+                    <div class="table-block">
+                        <div class="table-name">option_definitions</div>
+                        <div class="columns">
+                            <div>id</div>
+                            <div>section</div>
+                            <div>label</div>
+                            <div>sort_order</div>
+                            <div>is_active</div>
+                        </div>
+                    </div>
+                    
+                    <div style="color: #6ee7b7; font-size: 14px; line-height: 1.6;">
+                        <strong>Vorteile:</strong><br>
+                        • Multi-Select möglich<br>
+                        • Historische Daten intakt<br>
+                        • Admin kann Optionen ändern<br>
+                        • Kein Schema-Update nötig
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Benefits -->
+        <div class="benefits">
+            <div class="benefits-title">🎯 Warum diese Lösung perfekt ist</div>
+            <div class="benefits-grid">
+                <div class="benefit-item">
+                    <div class="benefit-icon">📥</div>
+                    <div class="benefit-title">Import-Kompatibel</div>
+                    <div class="benefit-desc">
+                        Alle CSV-Daten können 1:1 importiert werden. Jedes angekreuzte Feld wird eine Zeile in stats_entry_values.
+                    </div>
+                </div>
+                
+                <div class="benefit-item">
+                    <div class="benefit-icon">🔧</div>
+                    <div class="benefit-title">Admin-Flexibilität</div>
+                    <div class="benefit-desc">
+                        Neue Optionen einfach in option_definitions hinzufügen. Reordering via sort_order. Keine Code-Änderungen!
+                    </div>
+                </div>
+                
+                <div class="benefit-item">
+                    <div class="benefit-icon">🛡️</div>
+                    <div class="benefit-title">Historische Integrität</div>
+                    <div class="benefit-desc">
+                        Werte werden als Text gespeichert, nicht als FK. Alte Einträge zeigen weiter "Bildung", auch wenn die Option gelöscht wird.
+                    </div>
+                </div>
+                
+                <div class="benefit-item">
+                    <div class="benefit-icon">🚀</div>
+                    <div class="benefit-title">Keine Migrationen</div>
+                    <div class="benefit-desc">
+                        Schema bleibt konstant. "Reisen" hinzufügen = 1 SQL INSERT. Kein ALTER TABLE, kein Deployment.
+                    </div>
+                </div>
+                
+                <div class="benefit-item">
+                    <div class="benefit-icon">📊</div>
+                    <div class="benefit-title">Statistik-Freundlich</div>
+                    <div class="benefit-desc">
+                        SQL-Queries für Auswertungen bleiben einfach. GROUP BY value_text für Häufigkeiten.
+                    </div>
+                </div>
+                
+                <div class="benefit-item">
+                    <div class="benefit-icon">🎨</div>
+                    <div class="benefit-title">UI-Freundlich</div>
+                    <div class="benefit-desc">
+                        Frontend lädt Optionen aus option_definitions. User-Selektion wird direkt als value_text gespeichert.
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Example -->
+        <div class="example">
+            <div class="example-title">💡 Beispiel: Entry #499 aus CSV</div>
+            <div class="code-block">
+<span class="comment">-- CSV Zeile 2:</span>
+Besuch=WAHR, Mann=WAHR, Frau=WAHR, unter 55=WAHR, 
+selbst betroffen=WAHR, Bildung=WAHR, Migrationshintergrund=WAHR
+
+<span class="comment">-- Wird zu:</span>
+
+<span class="keyword">INSERT INTO</span> stats_entries (id, user_id, created_at)
+<span class="keyword">VALUES</span> (<span class="number">499</span>, <span class="number">5</span>, <span class="string">'2025-03-19 12:30:00'</span>);
+
+<span class="keyword">INSERT INTO</span> stats_entry_values (entry_id, section, value_text) <span class="keyword">VALUES</span>
+(<span class="number">499</span>, <span class="string">'kontaktart'</span>, <span class="string">'Besuch'</span>),
+(<span class="number">499</span>, <span class="string">'person'</span>, <span class="string">'Mann'</span>),
+(<span class="number">499</span>, <span class="string">'person'</span>, <span class="string">'Frau'</span>),
+(<span class="number">499</span>, <span class="string">'person'</span>, <span class="string">'unter 55'</span>),
+(<span class="number">499</span>, <span class="string">'person'</span>, <span class="string">'selbst betroffen'</span>),
+(<span class="number">499</span>, <span class="string">'thema'</span>, <span class="string">'Bildung'</span>),
+(<span class="number">499</span>, <span class="string">'thema'</span>, <span class="string">'Migrationshintergrund'</span>);
+            </div>
+            
+            <div style="color: #94a3b8; font-size: 14px; line-height: 1.8;">
+                <strong>Was passiert, wenn Admin "Reisen" hinzufügt?</strong><br>
+                1. Admin: INSERT INTO option_definitions (section, label) VALUES ('thema', 'Reisen');<br>
+                2. Frontend: Lädt Dropdowns neu → "Reisen" erscheint<br>
+                3. User wählt "Reisen" → INSERT INTO stats_entry_values (..., 'Reisen')<br>
+                <strong>→ Kein Schema-Update nötig!</strong>
+            </div>
+        </div>
+        
+        <!-- Workflow -->
+        <div class="workflow">
+            <div class="workflow-title">🗺️ Implementierungs-Workflow</div>
+            <div class="steps">
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <div class="step-content">
+                        <div class="step-title">Schema erstellen</div>
+                        <div class="step-desc">
+                            Führe revised-schema.sql auf deiner MySQL-Datenbank aus.
+                            3 Tabellen: users, option_definitions, stats_entries, stats_entry_values
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <div class="step-content">
+                        <div class="step-title">option_definitions befüllen</div>
+                        <div class="step-desc">
+                            Importiere alle aktuellen Optionen aus der CSV-Header-Zeile.
+                            Jede Spalte (außer ID, Datum, User) wird eine Zeile in option_definitions.
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <div class="step-content">
+                        <div class="step-title">CSV-Daten migrieren</div>
+                        <div class="step-desc">
+                            Schreibe PHP-Script: Für jede CSV-Zeile → 1 stats_entries + N stats_entry_values (für jedes WAHR-Feld).
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="step">
+                    <div class="step-number">4</div>
+                    <div class="step-content">
+                        <div class="step-title">PHP API bauen</div>
+                        <div class="step-desc">
+                            api/options.php → GET: Active options per section<br>
+                            api/submit.php → POST: Create entry + values<br>
+                            api/admin/options.php → POST: Add/Edit/Reorder options
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="step">
+                    <div class="step-number">5</div>
+                    <div class="step-content">
+                        <div class="step-title">Vue.js Frontend</div>
+                        <div class="step-desc">
+                            Multi-Select Dropdowns per Section (vue-multiselect empfohlen).
+                            Admin-Bereich mit vuedraggable für Reordering.
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="step">
+                    <div class="step-number">6</div>
+                    <div class="step-content">
+                        <div class="step-title">Export/Statistik</div>
+                        <div class="step-desc">
+                            api/export.php → CSV mit GROUP_CONCAT für multi-values<br>
+                            api/stats.php → Aggregierte Auswertungen nach section + value_text
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
