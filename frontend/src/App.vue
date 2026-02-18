@@ -132,8 +132,18 @@ function isActive(item) {
 </template>
 
 <style>
+@font-face {
+    font-family: 'Din Next Rounded';
+    src: url('/fonts/din-next-rounded-lt-w01-regular.woff2') format('woff2'),
+         url('/fonts/din-next-rounded-lt-w01-regular.woff') format('woff'),
+         url('/fonts/din-next-rounded-lt-w01-regular.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
 :root {
-    --font-family: 'Source Sans Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-family: 'Din Next Rounded', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
 * {
@@ -143,7 +153,7 @@ function isActive(item) {
 }
 
 html, body, #app {
-    font-family: 'Source Sans Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-family: 'Din Next Rounded', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     background: #f5f3ef;
     color: var(--text-color);
     min-height: 100vh;

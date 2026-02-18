@@ -827,7 +827,7 @@ function handleClickOutside(event) {
 }
 
 .header-title h1 {
-    font-family: 'Patrick Hand', cursive;
+    font-family: 'Din Next Rounded', sans-serif;
     font-size: 2.5rem;
     font-weight: 400;
     margin: 0;
