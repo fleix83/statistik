@@ -644,7 +644,7 @@ function handleClickOutside(event) {
                         <p class="card-subtitle">Auf uns aufmerksam gemacht durch:</p>
                         <div class="card-content">
                             <div
-                                v-for="opt in optionsBySection.referenz"
+                                v-for="opt in optionsBySection.referenz.filter(o => o.toLowerCase() !== 'andere')"
                                 :key="opt"
                                 class="checkbox-item referenz-item"
                                 :class="{ 'is-checked': formData.referenz.includes(opt) }"
