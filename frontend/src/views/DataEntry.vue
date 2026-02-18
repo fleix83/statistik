@@ -459,37 +459,35 @@ function handleClickOutside(event) {
 
         <!-- Main Form -->
         <div class="form-container">
-            <Button
-                label="neue Eingabe"
-                icon="pi pi-plus"
-                @click="resetForm"
-                class="new-entry-btn"
-            />
-
-            <!-- Top Fields -->
-            <div class="top-fields">
-                <div class="field-row">
-                    <label>Erfassungsdatum:</label>
-                    <DatePicker
-                        v-model="erfassungsdatum"
-                        dateFormat="DD, dd. MM yy"
-                        showIcon
-                        class="date-input"
-                        @date-select="onDateSelect"
-                    />
-                </div>
-                <div class="field-row">
-                    <label>Bearbeitet von:</label>
-                    <Select
-                        v-model="selectedUser"
-                        :options="userList"
-                        optionLabel="username"
-                        placeholder="Auswählen"
-                        class="user-select"
-                        :class="{ 'highlight-placeholder': highlightUserSelect && !selectedUser }"
-                        :loading="loading"
-                        @change="highlightUserSelect = false"
-                    />
+            <!-- Top Fields with New Entry Button -->
+            <div class="top-section">
+                <button class="new-entry-circle" @click="resetForm">
+                    <i class="pi pi-plus"></i>
+                </button>
+                <div class="top-fields">
+                    <div class="field-row">
+                        <label>Erfassungsdatum:</label>
+                        <DatePicker
+                            v-model="erfassungsdatum"
+                            dateFormat="DD, dd. MM yy"
+                            showIcon
+                            class="date-input"
+                            @date-select="onDateSelect"
+                        />
+                    </div>
+                    <div class="field-row">
+                        <label>Bearbeitet von:</label>
+                        <Select
+                            v-model="selectedUser"
+                            :options="userList"
+                            optionLabel="username"
+                            placeholder="Auswählen"
+                            class="user-select"
+                            :class="{ 'highlight-placeholder': highlightUserSelect && !selectedUser }"
+                            :loading="loading"
+                            @change="highlightUserSelect = false"
+                        />
+                    </div>
                 </div>
             </div>
 
@@ -776,16 +774,34 @@ function handleClickOutside(event) {
     border-bottom: 2px solid var(--surface-border);
 }
 
-.new-entry-btn {
-    background: var(--color-primary) !important;
-    border-color: transparent !important;
-    color: var(--color-primary-text) !important;
-    margin-bottom: 0.75rem;
+.top-section {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    margin-bottom: 2.4rem;
 }
 
-.new-entry-btn:hover {
-    background: var(--color-primary-hover) !important;
-    border-color: transparent !important;
+.new-entry-circle {
+    width: 100px;
+    height: 100px;
+    min-width: 100px;
+    border-radius: 50%;
+    border: none;
+    background: var(--color-primary);
+    color: var(--color-primary-text);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+}
+
+.new-entry-circle:hover {
+    background: var(--color-primary-hover);
+}
+
+.new-entry-circle .pi {
+    font-size: 2.5rem;
 }
 
 .header-title {
@@ -818,8 +834,6 @@ function handleClickOutside(event) {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
-    margin-bottom: 2.4rem;
-    max-width: 400px;
 }
 
 .field-row {
@@ -829,22 +843,34 @@ function handleClickOutside(event) {
 }
 
 .field-row label {
-    min-width: 120px;
+    width: 130px;
     font-weight: 500;
+    text-align: left;
 }
 
-.date-input {
-    flex: 1;
+.field-row .date-input {
+    width: 280px !important;
+    flex: none;
 }
 
-.user-select {
-    flex: 1;
-    min-width: 200px;
+.field-row .user-select {
+    width: 280px !important;
+    flex: none;
+}
+
+.field-row .date-input :deep(.p-inputtext) {
+    width: 100%;
+    padding-top: 0.55rem;
+    padding-bottom: 0.55rem;
+}
+
+.field-row .user-select :deep(.p-select-label) {
+    padding: 8px 0.5rem;
 }
 
 .user-select.highlight-placeholder :deep(.p-select-label.p-placeholder) {
     background: var(--color-primary);
-    padding: 0.25rem 0.5rem;
+    padding: 8px 0.5rem;
     border-radius: 4px;
 }
 
