@@ -78,7 +78,7 @@ const currentYear = computed(() => new Date().getFullYear())
 onMounted(async () => {
     await loadData()
     await loadEntries(false)  // Load entries list but don't display any - start with new entry form
-    highlightUserSelect.value = true  // Highlight user dropdown for new entry
+    // No highlight on initial load - only on new entry tap
     document.addEventListener('click', handleClickOutside)
 })
 
@@ -425,71 +425,76 @@ function handleClickOutside(event) {
     </div>
 
     <div class="data-entry">
-        <!-- Header -->
-        <div class="header">
-            <div class="header-title">
-                <h1>STATISTIK</h1>
-                <p>{{ formattedDate }}</p>
-                <!-- Pagination -->
-                <div class="entry-pagination">
-                    <button
-                        class="pagination-btn"
-                        @click="goToPreviousEntry"
-                        :disabled="entriesList.length === 0 || currentEntryIndex === 0"
-                    >
-                        <i class="pi pi-chevron-left"></i>
+        <!-- Top Row: Entry Card + Header -->
+        <div class="top-row">
+            <div class="entry-card">
+                <div class="top-section">
+                    <button class="new-entry-circle" @click="resetForm">
+                        <i class="pi pi-plus"></i>
                     </button>
-                    <input
-                        type="text"
-                        class="pagination-id"
-                        :value="currentEntryId || ''"
-                        placeholder="–"
-                        @keydown.enter="goToEntryById($event)"
-                    />
-                    <button
-                        class="pagination-btn"
-                        @click="goToNextEntry"
-                        :disabled="currentEntryIndex >= entriesList.length - 1"
-                    >
-                        <i class="pi pi-chevron-right"></i>
-                    </button>
+                    <div class="top-fields">
+                        <div class="field-row">
+                            <label>Erfassungsdatum:</label>
+                            <DatePicker
+                                v-model="erfassungsdatum"
+                                dateFormat="DD, dd. MM yy"
+                                showIcon
+                                class="date-input"
+                                @date-select="onDateSelect"
+                            />
+                        </div>
+                        <div class="field-row">
+                            <label>Bearbeitet von:</label>
+                            <Select
+                                v-model="selectedUser"
+                                :options="userList"
+                                optionLabel="username"
+                                placeholder="Auswählen"
+                                class="user-select"
+                                :class="{ 'highlight-placeholder': highlightUserSelect && !selectedUser }"
+                                :loading="loading"
+                                @change="highlightUserSelect = false"
+                            />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="header">
+                <img src="@/assets/logo_wegweiser.svg" alt="Wegweiser" class="header-logo" />
+                <div class="header-title">
+                    <h1>STATISTIK</h1>
+                    <p>{{ formattedDate }}</p>
+                    <!-- Pagination -->
+                    <div class="entry-pagination">
+                        <button
+                            class="pagination-btn"
+                            @click="goToPreviousEntry"
+                            :disabled="entriesList.length === 0 || currentEntryIndex === 0"
+                        >
+                            <i class="pi pi-chevron-left"></i>
+                        </button>
+                        <input
+                            type="text"
+                            class="pagination-id"
+                            :value="currentEntryId || ''"
+                            placeholder="–"
+                            @keydown.enter="goToEntryById($event)"
+                        />
+                        <button
+                            class="pagination-btn"
+                            @click="goToNextEntry"
+                            :disabled="currentEntryIndex >= entriesList.length - 1"
+                        >
+                            <i class="pi pi-chevron-right"></i>
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
 
         <!-- Main Form -->
         <div class="form-container">
-            <!-- Top Fields with New Entry Button -->
-            <div class="top-section">
-                <button class="new-entry-circle" @click="resetForm">
-                    <i class="pi pi-plus"></i>
-                </button>
-                <div class="top-fields">
-                    <div class="field-row">
-                        <label>Erfassungsdatum:</label>
-                        <DatePicker
-                            v-model="erfassungsdatum"
-                            dateFormat="DD, dd. MM yy"
-                            showIcon
-                            class="date-input"
-                            @date-select="onDateSelect"
-                        />
-                    </div>
-                    <div class="field-row">
-                        <label>Bearbeitet von:</label>
-                        <Select
-                            v-model="selectedUser"
-                            :options="userList"
-                            optionLabel="username"
-                            placeholder="Auswählen"
-                            class="user-select"
-                            :class="{ 'highlight-placeholder': highlightUserSelect && !selectedUser }"
-                            :loading="loading"
-                            @change="highlightUserSelect = false"
-                        />
-                    </div>
-                </div>
-            </div>
 
             <!-- Cards Grid - Three Columns -->
             <div class="cards-grid">
@@ -766,12 +771,31 @@ function handleClickOutside(event) {
 }
 
 /* Header */
+.top-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
 .header {
     display: flex;
-    justify-content: flex-end;
-    margin-bottom: 1rem;
-    padding-bottom: 1rem;
-    border-bottom: 2px solid var(--surface-border);
+    align-items: center;
+    gap: 1rem;
+    padding: 1.4rem;
+    background: linear-gradient(180deg, #f5f3ef, transparent);
+    border-radius: 25px;
+}
+
+.header-logo {
+    height: 3.5rem;
+    opacity: 0.7;
+}
+
+.entry-card {
+    background: linear-gradient(180deg, #f5f3ef, transparent);
+    border-radius: 25px;
+    padding: 1.4rem;
 }
 
 .top-section {
@@ -825,8 +849,7 @@ function handleClickOutside(event) {
 
 /* Form Container */
 .form-container {
-    padding: 1rem 0;
-    margin-top: -10rem;
+    padding: 0;
 }
 
 /* Top Fields */

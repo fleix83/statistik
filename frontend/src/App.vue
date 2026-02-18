@@ -210,7 +210,7 @@ button, input, select, textarea {
 
 .app-main {
     flex: 1;
-    padding: 1rem;
+    padding: 0;
 }
 
 /* Year button selected state - blue background */
