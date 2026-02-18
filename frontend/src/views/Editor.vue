@@ -163,7 +163,15 @@ async function onAddOption(section) {
             : 0
         const sortOrder = minSortOrder - 1
 
-        await createOption(section, 'Neues Feld', sortOrder)
+        // Generate unique label to avoid duplicate check in API
+        let label = 'Neues Feld'
+        const existingLabels = currentOptions.map(o => o.label)
+        let counter = 2
+        while (existingLabels.includes(label)) {
+            label = `Neues Feld ${counter++}`
+        }
+
+        await createOption(section, label, sortOrder)
         toast.add({
             severity: 'success',
             summary: 'Erstellt',
