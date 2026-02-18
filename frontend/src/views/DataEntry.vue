@@ -599,7 +599,7 @@ function handleClickOutside(event) {
                                 >
                                     <div
                                         class="checkbox-item thema-chip"
-                                        :class="{ 'thema-chip-expanded': expandedThema === opt, 'is-checked': formData.thema.includes(opt) }"
+                                        :class="{ 'is-checked': formData.thema.includes(opt) }"
                                     >
                                         <Checkbox
                                             :inputId="'thema-' + opt"
@@ -613,23 +613,11 @@ function handleClickOutside(event) {
                                                 class="keywords-inline"
                                             >
                                                 <span
-                                                    v-for="kw in (expandedThema === opt
-                                                        ? getKeywordsForThema(opt)
-                                                        : getFirstThreeKeywords(opt))"
+                                                    v-for="kw in getKeywordsForThema(opt)"
                                                     :key="kw"
                                                     class="keyword-tag"
                                                 >{{ kw }}</span>
                                             </div>
-                                        </div>
-                                        <div
-                                            v-if="hasMoreKeywords(opt)"
-                                            class="expand-zone"
-                                            @click="toggleExpandedKeywords(opt, $event)"
-                                        >
-                                            <i
-                                                class="pi pi-chevron-down expand-icon"
-                                                :class="{ 'expanded': expandedThema === opt }"
-                                            ></i>
                                         </div>
                                     </div>
                                 </div>
@@ -822,6 +810,7 @@ function handleClickOutside(event) {
 /* Form Container */
 .form-container {
     padding: 1rem 0;
+    margin-top: -10rem;
 }
 
 /* Top Fields */
@@ -1166,17 +1155,12 @@ function handleClickOutside(event) {
 
 .keyword-tag {
     display: inline-block;
-    padding: 0.1rem 0.35rem;
-    font-size: 0.68rem;
+    padding: 0.15rem 0.5rem;
+    font-size: 1rem;
     color: var(--text-color-secondary);
     font-weight: 400;
     background: rgb(255 255 255);
     border-radius: 3px;
-}
-
-.thema-chip-expanded .keyword-tag {
-    font-size: 1rem;
-    padding: 0.15rem 0.5rem;
 }
 
 /* Expand zone for keywords */
