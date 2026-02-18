@@ -518,41 +518,22 @@ function handleClickOutside(event) {
                                 </div>
                             </div>
 
-                            <!-- Geschlecht + Alter -->
-                            <div class="checkbox-row subgroup-person subgroup-first">
-                                <template v-for="opt in optionsBySection.person" :key="opt">
-                                    <div
-                                        v-if="['Frau', 'Mann', 'unter 55', 'über 55', 'über 80'].includes(opt)"
-                                        class="checkbox-item"
-                                        :class="{ 'is-checked': formData.person.includes(opt) }"
-                                    >
-                                        <Checkbox
-                                            :inputId="'person-' + opt"
-                                            :value="opt"
-                                            v-model="formData.person"
-                                        />
-                                        <label :for="'person-' + opt">{{ opt }}</label>
-                                    </div>
-                                </template>
-                            </div>
-
-                            <!-- Betroffenheit + Migrationshintergrund -->
-                            <div class="checkbox-row subgroup-person subgroup-last">
-                                <template v-for="opt in optionsBySection.person" :key="opt">
-                                    <div
-                                        v-if="['selbst betroffen', 'Angehörige Nachbarn und andere', 'Institution'].includes(opt)"
-                                        class="checkbox-item"
-                                        :class="{ 'is-checked': formData.person.includes(opt) }"
-                                    >
-                                        <Checkbox
-                                            :inputId="'betroffen-' + opt"
-                                            :value="opt"
-                                            v-model="formData.person"
-                                        />
-                                        <label :for="'betroffen-' + opt">{{ opt }}</label>
-                                    </div>
-                                </template>
-                                <!-- Migrationshintergrund on same line -->
+                            <!-- Person -->
+                            <div class="checkbox-row subgroup-person subgroup-first subgroup-last">
+                                <div
+                                    v-for="opt in optionsBySection.person"
+                                    :key="opt"
+                                    class="checkbox-item"
+                                    :class="{ 'is-checked': formData.person.includes(opt) }"
+                                >
+                                    <Checkbox
+                                        :inputId="'person-' + opt"
+                                        :value="opt"
+                                        v-model="formData.person"
+                                    />
+                                    <label :for="'person-' + opt">{{ opt }}</label>
+                                </div>
+                                <!-- Migrationshintergrund -->
                                 <div
                                     class="checkbox-item"
                                     :class="{ 'is-checked': formData.thema.includes('Migrationshintergrund') }"
@@ -717,8 +698,6 @@ function handleClickOutside(event) {
 </template>
 
 <style scoped>
-@import url('https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap');
-
 .data-entry {
     max-width: 1000px;
     margin: 0 auto;
