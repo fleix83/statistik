@@ -461,9 +461,19 @@ function handleClickOutside(event) {
             </div>
 
             <div class="entries-card">
-                <h2 class="entry-title">Einträge</h2>
                 <p class="entries-date">{{ formattedDate }}</p>
+                <div class="quick-filter-row">
+                    <button class="quick-filter-btn">
+                        <i class="pi pi-history"></i>
+                        7 Tage
+                    </button>
+                    <button class="quick-filter-btn">
+                        <i class="pi pi-history"></i>
+                        30 Tage
+                    </button>
+                </div>
                 <div class="entry-pagination">
+                    <h2 class="entry-title">Einträge</h2>
                     <button
                         class="pagination-btn"
                         @click="goToPreviousEntry"
@@ -816,15 +826,45 @@ function handleClickOutside(event) {
 }
 
 .entries-date {
-    margin: 0 0 0.5rem;
-    font-size: 1rem;
-    color: var(--text-color-secondary);
+    margin: 0 0 0.75rem;
+    font-size: 1.35rem;
+    font-weight: 600;
+    color: var(--text-color);
+}
+
+.quick-filter-row {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.quick-filter-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.5rem 1rem;
+    border: none;
+    background: var(--color-kontaktart-light, #dbeafe);
+    color: var(--text-color);
+    font-size: 0.95rem;
+    font-weight: 500;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.quick-filter-btn:hover {
+    background: var(--color-kontaktart-hover, #bfdbfe);
+}
+
+.quick-filter-btn i {
+    font-size: 0.95rem;
 }
 
 .entry-title {
-    font-size: 1.1rem;
+    font-size: 1.05rem;
     font-weight: 600;
-    margin: 0 0 0.5rem;
+    margin: 0;
     color: var(--text-color);
 }
 
@@ -1180,7 +1220,7 @@ function handleClickOutside(event) {
     flex-direction: row;
     align-items: flex-start;
     gap: 0.5rem;
-    padding: 0.5rem 0.75rem;
+    padding: 0.8rem 12.8px 0.75rem;
     transition: all 0.15s ease;
 }
 
@@ -1208,15 +1248,15 @@ function handleClickOutside(event) {
 }
 
 .thema-chip-content label {
-    font-size: 1rem;
+    font-size: 1.3rem;
     font-weight: 500;
 }
 
 .keywords-inline {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.25rem;
-    margin-top: 0.1rem;
+    gap: 0.55rem;
+    margin-top: 0.3rem;
 }
 
 .keyword-tag {
@@ -1321,7 +1361,6 @@ function handleClickOutside(event) {
     align-items: center;
     justify-content: flex-start;
     gap: 0.5rem;
-    margin-top: 0.5rem;
 }
 
 .pagination-btn {
