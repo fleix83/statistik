@@ -957,7 +957,7 @@ function handleClickOutside(event) {
 /* Cards Grid - Three columns layout */
 .cards-grid {
     display: grid;
-    grid-template-columns: 1fr 2.5fr 1fr;
+    grid-template-columns: 1fr 3.2fr 1fr;
     gap: 1rem;
     align-items: start;
 }
@@ -1241,8 +1241,9 @@ function handleClickOutside(event) {
 
 .thema-chip-content {
     display: flex;
-    flex-direction: column;
-    gap: 0.15rem;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.4rem;
     flex: 1;
     min-width: 0;
 }
@@ -1250,13 +1251,11 @@ function handleClickOutside(event) {
 .thema-chip-content label {
     font-size: 1.3rem;
     font-weight: 500;
+    margin-right: 0.5rem;
 }
 
 .keywords-inline {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.55rem;
-    margin-top: 0.3rem;
+    display: contents;
 }
 
 .keyword-tag {
