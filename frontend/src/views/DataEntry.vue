@@ -425,7 +425,7 @@ function handleClickOutside(event) {
     </div>
 
     <div class="data-entry">
-        <!-- Top Row: Entry Card + Header -->
+        <!-- Top Row: Entry Card + Branding -->
         <div class="top-row">
             <div class="entry-card">
                 <div class="top-section">
@@ -460,36 +460,37 @@ function handleClickOutside(event) {
                 </div>
             </div>
 
-            <div class="header">
-                <img src="@/assets/logo_wegweiser.svg" alt="Wegweiser" class="header-logo" />
-                <div class="header-title">
-                    <h1>STATISTIK</h1>
-                    <p>{{ formattedDate }}</p>
-                    <!-- Pagination -->
-                    <div class="entry-pagination">
-                        <button
-                            class="pagination-btn"
-                            @click="goToPreviousEntry"
-                            :disabled="entriesList.length === 0 || currentEntryIndex === 0"
-                        >
-                            <i class="pi pi-chevron-left"></i>
-                        </button>
-                        <input
-                            type="text"
-                            class="pagination-id"
-                            :value="currentEntryId || ''"
-                            placeholder="–"
-                            @keydown.enter="goToEntryById($event)"
-                        />
-                        <button
-                            class="pagination-btn"
-                            @click="goToNextEntry"
-                            :disabled="currentEntryIndex >= entriesList.length - 1"
-                        >
-                            <i class="pi pi-chevron-right"></i>
-                        </button>
-                    </div>
+            <div class="entries-card">
+                <h2 class="entry-title">Einträge</h2>
+                <p class="entries-date">{{ formattedDate }}</p>
+                <div class="entry-pagination">
+                    <button
+                        class="pagination-btn"
+                        @click="goToPreviousEntry"
+                        :disabled="entriesList.length === 0 || currentEntryIndex === 0"
+                    >
+                        <i class="pi pi-chevron-left"></i>
+                    </button>
+                    <input
+                        type="text"
+                        class="pagination-id"
+                        :value="currentEntryId || ''"
+                        placeholder="–"
+                        @keydown.enter="goToEntryById($event)"
+                    />
+                    <button
+                        class="pagination-btn"
+                        @click="goToNextEntry"
+                        :disabled="currentEntryIndex >= entriesList.length - 1"
+                    >
+                        <i class="pi pi-chevron-right"></i>
+                    </button>
                 </div>
+            </div>
+
+            <div class="branding-card">
+                <img src="@/assets/logo_wegweiser.svg" alt="Wegweiser" class="header-logo" />
+                <h1 class="branding-title">STATISTIK</h1>
             </div>
         </div>
 
@@ -524,7 +525,7 @@ function handleClickOutside(event) {
                             <!-- Person -->
                             <div class="checkbox-row subgroup-person subgroup-first subgroup-last">
                                 <div
-                                    v-for="opt in optionsBySection.person"
+                                    v-for="opt in optionsBySection.person.filter(o => o !== 'Migrationshintergrund')"
                                     :key="opt"
                                     class="checkbox-item"
                                     :class="{ 'is-checked': formData.person.includes(opt) }"
@@ -778,18 +779,53 @@ function handleClickOutside(event) {
     margin-bottom: 1rem;
 }
 
-.header {
+.branding-card {
     display: flex;
-    align-items: center;
-    gap: 1rem;
-    padding: 1.4rem;
+    flex-direction: column;
+    align-items: flex-end;
+    padding: 1.4rem 2rem;
     background: linear-gradient(180deg, #f5f3ef, transparent);
     border-radius: 25px;
+    margin-left: auto;
 }
 
 .header-logo {
-    height: 3.5rem;
+    height: 3rem;
+    opacity: 0.6;
+    margin-right: 203px;
+}
+
+.branding-title {
+    font-family: 'Din Next Rounded', sans-serif;
+    font-size: 2.8rem;
+    font-weight: 400;
+    margin: -0.3rem 0 0;
+    margin-right: 23px;
+    color: var(--text-color);
+    letter-spacing: 0.10em;
     opacity: 0.7;
+}
+
+.entries-card {
+    background: linear-gradient(180deg, #f5f3ef, transparent);
+    border-radius: 25px;
+    padding: 1.4rem;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.entries-date {
+    margin: 0 0 0.5rem;
+    font-size: 1rem;
+    color: var(--text-color-secondary);
+}
+
+.entry-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin: 0 0 0.5rem;
+    color: var(--text-color);
 }
 
 .entry-card {
@@ -826,25 +862,6 @@ function handleClickOutside(event) {
 
 .new-entry-circle .pi {
     font-size: 2.5rem;
-}
-
-.header-title {
-    text-align: right;
-    margin-right: 20px;
-}
-
-.header-title h1 {
-    font-family: 'Din Next Rounded', sans-serif;
-    font-size: 2.5rem;
-    font-weight: 400;
-    margin: 0;
-    color: var(--text-color);
-}
-
-.header-title p {
-    margin: 0.25rem 0 0;
-    font-size: 1.1rem;
-    color: var(--text-color-secondary);
 }
 
 /* Form Container */
@@ -1302,9 +1319,9 @@ function handleClickOutside(event) {
 .entry-pagination {
     display: flex;
     align-items: center;
-    justify-content: flex-end;
+    justify-content: flex-start;
     gap: 0.5rem;
-    margin-top: 1.25rem;
+    margin-top: 0.5rem;
 }
 
 .pagination-btn {
@@ -1392,13 +1409,14 @@ function handleClickOutside(event) {
 
 .save-btn-full {
     width: 100%;
-    max-width: 400px;
+    max-width: 360px;
     background: var(--color-primary) !important;
     border-color: transparent !important;
     color: var(--color-primary-text) !important;
-    margin-top: 0.75rem;
     padding: 0.75rem 1rem;
-    font-size: 1rem;
+    font-size: 22px;
+    margin: 20px 20px;
+    height: 81px;
 }
 
 .save-btn-full:hover {
