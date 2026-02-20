@@ -430,6 +430,8 @@ function handleClickOutside(event) {
                 <h1 class="branding-title">STATISTIK</h1>
             </div>
 
+            <img src="@/assets/arrow_entry.svg" alt="" class="arrow-entry" />
+
             <div class="entry-card">
                 <div class="top-section">
                     <button class="new-entry-circle" @click="resetForm">
@@ -794,6 +796,7 @@ function handleClickOutside(event) {
     align-items: flex-start;
     gap: 1rem;
     margin-bottom: 1rem;
+    position: relative;
 }
 
 .branding-card {
@@ -808,6 +811,16 @@ function handleClickOutside(event) {
 .header-logo {
     height: 3rem;
     opacity: 0.6;
+}
+
+.arrow-entry {
+    position: absolute;
+    width: 348px;
+    left: 140px;
+    top: 80%;
+    transform: translateY(-50%);
+    pointer-events: none;
+    opacity: 0.8;
 }
 
 .branding-title {
@@ -872,6 +885,7 @@ function handleClickOutside(event) {
     align-items: center;
     gap: 3.5rem;
     padding-right: 40px;
+    margin-left: 15rem;
 }
 
 .card-separator {
