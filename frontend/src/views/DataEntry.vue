@@ -379,7 +379,8 @@ function hasMoreKeywords(label) {
 }
 
 function toggleExpandedKeywords(label, event) {
-    event.stopPropagation()
+    // Don't toggle expand when clicking the checkbox or its label
+    if (event.target.closest('.p-checkbox') || event.target.tagName === 'LABEL') return
     if (expandedThema.value === label) {
         expandedThema.value = null
     } else {
@@ -388,10 +389,7 @@ function toggleExpandedKeywords(label, event) {
 }
 
 function handleClickOutside(event) {
-    // Check if click is outside any expanded keywords area
-    const expandedEl = document.querySelector('.keywords-expanded')
-    const expandZone = event.target.closest('.expand-zone')
-    if (expandedEl && !expandedEl.contains(event.target) && !expandZone) {
+    if (expandedThema.value && !event.target.closest('.thema-chip')) {
         expandedThema.value = null
     }
 }
@@ -427,6 +425,11 @@ function handleClickOutside(event) {
     <div class="data-entry">
         <!-- Top Row: Entry Card + Branding -->
         <div class="top-row">
+            <div class="branding-card">
+                <img src="@/assets/logo_wegweiser.svg" alt="Wegweiser" class="header-logo" />
+                <h1 class="branding-title">STATISTIK</h1>
+            </div>
+
             <div class="entry-card">
                 <div class="top-section">
                     <button class="new-entry-circle" @click="resetForm">
@@ -458,49 +461,46 @@ function handleClickOutside(event) {
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <div class="entries-card">
-                <p class="entries-date">{{ formattedDate }}</p>
-                <div class="quick-filter-row">
-                    <button class="quick-filter-btn">
-                        <i class="pi pi-history"></i>
-                        7 Tage
-                    </button>
-                    <button class="quick-filter-btn">
-                        <i class="pi pi-history"></i>
-                        30 Tage
-                    </button>
-                </div>
-                <div class="entry-pagination">
-                    <h2 class="entry-title">Einträge</h2>
-                    <button
-                        class="pagination-btn"
-                        @click="goToPreviousEntry"
-                        :disabled="entriesList.length === 0 || currentEntryIndex === 0"
-                    >
-                        <i class="pi pi-chevron-left"></i>
-                    </button>
-                    <input
-                        type="text"
-                        class="pagination-id"
-                        :value="currentEntryId || ''"
-                        placeholder="–"
-                        @keydown.enter="goToEntryById($event)"
-                    />
-                    <button
-                        class="pagination-btn"
-                        @click="goToNextEntry"
-                        :disabled="currentEntryIndex >= entriesList.length - 1"
-                    >
-                        <i class="pi pi-chevron-right"></i>
-                    </button>
-                </div>
-            </div>
+                <div class="card-separator"></div>
 
-            <div class="branding-card">
-                <img src="@/assets/logo_wegweiser.svg" alt="Wegweiser" class="header-logo" />
-                <h1 class="branding-title">STATISTIK</h1>
+                <div class="entries-section">
+                    <p class="entries-date">{{ formattedDate }}</p>
+                    <div class="quick-filter-row">
+                        <button class="quick-filter-btn">
+                            <i class="pi pi-history"></i>
+                            7 Tage
+                        </button>
+                        <button class="quick-filter-btn">
+                            <i class="pi pi-history"></i>
+                            30 Tage
+                        </button>
+                    </div>
+                    <div class="entry-pagination">
+                        <h2 class="entry-title">Einträge</h2>
+                        <button
+                            class="pagination-btn"
+                            @click="goToPreviousEntry"
+                            :disabled="entriesList.length === 0 || currentEntryIndex === 0"
+                        >
+                            <i class="pi pi-chevron-left"></i>
+                        </button>
+                        <input
+                            type="text"
+                            class="pagination-id"
+                            :value="currentEntryId || ''"
+                            placeholder="–"
+                            @keydown.enter="goToEntryById($event)"
+                        />
+                        <button
+                            class="pagination-btn"
+                            @click="goToNextEntry"
+                            :disabled="currentEntryIndex >= entriesList.length - 1"
+                        >
+                            <i class="pi pi-chevron-right"></i>
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -531,6 +531,7 @@ function handleClickOutside(event) {
                                     <label :for="'kontakt-' + opt">{{ opt }}</label>
                                 </div>
                             </div>
+                            <hr class="subgroup-separator" />
 
                             <!-- Person -->
                             <div class="checkbox-row subgroup-person subgroup-first subgroup-last">
@@ -560,6 +561,7 @@ function handleClickOutside(event) {
                                     <label for="migration">Migrationshintergrund</label>
                                 </div>
                             </div>
+                            <hr class="subgroup-separator" />
 
                             <!-- Dauer (optional) -->
                             <div class="checkbox-row no-border subgroup-dauer subgroup-first">
@@ -613,14 +615,15 @@ function handleClickOutside(event) {
                                 >
                                     <div
                                         class="checkbox-item thema-chip"
-                                        :class="{ 'is-checked': formData.thema.includes(opt) }"
+                                        :class="{ 'is-checked': formData.thema.includes(opt), 'is-expanded': expandedThema === opt }"
+                                        @click="toggleExpandedKeywords(opt, $event)"
                                     >
                                         <Checkbox
                                             :inputId="'thema-' + opt"
                                             :value="opt"
                                             v-model="formData.thema"
                                         />
-                                        <div class="thema-chip-content">
+                                        <div class="thema-chip-content" :class="{ 'is-expanded': expandedThema === opt }">
                                             <label :for="'thema-' + opt">{{ opt }}</label>
                                             <div
                                                 v-if="getKeywordsForThema(opt).length > 0"
@@ -632,6 +635,10 @@ function handleClickOutside(event) {
                                                     class="keyword-tag"
                                                 >{{ kw }}</span>
                                             </div>
+                                            <i
+                                                v-if="getKeywordsForThema(opt).length > 0 && expandedThema !== opt"
+                                                class="pi pi-plus keywords-indicator"
+                                            ></i>
                                         </div>
                                     </div>
                                 </div>
@@ -792,37 +799,24 @@ function handleClickOutside(event) {
 .branding-card {
     display: flex;
     flex-direction: column;
-    align-items: flex-end;
+    align-items: center;
     padding: 1.4rem 2rem;
-    background: linear-gradient(180deg, #f5f3ef, transparent);
     border-radius: 25px;
-    margin-left: auto;
 }
 
 .header-logo {
     height: 3rem;
     opacity: 0.6;
-    margin-right: 203px;
 }
 
 .branding-title {
     font-family: 'Din Next Rounded', sans-serif;
-    font-size: 2.8rem;
+    font-size: 2.0rem;
     font-weight: 400;
-    margin: -0.3rem 0 0;
-    margin-right: 23px;
+    margin: -0.7rem 0 0;
     color: var(--text-color);
     letter-spacing: 0.10em;
     opacity: 0.7;
-}
-
-.entries-card {
-    background: linear-gradient(180deg, #f5f3ef, transparent);
-    border-radius: 25px;
-    padding: 1.4rem;
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
 }
 
 .entries-date {
@@ -870,15 +864,31 @@ function handleClickOutside(event) {
 
 .entry-card {
     background: linear-gradient(180deg, #f5f3ef, transparent);
-    border-radius: 25px;
+    border-radius: 45px;
     padding: 1.4rem;
+    display: flex;
+    align-items: center;
+    gap: 3.5rem;
+    padding-right: 40px;
+}
+
+.card-separator {
+    width: 1px;
+    align-self: stretch;
+    background: var(--surface-border, #ddd);
+    margin: 0.25rem 0;
+}
+
+.entries-section {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
 }
 
 .top-section {
     display: flex;
     align-items: center;
     gap: 1.5rem;
-    margin-bottom: 2.4rem;
 }
 
 .new-entry-circle {
@@ -957,7 +967,7 @@ function handleClickOutside(event) {
 /* Cards Grid - Three columns layout */
 .cards-grid {
     display: grid;
-    grid-template-columns: 1fr 3.2fr 1fr;
+    grid-template-columns: 1fr minmax(0, 2.3fr) 1fr;
     gap: 1rem;
     align-items: start;
 }
@@ -965,7 +975,7 @@ function handleClickOutside(event) {
 .cards-column {
     display: flex;
     flex-direction: column;
-    gap: 1rem;
+    gap: 0;
 }
 
 /* Card Base Styles */
@@ -1016,6 +1026,12 @@ function handleClickOutside(event) {
     padding-bottom: 0;
 }
 
+.subgroup-separator {
+    border: none;
+    border-top: 1px solid var(--surface-border, #ddd);
+    margin: 0.25rem 0;
+}
+
 /* Subgroup spacing - larger gaps between Kontaktart, Person, Dauer */
 .checkbox-row.subgroup-first {
     margin-top: 0.75rem;
@@ -1024,7 +1040,7 @@ function handleClickOutside(event) {
 
 .checkbox-row.subgroup-last {
     border-bottom: none;
-    padding-bottom: 0.5rem;
+    padding-bottom: 1.5rem;
 }
 
 /* Chip/Swatch Styles */
@@ -1044,6 +1060,10 @@ function handleClickOutside(event) {
     user-select: none;
     font-size: 1rem;
     font-weight: 500;
+}
+
+.checkbox-item.is-checked label {
+    color: #fff;
 }
 
 /* Hide the actual checkbox visually but keep it functional */
@@ -1089,25 +1109,17 @@ function handleClickOutside(event) {
     background: var(--color-kontaktart-checked);
 }
 
-.card-person .subgroup-kontaktart .checkbox-item.is-checked label {
-    color: var(--color-kontakt-text);
-}
-
 /* Person subgroup - medium blue */
 .card-person .subgroup-person .checkbox-item {
-    background: var(--color-person-light);
+    background: #bfdbfe;
 }
 
 .card-person .subgroup-person .checkbox-item:hover {
-    background: var(--color-person-hover);
+    background: #bfdbfe;
 }
 
 .card-person .subgroup-person .checkbox-item.is-checked {
     background: var(--color-person-checked);
-}
-
-.card-person .subgroup-person .checkbox-item.is-checked label {
-    color: var(--color-kontakt-text);
 }
 
 /* Dauer subgroup - light blue */
@@ -1121,10 +1133,6 @@ function handleClickOutside(event) {
 
 .card-person .subgroup-dauer .checkbox-item.is-checked {
     background: var(--color-dauer-checked);
-}
-
-.card-person .subgroup-dauer .checkbox-item.is-checked label {
-    color: var(--color-kontakt-text);
 }
 
 /* All kontakt subgroups share the same checkbox color */
@@ -1148,10 +1156,6 @@ function handleClickOutside(event) {
     background: var(--color-thema-checked);
 }
 
-.card-thema .checkbox-item.is-checked label {
-    color: var(--color-thema-text);
-}
-
 .card-thema :deep(.p-checkbox-checked .p-checkbox-box),
 .card-thema :deep(.p-checkbox-checked:hover .p-checkbox-box),
 .card-thema :deep(.p-checkbox-checked:has(.p-checkbox-input:hover) .p-checkbox-box) {
@@ -1172,10 +1176,6 @@ function handleClickOutside(event) {
     background: var(--color-zeitfenster-checked);
 }
 
-.card-zeitfenster .checkbox-item.is-checked label {
-    color: var(--color-zeitfenster-text);
-}
-
 .card-zeitfenster :deep(.p-checkbox-checked .p-checkbox-box),
 .card-zeitfenster :deep(.p-checkbox-checked:hover .p-checkbox-box),
 .card-zeitfenster :deep(.p-checkbox-checked:has(.p-checkbox-input:hover) .p-checkbox-box) {
@@ -1194,10 +1194,6 @@ function handleClickOutside(event) {
 
 .card-referenz .checkbox-item.is-checked {
     background: var(--color-referenz-checked);
-}
-
-.card-referenz .checkbox-item.is-checked label {
-    color: var(--color-referenz-text);
 }
 
 .card-referenz :deep(.p-checkbox-checked .p-checkbox-box),
@@ -1222,6 +1218,8 @@ function handleClickOutside(event) {
     gap: 0.5rem;
     padding: 0.8rem 12.8px 0.75rem;
     transition: all 0.15s ease;
+    width: 100%;
+    overflow: hidden;
 }
 
 .thema-chip-expanded {
@@ -1241,21 +1239,54 @@ function handleClickOutside(event) {
 
 .thema-chip-content {
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     align-items: baseline;
     gap: 0.4rem;
     flex: 1;
     min-width: 0;
+    overflow: hidden;
+}
+
+.thema-chip.is-expanded {
+    overflow: visible;
+}
+
+.thema-chip-content.is-expanded {
+    flex-wrap: wrap;
+    overflow: visible;
 }
 
 .thema-chip-content label {
     font-size: 1.3rem;
     font-weight: 500;
     margin-right: 0.5rem;
+    flex-shrink: 0;
+}
+
+.keywords-indicator {
+    font-size: 0.9rem;
+    color: var(--text-color-secondary);
+    flex-shrink: 0;
+    margin: 0 10px;
+    padding-left: 0.5rem;
 }
 
 .keywords-inline {
-    display: contents;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    flex: 1;
+    min-width: 0;
+}
+
+.thema-chip-content:not(.is-expanded) .keywords-inline {
+    flex-wrap: nowrap;
+    overflow: hidden;
+}
+
+.thema-chip-content:not(.is-expanded) .keyword-tag {
+    opacity: 0.1;
+    flex-shrink: 0;
 }
 
 .keyword-tag {
