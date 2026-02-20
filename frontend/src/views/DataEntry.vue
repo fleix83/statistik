@@ -800,8 +800,9 @@ function handleClickOutside(event) {
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 1.4rem 2rem;
+    padding: 1.4rem 0;
     border-radius: 25px;
+    margin-left: -76px;
 }
 
 .header-logo {
@@ -814,6 +815,7 @@ function handleClickOutside(event) {
     font-size: 2.0rem;
     font-weight: 400;
     margin: -0.7rem 0 0;
+    margin-left: 157px;
     color: var(--text-color);
     letter-spacing: 0.10em;
     opacity: 0.7;
