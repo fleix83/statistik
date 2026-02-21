@@ -1114,7 +1114,7 @@ function handleClickOutside(event) {
 
 /* Kontaktart subgroup - saturated blue */
 .card-person .subgroup-kontaktart .checkbox-item {
-    background: var(--color-kontaktart-light);
+    background: #fff;
 }
 
 .card-person .subgroup-kontaktart .checkbox-item:hover {
@@ -1127,7 +1127,7 @@ function handleClickOutside(event) {
 
 /* Person subgroup - medium blue */
 .card-person .subgroup-person .checkbox-item {
-    background: #bfdbfe;
+    background: #fff;
 }
 
 .card-person .subgroup-person .checkbox-item:hover {
@@ -1140,7 +1140,7 @@ function handleClickOutside(event) {
 
 /* Dauer subgroup - light blue */
 .card-person .subgroup-dauer .checkbox-item {
-    background: var(--color-dauer-light);
+    background: #fff;
 }
 
 .card-person .subgroup-dauer .checkbox-item:hover {
@@ -1161,7 +1161,7 @@ function handleClickOutside(event) {
 
 /* === THEMA CARD CHIPS (Red/Pink) === */
 .card-thema .checkbox-item {
-    background: var(--color-thema-light);
+    background: #fff;
 }
 
 .card-thema .checkbox-item:hover {
@@ -1181,7 +1181,7 @@ function handleClickOutside(event) {
 
 /* === ZEITFENSTER CARD CHIPS (Green) === */
 .card-zeitfenster .checkbox-item {
-    background: var(--color-zeitfenster-light);
+    background: #fff;
 }
 
 .card-zeitfenster .checkbox-item:hover {
@@ -1201,7 +1201,7 @@ function handleClickOutside(event) {
 
 /* === REFERENZ CARD CHIPS (Beige/Tan) === */
 .card-referenz .checkbox-item {
-    background: var(--color-referenz-light);
+    background: #fff;
 }
 
 .card-referenz .checkbox-item:hover {
