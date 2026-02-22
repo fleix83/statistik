@@ -423,79 +423,74 @@ function handleClickOutside(event) {
     </div>
 
     <div class="data-entry">
-        <!-- Top Row: Entry Card + Branding -->
-        <div class="top-row">
-            <div class="entry-card">
-                <div class="top-section">
-                    <button class="new-entry-circle" @click="resetForm">
-                        <i class="pi pi-plus"></i>
+        <!-- Top Bar -->
+        <div class="top-bar">
+            <button class="new-entry-btn" @click="resetForm">
+                <i class="pi pi-plus"></i>
+                Neuer Eintrag
+            </button>
+
+            <div class="top-bar-field">
+                <label>Bearbeitet von</label>
+                <Select
+                    v-model="selectedUser"
+                    :options="userList"
+                    optionLabel="username"
+                    placeholder="Auswählen"
+                    class="user-select"
+                    :class="{ 'highlight-placeholder': highlightUserSelect && !selectedUser }"
+                    :loading="loading"
+                    @change="highlightUserSelect = false"
+                />
+            </div>
+
+            <div class="top-bar-field">
+                <label>Erfassungsdatum</label>
+                <DatePicker
+                    v-model="erfassungsdatum"
+                    dateFormat="DD, dd. MM yy"
+                    showIcon
+                    class="date-input"
+                    @date-select="onDateSelect"
+                />
+            </div>
+
+            <div class="top-bar-field">
+                <label>Einträge</label>
+                <div class="entry-pagination">
+                    <button
+                        class="pagination-btn"
+                        @click="goToPreviousEntry"
+                        :disabled="entriesList.length === 0 || currentEntryIndex === 0"
+                    >
+                        <i class="pi pi-chevron-left"></i>
                     </button>
-                    <div class="top-fields">
-                        <div class="field-row">
-                            <label>Erfassungsdatum:</label>
-                            <DatePicker
-                                v-model="erfassungsdatum"
-                                dateFormat="DD, dd. MM yy"
-                                showIcon
-                                class="date-input"
-                                @date-select="onDateSelect"
-                            />
-                        </div>
-                        <div class="field-row">
-                            <label>Bearbeitet von:</label>
-                            <Select
-                                v-model="selectedUser"
-                                :options="userList"
-                                optionLabel="username"
-                                placeholder="Auswählen"
-                                class="user-select"
-                                :class="{ 'highlight-placeholder': highlightUserSelect && !selectedUser }"
-                                :loading="loading"
-                                @change="highlightUserSelect = false"
-                            />
-                        </div>
-                    </div>
+                    <input
+                        type="text"
+                        class="pagination-id"
+                        :value="currentEntryId || ''"
+                        placeholder="–"
+                        @keydown.enter="goToEntryById($event)"
+                    />
+                    <button
+                        class="pagination-btn"
+                        @click="goToNextEntry"
+                        :disabled="currentEntryIndex >= entriesList.length - 1"
+                    >
+                        <i class="pi pi-chevron-right"></i>
+                    </button>
                 </div>
+            </div>
 
-                <div class="card-separator"></div>
-
-                <div class="entries-section">
-                    <p class="entries-date">{{ formattedDate }}</p>
-                    <div class="quick-filter-row">
-                        <button class="quick-filter-btn">
-                            <i class="pi pi-history"></i>
-                            7 Tage
-                        </button>
-                        <button class="quick-filter-btn">
-                            <i class="pi pi-history"></i>
-                            30 Tage
-                        </button>
-                    </div>
-                    <div class="entry-pagination">
-                        <h2 class="entry-title">Einträge</h2>
-                        <button
-                            class="pagination-btn"
-                            @click="goToPreviousEntry"
-                            :disabled="entriesList.length === 0 || currentEntryIndex === 0"
-                        >
-                            <i class="pi pi-chevron-left"></i>
-                        </button>
-                        <input
-                            type="text"
-                            class="pagination-id"
-                            :value="currentEntryId || ''"
-                            placeholder="–"
-                            @keydown.enter="goToEntryById($event)"
-                        />
-                        <button
-                            class="pagination-btn"
-                            @click="goToNextEntry"
-                            :disabled="currentEntryIndex >= entriesList.length - 1"
-                        >
-                            <i class="pi pi-chevron-right"></i>
-                        </button>
-                    </div>
-                </div>
+            <div class="quick-filter-row">
+                <button class="quick-filter-btn">
+                    <i class="pi pi-history"></i>
+                    7 Tage
+                </button>
+                <button class="quick-filter-btn">
+                    <i class="pi pi-history"></i>
+                    30 Tage
+                </button>
             </div>
         </div>
 
@@ -783,61 +778,63 @@ function handleClickOutside(event) {
     background: var(--color-primary-hover) !important;
 }
 
-/* Header */
-.top-row {
+/* Top Bar */
+.top-bar {
     display: flex;
-    align-items: flex-start;
-    gap: 1rem;
+    align-items: flex-end;
+    gap: 1.5rem;
     margin-bottom: 1rem;
-    position: relative;
+    padding: 1rem 0;
 }
 
-.branding-card {
+.new-entry-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.65rem 1.5rem;
+    border: none;
+    background: var(--color-primary, #FFEA95);
+    color: var(--color-primary-text, #000);
+    font-size: 1rem;
+    font-weight: 600;
+    border-radius: 25px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.2s;
+}
+
+.new-entry-btn:hover {
+    background: var(--color-primary-hover, #ffe066);
+}
+
+.new-entry-btn .pi {
+    font-size: 1rem;
+}
+
+.top-bar-field {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    padding: 1.4rem 0;
-    border-radius: 25px;
-    margin-left: -76px;
+    gap: 0.25rem;
 }
 
-.header-logo {
-    height: 3rem;
-    opacity: 0.6;
+.top-bar-field > label {
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--text-color-secondary);
 }
 
-.arrow-entry {
-    position: absolute;
-    width: 348px;
-    left: 140px;
-    top: 80%;
-    transform: translateY(-50%);
-    pointer-events: none;
-    opacity: 0.8;
+.top-bar-field .user-select {
+    width: 180px !important;
 }
 
-.branding-title {
-    font-family: 'Din Next Rounded', sans-serif;
-    font-size: 2.0rem;
-    font-weight: 400;
-    margin: -0.7rem 0 0;
-    margin-left: 157px;
-    color: var(--text-color);
-    letter-spacing: 0.10em;
-    opacity: 0.7;
-}
-
-.entries-date {
-    margin: 0 0 0.75rem;
-    font-size: 1.35rem;
-    font-weight: 600;
-    color: var(--text-color);
+.top-bar-field .date-input {
+    width: 260px !important;
+    flex: none;
 }
 
 .quick-filter-row {
     display: flex;
     gap: 0.5rem;
-    margin-bottom: 0.75rem;
 }
 
 .quick-filter-btn {
@@ -863,113 +860,13 @@ function handleClickOutside(event) {
     font-size: 0.95rem;
 }
 
-.entry-title {
-    font-size: 1.05rem;
-    font-weight: 600;
-    margin: 0;
-    color: var(--text-color);
-}
-
-.entry-card {
-    background: #f5f3ef;
-    border-radius: 45px;
-    padding: 1.4rem;
-    display: flex;
-    align-items: center;
-    gap: 3.5rem;
-    padding-right: 40px;
-    margin-left: 15rem;
-}
-
-.card-separator {
-    width: 1px;
-    align-self: stretch;
-    background: var(--surface-border, #ddd);
-    margin: 0.25rem 0;
-}
-
-.entries-section {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-}
-
-.top-section {
-    display: flex;
-    align-items: center;
-    gap: 1.5rem;
-}
-
-.new-entry-circle {
-    width: 100px;
-    height: 100px;
-    min-width: 100px;
-    border-radius: 50%;
-    border: none;
-    background: var(--color-primary);
-    color: var(--color-primary-text);
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: background 0.2s;
-}
-
-.new-entry-circle:hover {
-    background: var(--color-primary-hover);
-}
-
-.new-entry-circle .pi {
-    font-size: 2.5rem;
-}
-
 /* Form Container */
 .form-container {
     padding: 0;
 }
 
-/* Top Fields */
-.top-fields {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-}
-
-.field-row {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-.field-row label {
-    width: 130px;
-    font-weight: 500;
-    text-align: left;
-}
-
-.field-row .date-input {
-    width: 280px !important;
-    flex: none;
-}
-
-.field-row .user-select {
-    width: 280px !important;
-    flex: none;
-}
-
-.field-row .date-input :deep(.p-inputtext) {
-    width: 100%;
-    padding-top: 0.55rem;
-    padding-bottom: 0.55rem;
-}
-
-.field-row .user-select :deep(.p-select-label) {
-    padding: 8px 0.5rem;
-}
-
 .user-select.highlight-placeholder :deep(.p-select-label.p-placeholder) {
     background: var(--color-primary);
-    padding: 8px 0.5rem;
     border-radius: 4px;
 }
 
