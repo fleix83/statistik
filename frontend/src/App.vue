@@ -91,7 +91,10 @@ function isActive(item) {
     <div class="app-layout">
         <Menubar :model="menuItems" class="app-header" :class="{ 'navbar-hidden': !navbarVisible && isAnalyticsView }">
             <template #start>
-                <img src="@/assets/logo.svg" alt="Logo" class="app-logo" />
+                <div class="app-branding">
+                    <img src="@/assets/logo_wegweiser.svg" alt="Wegweiser" class="app-logo" />
+                    <h1 class="app-branding-title">STATISTIK</h1>
+                </div>
             </template>
             <template #item="{ item }">
                 <router-link
@@ -154,7 +157,7 @@ function isActive(item) {
 
 html, body, #app {
     font-family: 'Din Next Rounded', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    background: #f5f3ef;
+    background: #fafafa;
     color: var(--text-color);
     min-height: 100vh;
 }
@@ -174,18 +177,44 @@ button, input, select, textarea {
     border-left: 0;
     border-right: 0;
     border-top: 0;
-    transition: margin-top 0.3s ease;
+    transition: max-height 0.3s ease, opacity 0.3s ease, border-color 0.3s ease;
+    overflow: hidden;
+    max-height: 200px;
 }
 
 .app-header.navbar-hidden {
-    margin-top: -54px;
+    max-height: 0;
+    opacity: 0;
+    border: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    min-height: 0 !important;
+}
+
+.app-branding {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-left: -80px;
+    margin-right: 3rem;
+    padding: 20px;
 }
 
 .app-logo {
-    height: 2rem;
-    margin-left: 20px;
-    margin-right: 2rem;
-    filter: brightness(0);
+    height: 3rem;
+    opacity: 0.6;
+}
+
+.app-branding-title {
+    font-family: 'Din Next Rounded', sans-serif;
+    font-size: 2.0rem;
+    font-weight: 400;
+    margin: -0.7rem 0 0;
+    margin-left: 157px;
+    color: var(--text-color);
+    letter-spacing: 0.10em;
+    opacity: 0.7;
 }
 
 .menu-item {

@@ -425,13 +425,6 @@ function handleClickOutside(event) {
     <div class="data-entry">
         <!-- Top Row: Entry Card + Branding -->
         <div class="top-row">
-            <div class="branding-card">
-                <img src="@/assets/logo_wegweiser.svg" alt="Wegweiser" class="header-logo" />
-                <h1 class="branding-title">STATISTIK</h1>
-            </div>
-
-            <img src="@/assets/arrow_entry.svg" alt="" class="arrow-entry" />
-
             <div class="entry-card">
                 <div class="top-section">
                     <button class="new-entry-circle" @click="resetForm">
@@ -714,7 +707,7 @@ function handleClickOutside(event) {
     width: 100%;
     margin: 0 auto;
     padding: 1rem 40px;
-    background: linear-gradient(180deg, #ffffff, transparent);
+    background: #fafafa;
     min-height: 100vh;
 }
 
@@ -878,7 +871,7 @@ function handleClickOutside(event) {
 }
 
 .entry-card {
-    background: linear-gradient(180deg, #f5f3ef, transparent);
+    background: #f5f3ef;
     border-radius: 45px;
     padding: 1.4rem;
     display: flex;
@@ -1025,7 +1018,7 @@ function handleClickOutside(event) {
 .card-thema,
 .card-zeitfenster,
 .card-referenz {
-    background: linear-gradient(180deg, #f5f3ef, transparent);
+    background: #f5f3ef;
 }
 
 /* Checkbox Row */
