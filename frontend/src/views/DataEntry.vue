@@ -43,6 +43,10 @@ const themaOptionsWithKeywords = ref([])
 // Track which thema has expanded keywords
 const expandedThema = ref(null)
 
+// Toggle card borders and backgrounds
+const showBorders = ref(true)
+const showCardBg = ref(true)
+
 const loading = ref(false)
 const submitting = ref(false)
 
@@ -455,43 +459,53 @@ function handleClickOutside(event) {
                 />
             </div>
 
-            <div class="top-bar-field">
-                <label>Einträge</label>
-                <div class="entry-pagination">
-                    <button
-                        class="pagination-btn"
-                        @click="goToPreviousEntry"
-                        :disabled="entriesList.length === 0 || currentEntryIndex === 0"
-                    >
-                        <i class="pi pi-chevron-left"></i>
+            <div class="top-bar-separator"></div>
+
+            <div class="top-bar-entries-group">
+                <div class="top-bar-field">
+                    <label>Einträge</label>
+                    <div class="entry-pagination">
+                        <button
+                            class="pagination-btn"
+                            @click="goToPreviousEntry"
+                            :disabled="entriesList.length === 0 || currentEntryIndex === 0"
+                        >
+                            <i class="pi pi-chevron-left"></i>
+                        </button>
+                        <input
+                            type="text"
+                            class="pagination-id"
+                            :value="currentEntryId || ''"
+                            placeholder="–"
+                            @keydown.enter="goToEntryById($event)"
+                        />
+                        <button
+                            class="pagination-btn"
+                            @click="goToNextEntry"
+                            :disabled="currentEntryIndex >= entriesList.length - 1"
+                        >
+                            <i class="pi pi-chevron-right"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="quick-filter-row">
+                    <button class="quick-filter-btn">
+                        <i class="pi pi-history"></i>
+                        7 Tage
                     </button>
-                    <input
-                        type="text"
-                        class="pagination-id"
-                        :value="currentEntryId || ''"
-                        placeholder="–"
-                        @keydown.enter="goToEntryById($event)"
-                    />
-                    <button
-                        class="pagination-btn"
-                        @click="goToNextEntry"
-                        :disabled="currentEntryIndex >= entriesList.length - 1"
-                    >
-                        <i class="pi pi-chevron-right"></i>
+                    <button class="quick-filter-btn">
+                        <i class="pi pi-history"></i>
+                        30 Tage
                     </button>
                 </div>
             </div>
-
-            <div class="quick-filter-row">
-                <button class="quick-filter-btn">
-                    <i class="pi pi-history"></i>
-                    7 Tage
-                </button>
-                <button class="quick-filter-btn">
-                    <i class="pi pi-history"></i>
-                    30 Tage
-                </button>
-            </div>
+            <button class="border-toggle-btn" @click="showBorders = !showBorders">
+                {{ showBorders ? 'Borders ON' : 'Borders OFF' }}
+            </button>
+            <button class="border-toggle-btn" @click="showCardBg = !showCardBg">
+                {{ showCardBg ? 'BG ON' : 'BG OFF' }}
+            </button>
         </div>
 
         <!-- Main Form -->
@@ -501,7 +515,7 @@ function handleClickOutside(event) {
             <div class="cards-grid">
                 <!-- Kontakt (left, spans rows) -->
                 <div class="cards-column grid-kontakt">
-                    <div class="card card-person">
+                    <div class="card card-person" :class="{ 'no-borders': !showBorders, 'has-card-bg': showCardBg }">
                         <h3 class="card-title">Kontakt</h3>
                         <div class="card-content">
                             <!-- Kontaktart -->
@@ -573,7 +587,7 @@ function handleClickOutside(event) {
                 </div>
 
                 <!-- Zeitfenster (spans center + right, single row) -->
-                <div class="card card-zeitfenster grid-zeitfenster">
+                <div class="card card-zeitfenster grid-zeitfenster" :class="{ 'no-borders': !showBorders, 'has-card-bg': showCardBg }">
                     <h3 class="card-title">Zeitfenster</h3>
                     <div
                         v-for="opt in optionsBySection.zeitfenster"
@@ -592,7 +606,7 @@ function handleClickOutside(event) {
 
                 <!-- Thema (center) -->
                 <div class="cards-column grid-thema">
-                    <div class="card card-thema">
+                    <div class="card card-thema" :class="{ 'no-borders': !showBorders, 'has-card-bg': showCardBg }">
                         <h3 class="card-title">Thema</h3>
                         <div class="card-content">
                             <template v-for="opt in optionsBySection.thema" :key="opt">
@@ -636,7 +650,7 @@ function handleClickOutside(event) {
 
                 <!-- Right Column: Referenz + Save -->
                 <div class="cards-column grid-referenz">
-                    <div class="card card-referenz">
+                    <div class="card card-referenz" :class="{ 'no-borders': !showBorders, 'has-card-bg': showCardBg }">
                         <h3 class="card-title">Referenz</h3>
                         <p class="card-subtitle">Auf uns aufmerksam gemacht durch:</p>
                         <div class="card-content">
@@ -779,25 +793,52 @@ function handleClickOutside(event) {
 .top-bar {
     display: flex;
     align-items: flex-end;
-    gap: 1.25rem;
-    padding: 0.75rem 0 0.5rem;
+    gap: 3.25rem;
+    padding: 0.4rem 1.2rem 0.5rem;
+    background: #f1eee9;
+    margin-bottom: 1rem;
+    border-radius: 25px;
+    border-bottom: 7px solid #e7e3d0;
+    border-top: 4px solid #e7e3d052;
+}
+
+.top-bar :deep(.p-select-label) {
+    font-size: 1rem;
+}
+
+.top-bar :deep(.p-select-label.p-placeholder) {
+    color: #334155;
+}
+
+.top-bar-separator {
+    width: 1px;
+    align-self: stretch;
+    background: #d5d0c5;
+    margin: 0.5rem 0;
+}
+
+.top-bar-entries-group {
+    display: flex;
+    align-items: flex-end;
+    gap: 0.75rem;
 }
 
 .new-entry-btn {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    padding: 0.55rem 1.25rem;
+    padding: 1.1rem 1.75rem;
     border: none;
     background: var(--color-primary, #FFEA95);
-    color: var(--color-primary-text, #000);
-    font-size: 0.95rem;
+    color: #404040;
+    font-size: 1.2em;
     font-weight: 600;
     border-radius: 25px;
     cursor: pointer;
     white-space: nowrap;
     transition: background 0.2s;
-    margin-bottom: 1px;
+    margin-bottom: -4px;
+    margin-left: -11px;
 }
 
 .new-entry-btn:hover {
@@ -858,6 +899,22 @@ function handleClickOutside(event) {
 
 .quick-filter-btn i {
     font-size: 0.95rem;
+}
+
+.border-toggle-btn {
+    margin-left: auto;
+    padding: 0.4rem 0.75rem;
+    border-radius: 12px;
+    border: 1px solid #ccc;
+    background: #fff;
+    color: #666;
+    font-size: 0.8rem;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.border-toggle-btn:hover {
+    background: #eee;
 }
 
 /* Form Container */
@@ -927,6 +984,42 @@ function handleClickOutside(event) {
     background: #f5f3ef;
 }
 
+.card-person {
+    border: 3px solid rgb(96 165 250 / 33%);
+}
+
+.card-thema {
+    border: 3px solid rgb(255 120 120 / 33%);
+}
+
+.card-zeitfenster {
+    border: 3px solid rgb(91 219 166 / 33%);
+}
+
+.card-referenz {
+    border: 3px solid rgb(217 210 177 / 33%);
+}
+
+.card.no-borders {
+    border-color: transparent;
+}
+
+.card-person.has-card-bg {
+    background: rgb(96 165 250 / 33%);
+}
+
+.card-thema.has-card-bg {
+    background: rgb(255 120 120 / 33%);
+}
+
+.card-zeitfenster.has-card-bg {
+    background: rgb(91 219 166 / 33%);
+}
+
+.card-referenz.has-card-bg {
+    background: rgb(217 210 177 / 33%);
+}
+
 /* Checkbox Row */
 .checkbox-row {
     display: flex;
@@ -950,12 +1043,12 @@ function handleClickOutside(event) {
 /* Subgroup spacing - larger gaps between Kontaktart, Person, Dauer */
 .checkbox-row.subgroup-first {
     margin-top: 0.75rem;
-    padding-top: 0.75rem;
+    padding-top: 1.0rem;
 }
 
 .checkbox-row.subgroup-last {
     border-bottom: none;
-    padding-bottom: 1.5rem;
+    padding-bottom: 2.0rem;
 }
 
 /* Chip/Swatch Styles */
@@ -963,11 +1056,12 @@ function handleClickOutside(event) {
     display: flex;
     align-items: center;
     gap: 0.4rem;
-    padding: 0.4rem 0.75rem;
+    padding: 0.7rem 0.75rem;
     border-radius: 6px;
     cursor: pointer;
     user-select: none;
     transition: all 0.15s ease;
+    font-size: 1.3rem;
 }
 
 .checkbox-item label {
@@ -1131,20 +1225,27 @@ function handleClickOutside(event) {
     flex-direction: row;
     align-items: flex-start;
     gap: 0.5rem;
-    padding: 0.8rem 12.8px 0.75rem;
+    padding: 0.7rem 12.8px 0.75rem;
     transition: all 0.15s ease;
     width: 100%;
     overflow: hidden;
 }
 
-.thema-chip-expanded {
+.thema-chip.is-expanded {
     background: var(--color-thema-hover);
     padding: 25px 20px;
+    overflow: visible;
 }
 
-.thema-chip-expanded .keywords-inline {
+.thema-chip.is-expanded .keywords-inline {
     gap: 0.7rem;
     margin-top: 0.5rem;
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.thema-chip.is-expanded .keyword-tag {
+    font-size: 1.5rem;
 }
 
 .thema-chip :deep(.p-checkbox) {
@@ -1162,9 +1263,6 @@ function handleClickOutside(event) {
     overflow: hidden;
 }
 
-.thema-chip.is-expanded {
-    overflow: visible;
-}
 
 .thema-chip-content.is-expanded {
     flex-wrap: wrap;
@@ -1399,15 +1497,16 @@ function handleClickOutside(event) {
 }
 
 .save-btn-full {
+    border-radius: 25px;
     width: 100%;
-    max-width: 360px;
+    max-width: 340px;
     background: var(--color-primary) !important;
     border-color: transparent !important;
     color: var(--color-primary-text) !important;
     padding: 0.75rem 1rem;
     font-size: 22px;
     margin: 20px 20px;
-    height: 81px;
+    height: 67px;
 }
 
 .save-btn-full:hover {
