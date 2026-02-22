@@ -497,11 +497,10 @@ function handleClickOutside(event) {
         <!-- Main Form -->
         <div class="form-container">
 
-            <!-- Cards Grid - Three Columns -->
+            <!-- Cards Grid -->
             <div class="cards-grid">
-                <!-- Left Column: Kontakt + Zeitfenster -->
-                <div class="cards-column">
-                    <!-- Card 1: Kontakt -->
+                <!-- Kontakt (left, spans rows) -->
+                <div class="cards-column grid-kontakt">
                     <div class="card card-person">
                         <h3 class="card-title">Kontakt</h3>
                         <div class="card-content">
@@ -571,30 +570,28 @@ function handleClickOutside(event) {
                             </div>
                         </div>
                     </div>
+                </div>
 
-                    <!-- Card 2: Zeitfenster -->
-                    <div class="card card-zeitfenster">
-                        <h3 class="card-title">Zeitfenster</h3>
-                        <div class="card-content">
-                            <div
-                                v-for="opt in optionsBySection.zeitfenster"
-                                :key="opt"
-                                class="checkbox-item zeitfenster-item"
-                                :class="{ 'is-checked': formData.zeitfenster.includes(opt) }"
-                            >
-                                <Checkbox
-                                    :inputId="'zeit-' + opt"
-                                    :value="opt"
-                                    v-model="formData.zeitfenster"
-                                />
-                                <label :for="'zeit-' + opt">{{ opt }}</label>
-                            </div>
-                        </div>
+                <!-- Zeitfenster (spans center + right, single row) -->
+                <div class="card card-zeitfenster grid-zeitfenster">
+                    <h3 class="card-title">Zeitfenster</h3>
+                    <div
+                        v-for="opt in optionsBySection.zeitfenster"
+                        :key="opt"
+                        class="checkbox-item zeitfenster-item"
+                        :class="{ 'is-checked': formData.zeitfenster.includes(opt) }"
+                    >
+                        <Checkbox
+                            :inputId="'zeit-' + opt"
+                            :value="opt"
+                            v-model="formData.zeitfenster"
+                        />
+                        <label :for="'zeit-' + opt">{{ opt }}</label>
                     </div>
                 </div>
 
-                <!-- Center Column: Thema -->
-                <div class="cards-column">
+                <!-- Thema (center) -->
+                <div class="cards-column grid-thema">
                     <div class="card card-thema">
                         <h3 class="card-title">Thema</h3>
                         <div class="card-content">
@@ -638,7 +635,7 @@ function handleClickOutside(event) {
                 </div>
 
                 <!-- Right Column: Referenz + Save -->
-                <div class="cards-column">
+                <div class="cards-column grid-referenz">
                     <div class="card card-referenz">
                         <h3 class="card-title">Referenz</h3>
                         <p class="card-subtitle">Auf uns aufmerksam gemacht durch:</p>
@@ -782,25 +779,25 @@ function handleClickOutside(event) {
 .top-bar {
     display: flex;
     align-items: flex-end;
-    gap: 1.5rem;
-    margin-bottom: 1rem;
-    padding: 1rem 0;
+    gap: 1.25rem;
+    padding: 0.75rem 0 0.5rem;
 }
 
 .new-entry-btn {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    padding: 0.65rem 1.5rem;
+    padding: 0.55rem 1.25rem;
     border: none;
     background: var(--color-primary, #FFEA95);
     color: var(--color-primary-text, #000);
-    font-size: 1rem;
+    font-size: 0.95rem;
     font-weight: 600;
     border-radius: 25px;
     cursor: pointer;
     white-space: nowrap;
     transition: background 0.2s;
+    margin-bottom: 1px;
 }
 
 .new-entry-btn:hover {
@@ -808,19 +805,21 @@ function handleClickOutside(event) {
 }
 
 .new-entry-btn .pi {
-    font-size: 1rem;
+    font-size: 0.9rem;
 }
 
 .top-bar-field {
     display: flex;
     flex-direction: column;
-    gap: 0.25rem;
+    gap: 0.2rem;
 }
 
 .top-bar-field > label {
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     font-weight: 500;
     color: var(--text-color-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
 }
 
 .top-bar-field .user-select {
@@ -828,13 +827,14 @@ function handleClickOutside(event) {
 }
 
 .top-bar-field .date-input {
-    width: 260px !important;
+    width: 240px !important;
     flex: none;
 }
 
 .quick-filter-row {
     display: flex;
-    gap: 0.5rem;
+    gap: 0.4rem;
+    margin-bottom: 1px;
 }
 
 .quick-filter-btn {
@@ -870,13 +870,22 @@ function handleClickOutside(event) {
     border-radius: 4px;
 }
 
-/* Cards Grid - Three columns layout */
+/* Cards Grid */
 .cards-grid {
     display: grid;
     grid-template-columns: 1fr minmax(0, 2.3fr) 1fr;
+    grid-template-rows: auto 1fr;
+    grid-template-areas:
+        "kontakt zeitfenster zeitfenster"
+        "kontakt thema referenz";
     gap: 1rem;
     align-items: start;
 }
+
+.grid-kontakt { grid-area: kontakt; }
+.grid-zeitfenster { grid-area: zeitfenster; }
+.grid-thema { grid-area: thema; }
+.grid-referenz { grid-area: referenz; }
 
 .cards-column {
     display: flex;
@@ -1235,11 +1244,18 @@ function handleClickOutside(event) {
 }
 
 /* Zeitfenster & Referenz chip layouts */
-.card-zeitfenster .card-content {
-    display: grid;
-    grid-template-columns: auto auto;
-    gap: 0.5rem;
-    justify-content: start;
+.card-zeitfenster {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.card-zeitfenster .card-title {
+    margin: 0;
+    padding: 0;
+    border: none;
+    white-space: nowrap;
 }
 
 .card-referenz .card-content {
