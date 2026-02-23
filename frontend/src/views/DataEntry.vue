@@ -49,6 +49,12 @@ const showCardBg = ref(true)
 
 const loading = ref(false)
 const submitting = ref(false)
+const showSplash = ref(false)
+
+function triggerSplash() {
+    showSplash.value = true
+    setTimeout(() => { showSplash.value = false }, 500)
+}
 
 // Message state for inline feedback
 const message = ref({ type: '', text: '' })
@@ -215,6 +221,7 @@ async function performSave() {
             // Update existing entry
             await entries.update(currentEntryId.value, payload)
             showMessage('success', 'Eintrag wurde erfolgreich geändert')
+            triggerSplash()
             // Reload entries list and show the updated entry
             await loadEntries()
             if (editingIndex >= 0) {
@@ -224,6 +231,7 @@ async function performSave() {
             // Create new entry
             await entries.create(payload)
             showMessage('success', 'Eintrag wurde erfolgreich gespeichert')
+            triggerSplash()
             resetForm()
             await loadEntries()
         }
@@ -453,7 +461,6 @@ function handleClickOutside(event) {
                 <DatePicker
                     v-model="erfassungsdatum"
                     dateFormat="DD, dd. MM yy"
-                    showIcon
                     class="date-input"
                     @date-select="onDateSelect"
                 />
@@ -506,6 +513,10 @@ function handleClickOutside(event) {
             <button class="border-toggle-btn" @click="showCardBg = !showCardBg">
                 {{ showCardBg ? 'BG ON' : 'BG OFF' }}
             </button>
+            <div class="entry-branding">
+                <img src="@/assets/logo_wegweiser.svg" alt="Wegweiser" class="entry-logo" />
+                <h1 class="entry-branding-title">STATISTIK</h1>
+            </div>
         </div>
 
         <!-- Main Form -->
@@ -705,6 +716,7 @@ function handleClickOutside(event) {
             </div>
         </div>
 
+        <div v-if="showSplash" class="save-splash"></div>
     </div>
 </template>
 
@@ -715,6 +727,7 @@ function handleClickOutside(event) {
     padding: 1rem 40px;
     background: #fafafa;
     min-height: 100vh;
+    padding-top: 0;
 }
 
 /* Confirmation Dialog */
@@ -794,12 +807,14 @@ function handleClickOutside(event) {
     display: flex;
     align-items: flex-end;
     gap: 3.25rem;
-    padding: 0.4rem 1.2rem 0.5rem;
-    background: #f1eee9;
+    padding: 1rem 1.2rem 0.9rem;
+    background: #f9f7f3;
     margin-bottom: 1rem;
     border-radius: 25px;
     border-bottom: 7px solid #e7e3d0;
     border-top: 4px solid #e7e3d052;
+    border-top-left-radius: 0px;
+    border-top-right-radius: 0px;
 }
 
 .top-bar :deep(.p-select-label) {
@@ -833,12 +848,13 @@ function handleClickOutside(event) {
     color: #404040;
     font-size: 1.2em;
     font-weight: 600;
-    border-radius: 25px;
+    border-radius: 30px;
     cursor: pointer;
     white-space: nowrap;
-    transition: background 0.2s;
+    transition: background 0.2s, box-shadow 0.2s;
     margin-bottom: -4px;
-    margin-left: -11px;
+    margin-left: 4px;
+    box-shadow: 0 2px 6px rgb(0 0 0 / 12%), 0 1px 2px rgb(0 0 0 / 8%);
 }
 
 .new-entry-btn:hover {
@@ -861,6 +877,7 @@ function handleClickOutside(event) {
     color: var(--text-color-secondary);
     text-transform: uppercase;
     letter-spacing: 0.03em;
+    margin-left: 12px;
 }
 
 .top-bar-field .user-select {
@@ -940,6 +957,30 @@ function handleClickOutside(event) {
 }
 
 .grid-kontakt { grid-area: kontakt; }
+
+.entry-branding {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0 0.5rem;
+    margin-left: -100px;
+}
+
+.entry-logo {
+    height: 1.6rem;
+    opacity: 0.5;
+}
+
+.entry-branding-title {
+    font-family: 'Din Next Rounded', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 400;
+    margin: -0.3rem 0 0;
+    margin-left: 82px;
+    color: var(--text-color);
+    letter-spacing: 0.10em;
+    opacity: 0.5;
+}
 .grid-zeitfenster { grid-area: zeitfenster; }
 .grid-thema { grid-area: thema; }
 .grid-referenz { grid-area: referenz; }
@@ -1005,15 +1046,15 @@ function handleClickOutside(event) {
 }
 
 .card-person.has-card-bg {
-    background: rgb(96 165 250 / 33%);
+    background: rgb(217 234 255);
 }
 
 .card-thema.has-card-bg {
-    background: rgb(255 120 120 / 33%);
+    background: rgb(255 202 202);
 }
 
 .card-zeitfenster.has-card-bg {
-    background: rgb(91 219 166 / 33%);
+    background: rgb(184 248 219);
 }
 
 .card-referenz.has-card-bg {
@@ -1270,7 +1311,7 @@ function handleClickOutside(event) {
 }
 
 .thema-chip-content label {
-    font-size: 1.3rem;
+    font-size: 1rem;
     font-weight: 500;
     margin-right: 0.5rem;
     flex-shrink: 0;
@@ -1377,7 +1418,7 @@ function handleClickOutside(event) {
     width: 100%;
     margin-top: 0.5rem;
     padding: 0.4rem 0.75rem;
-    background: var(--color-referenz-light);
+    background: #fff;
     border-radius: 6px;
 }
 
@@ -1393,10 +1434,17 @@ function handleClickOutside(event) {
 
 .andere-input {
     flex: 1;
-    height: 1.75rem;
-    border: none;
-    background: transparent;
-    font-size: 0.875rem;
+    font-size: 1rem;
+    color: var(--p-inputtext-color);
+    background: var(--p-inputtext-background);
+    padding-block: var(--p-inputtext-padding-y);
+    padding-inline: var(--p-inputtext-padding-x);
+    border: 1px solid var(--p-inputtext-border-color);
+    border-radius: 30px;
+    max-width: 345px;
+    outline-color: transparent;
+    box-shadow: var(--p-inputtext-shadow);
+    transition: background var(--p-inputtext-transition-duration), color var(--p-inputtext-transition-duration), border-color var(--p-inputtext-transition-duration), outline-color var(--p-inputtext-transition-duration), box-shadow var(--p-inputtext-transition-duration);
 }
 
 .andere-input:focus {
@@ -1446,9 +1494,9 @@ function handleClickOutside(event) {
     font-size: 0.95rem;
     font-weight: 500;
     color: var(--text-color);
-    padding: 0.25rem 0.5rem;
+    padding: 0.50rem 0.5rem;
     background: #fff;
-    border-radius: 4px;
+    border-radius: 30px;
     border: 1px solid #ddd;
     outline: none;
 }
@@ -1497,21 +1545,48 @@ function handleClickOutside(event) {
 }
 
 .save-btn-full {
-    border-radius: 25px;
+    border-radius: 12px;
     width: 100%;
-    max-width: 340px;
+    max-width: 370px;
     background: var(--color-primary) !important;
     border-color: transparent !important;
     color: var(--color-primary-text) !important;
     padding: 0.75rem 1rem;
     font-size: 22px;
-    margin: 20px 20px;
+    margin: 20px 0px;
     height: 67px;
 }
 
 .save-btn-full:hover {
     background: var(--color-primary-hover) !important;
     border-color: transparent !important;
+}
+
+.save-splash {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: var(--color-primary, #ffea95);
+    transform: translate(-50%, -50%);
+    animation: splash 0.5s ease-out forwards;
+    pointer-events: none;
+    z-index: 9999;
+}
+
+@keyframes splash {
+    0% {
+        width: 0;
+        height: 0;
+        opacity: 0.8;
+    }
+    100% {
+        width: 300vmax;
+        height: 300vmax;
+        opacity: 0;
+    }
 }
 
 
@@ -1530,5 +1605,16 @@ function handleClickOutside(event) {
     .cards-column {
         gap: 0.75rem;
     }
+}
+</style>
+
+<style>
+.data-entry .p-select {
+    border-radius: 30px;
+}
+
+.data-entry .p-inputtext {
+    border-radius: 30px;
+    width: 220px;
 }
 </style>
