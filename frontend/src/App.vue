@@ -173,10 +173,10 @@ button, input, select, textarea {
 }
 
 .app-header {
-    border-radius: 0;
-    border-left: 0;
-    border-right: 0;
-    border-top: 0;
+    border: none !important;
+    box-shadow: none !important;
+    border-bottom: none !important;
+    background: #fff0c8 !important;
     transition: max-height 0.3s ease, opacity 0.3s ease, border-color 0.3s ease;
     overflow: hidden;
     max-height: 200px;

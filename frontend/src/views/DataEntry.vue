@@ -53,7 +53,7 @@ const showSplash = ref(false)
 
 function triggerSplash() {
     showSplash.value = true
-    setTimeout(() => { showSplash.value = false }, 500)
+    setTimeout(() => { showSplash.value = false }, 3000)
 }
 
 // Message state for inline feedback
@@ -717,6 +717,8 @@ function handleClickOutside(event) {
         </div>
 
         <div v-if="showSplash" class="save-splash"></div>
+        <div v-if="showSplash" class="save-splash-backdrop"></div>
+        <div v-if="showSplash" class="save-splash-text"><span class="splash-check">&#10003;</span> Eintrag gespeichert</div>
     </div>
 </template>
 
@@ -807,14 +809,11 @@ function handleClickOutside(event) {
     display: flex;
     align-items: flex-end;
     gap: 3.25rem;
-    padding: 1rem 1.2rem 0.9rem;
-    background: #f9f7f3;
+    padding: 1rem 40px 1.3rem;
+    background: linear-gradient(180deg, #fff0c8, transparent);
     margin-bottom: 1rem;
-    border-radius: 25px;
-    border-bottom: 7px solid #e7e3d0;
-    border-top: 4px solid #e7e3d052;
-    border-top-left-radius: 0px;
-    border-top-right-radius: 0px;
+    margin-left: -40px;
+    margin-right: -40px;
 }
 
 .top-bar :deep(.p-select-label) {
@@ -854,7 +853,6 @@ function handleClickOutside(event) {
     transition: background 0.2s, box-shadow 0.2s;
     margin-bottom: -4px;
     margin-left: 4px;
-    box-shadow: 0 2px 6px rgb(0 0 0 / 12%), 0 1px 2px rgb(0 0 0 / 8%);
 }
 
 .new-entry-btn:hover {
@@ -905,7 +903,7 @@ function handleClickOutside(event) {
     color: var(--text-color);
     font-size: 0.95rem;
     font-weight: 500;
-    border-radius: 8px;
+    border-radius: 30px;
     cursor: pointer;
     transition: background 0.15s ease;
 }
@@ -941,7 +939,7 @@ function handleClickOutside(event) {
 
 .user-select.highlight-placeholder :deep(.p-select-label.p-placeholder) {
     background: var(--color-primary);
-    border-radius: 4px;
+    border-radius: 30px;
 }
 
 /* Cards Grid */
@@ -1547,7 +1545,6 @@ function handleClickOutside(event) {
 .save-btn-full {
     border-radius: 12px;
     width: 100%;
-    max-width: 370px;
     background: var(--color-primary) !important;
     border-color: transparent !important;
     color: var(--color-primary-text) !important;
@@ -1586,6 +1583,65 @@ function handleClickOutside(event) {
         width: 300vmax;
         height: 300vmax;
         opacity: 0;
+    }
+}
+
+.save-splash-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: #f5f3ef;
+    z-index: 9999;
+    pointer-events: none;
+    animation: splash-backdrop 3s ease-out forwards;
+}
+
+@keyframes splash-backdrop {
+    0% { opacity: 0; }
+    10% { opacity: 1; }
+    70% { opacity: 1; }
+    100% { opacity: 0; }
+}
+
+.splash-check {
+    font-size: 8.4rem;
+    margin-right: 0.5rem;
+    line-height: 1;
+    vertical-align: middle;
+}
+
+.save-splash-text {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-family: 'Din Next Rounded', sans-serif;
+    font-size: 4.2rem;
+    font-weight: 600;
+    color: var(--color-primary, #ffea95);
+    z-index: 10000;
+    pointer-events: none;
+    animation: splash-text 3s ease-out forwards;
+}
+
+@keyframes splash-text {
+    0% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(0.8);
+    }
+    15% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+    }
+    70% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+    }
+    100% {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(1);
     }
 }
 
