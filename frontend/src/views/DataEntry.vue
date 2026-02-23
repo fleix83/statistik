@@ -527,6 +527,7 @@ function handleClickOutside(event) {
                 <!-- Kontakt (left, spans rows) -->
                 <div class="cards-column grid-kontakt">
                     <div class="card card-person" :class="{ 'no-borders': !showBorders, 'has-card-bg': showCardBg }">
+                        <span class="card-dot"></span>
                         <h3 class="card-title">Kontakt</h3>
                         <div class="card-content">
                             <!-- Kontaktart -->
@@ -599,6 +600,7 @@ function handleClickOutside(event) {
 
                 <!-- Zeitfenster (spans center + right, single row) -->
                 <div class="card card-zeitfenster grid-zeitfenster" :class="{ 'no-borders': !showBorders, 'has-card-bg': showCardBg }">
+                    <span class="card-dot"></span>
                     <h3 class="card-title">Zeitfenster</h3>
                     <div
                         v-for="opt in optionsBySection.zeitfenster"
@@ -618,6 +620,7 @@ function handleClickOutside(event) {
                 <!-- Thema (center) -->
                 <div class="cards-column grid-thema">
                     <div class="card card-thema" :class="{ 'no-borders': !showBorders, 'has-card-bg': showCardBg }">
+                        <span class="card-dot"></span>
                         <h3 class="card-title">Thema</h3>
                         <div class="card-content">
                             <template v-for="opt in optionsBySection.thema" :key="opt">
@@ -662,6 +665,7 @@ function handleClickOutside(event) {
                 <!-- Right Column: Referenz + Save -->
                 <div class="cards-column grid-referenz">
                     <div class="card card-referenz" :class="{ 'no-borders': !showBorders, 'has-card-bg': showCardBg }">
+                        <span class="card-dot"></span>
                         <h3 class="card-title">Referenz</h3>
                         <p class="card-subtitle">Auf uns aufmerksam gemacht durch:</p>
                         <div class="card-content">
@@ -993,6 +997,32 @@ function handleClickOutside(event) {
 .card {
     border-radius: 25px;
     padding: 1.4rem;
+    position: relative;
+}
+
+.card-dot {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+}
+
+.card-person .card-dot {
+    background: var(--color-kontaktart-checked);
+}
+
+.card-thema .card-dot {
+    background: var(--color-thema-checked);
+}
+
+.card-zeitfenster .card-dot {
+    background: var(--color-zeitfenster-checked);
+}
+
+.card-referenz .card-dot {
+    background: var(--color-referenz-checked);
 }
 
 .card-title {
