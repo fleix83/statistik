@@ -91,7 +91,9 @@ async function onSave() {
             sort_order: i
         }))
         await saveFields(fieldsToSave)
+        await loadFields()
         isDirty.value = false
+        syncFromConfigured()
         toast.add({ severity: 'success', summary: 'Gespeichert', detail: 'Rückschau-Felder wurden aktualisiert', life: 3000 })
     } catch {
         toast.add({ severity: 'error', summary: 'Fehler', detail: 'Speichern fehlgeschlagen', life: 3000 })
