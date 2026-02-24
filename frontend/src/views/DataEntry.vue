@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useToast } from 'primevue/usetoast'
 import Button from 'primevue/button'
 import Select from 'primevue/select'
@@ -62,6 +62,30 @@ const message = ref({ type: '', text: '' })
 
 // Highlight user select placeholder
 const highlightUserSelect = ref(false)
+
+// Validation errors - tracks which groups are missing
+const validationErrors = ref(new Set())
+
+// Auto-clear validation errors when user makes selections
+watch(selectedUser, (val) => {
+    if (val) validationErrors.value.delete('user')
+})
+watch(() => formData.value.kontaktart.length + formData.value.person.length, () => {
+    if (formData.value.kontaktart.length > 0 && formData.value.person.length > 0) {
+        validationErrors.value.delete('kontakt')
+    }
+})
+watch(() => formData.value.thema.length, (len) => {
+    if (len > 0) validationErrors.value.delete('thema')
+})
+watch(() => formData.value.zeitfenster.length, (len) => {
+    if (len > 0) validationErrors.value.delete('zeitfenster')
+})
+watch([() => formData.value.referenz.length, referenzAndere], () => {
+    if (formData.value.referenz.length > 0 || referenzAndere.value.trim()) {
+        validationErrors.value.delete('referenz')
+    }
+})
 
 // Rueckschau overlay
 const rueckschauVisible = ref(false)
@@ -170,15 +194,18 @@ function showMessage(type, text, duration = 5000) {
 function validateForm() {
     // Validate all groups have at least one selection and user is selected
     // Note: dauer (länger als 20 minuten) is optional
-    const hasAllSelections =
-        selectedUser.value &&
-        formData.value.kontaktart.length > 0 &&
-        formData.value.person.length > 0 &&
-        formData.value.thema.length > 0 &&
-        formData.value.zeitfenster.length > 0 &&
-        (formData.value.referenz.length > 0 || referenzAndere.value.trim())
+    const errors = new Set()
 
-    if (!hasAllSelections) {
+    if (!selectedUser.value) errors.add('user')
+    if (formData.value.kontaktart.length === 0) errors.add('kontakt')
+    if (formData.value.person.length === 0) errors.add('kontakt')
+    if (formData.value.thema.length === 0) errors.add('thema')
+    if (formData.value.zeitfenster.length === 0) errors.add('zeitfenster')
+    if (formData.value.referenz.length === 0 && !referenzAndere.value.trim()) errors.add('referenz')
+
+    validationErrors.value = errors
+
+    if (errors.size > 0) {
         showMessage('warn', 'Bitte wähle mindestens eine Option aus jeder Gruppe und deinen Namen.')
         return false
     }
@@ -266,6 +293,7 @@ function resetForm() {
     referenzAndere.value = ''
     erfassungsdatum.value = new Date()
     message.value = { type: '', text: '' }
+    validationErrors.value = new Set()
     highlightUserSelect.value = true
     currentEntryIndex.value = -1
 }
@@ -467,7 +495,7 @@ function handleClickOutside(event) {
                     optionLabel="username"
                     placeholder="Auswählen"
                     class="user-select"
-                    :class="{ 'highlight-placeholder': highlightUserSelect && !selectedUser }"
+                    :class="{ 'highlight-placeholder': highlightUserSelect && !selectedUser, 'validation-error-field': validationErrors.has('user') }"
                     :loading="loading"
                     @change="highlightUserSelect = false"
                 />
@@ -543,7 +571,7 @@ function handleClickOutside(event) {
             <div class="cards-grid">
                 <!-- Kontakt (left, spans rows) -->
                 <div class="cards-column grid-kontakt">
-                    <div class="card card-person" :class="{ 'no-borders': !showBorders, 'has-card-bg': showCardBg }">
+                    <div class="card card-person" :class="{ 'no-borders': !showBorders, 'has-card-bg': showCardBg, 'validation-error': validationErrors.has('kontakt') }">
                         <span class="card-dot"></span>
                         <h3 class="card-title">Kontakt</h3>
                         <div class="card-content">
@@ -616,7 +644,7 @@ function handleClickOutside(event) {
                 </div>
 
                 <!-- Zeitfenster (spans center + right, single row) -->
-                <div class="card card-zeitfenster grid-zeitfenster" :class="{ 'no-borders': !showBorders, 'has-card-bg': showCardBg }">
+                <div class="card card-zeitfenster grid-zeitfenster" :class="{ 'no-borders': !showBorders, 'has-card-bg': showCardBg, 'validation-error': validationErrors.has('zeitfenster') }">
                     <span class="card-dot"></span>
                     <h3 class="card-title">Zeitfenster</h3>
                     <div
@@ -636,7 +664,7 @@ function handleClickOutside(event) {
 
                 <!-- Thema (center) -->
                 <div class="cards-column grid-thema">
-                    <div class="card card-thema" :class="{ 'no-borders': !showBorders, 'has-card-bg': showCardBg }">
+                    <div class="card card-thema" :class="{ 'no-borders': !showBorders, 'has-card-bg': showCardBg, 'validation-error': validationErrors.has('thema') }">
                         <span class="card-dot"></span>
                         <h3 class="card-title">Thema</h3>
                         <div class="card-content">
@@ -681,7 +709,7 @@ function handleClickOutside(event) {
 
                 <!-- Right Column: Referenz + Save -->
                 <div class="cards-column grid-referenz">
-                    <div class="card card-referenz" :class="{ 'no-borders': !showBorders, 'has-card-bg': showCardBg }">
+                    <div class="card card-referenz" :class="{ 'no-borders': !showBorders, 'has-card-bg': showCardBg, 'validation-error': validationErrors.has('referenz') }">
                         <span class="card-dot"></span>
                         <h3 class="card-title">Referenz</h3>
                         <p class="card-subtitle">Auf uns aufmerksam gemacht durch:</p>
@@ -1692,6 +1720,48 @@ function handleClickOutside(event) {
     }
 }
 
+
+/* Validation error highlight — slow pulsing background */
+.card-person.validation-error {
+    animation: pulse-kontakt 2s ease-in-out infinite;
+}
+
+.card-zeitfenster.validation-error {
+    animation: pulse-zeitfenster 2s ease-in-out infinite;
+}
+
+.card-thema.validation-error {
+    animation: pulse-thema 2s ease-in-out infinite;
+}
+
+.card-referenz.validation-error {
+    animation: pulse-referenz 2s ease-in-out infinite;
+}
+
+.validation-error-field :deep(.p-select) {
+    animation: pulse-kontakt 2s ease-in-out infinite;
+    border-radius: 30px;
+}
+
+@keyframes pulse-kontakt {
+    0%, 100% { background-color: #f5f3ef; }
+    50% { background-color: #b5d6ff; }
+}
+
+@keyframes pulse-zeitfenster {
+    0%, 100% { background-color: #f5f3ef; }
+    50% { background-color: #9ae2c0; }
+}
+
+@keyframes pulse-thema {
+    0%, 100% { background-color: #f5f3ef; }
+    50% { background-color: #ffc6c6; }
+}
+
+@keyframes pulse-referenz {
+    0%, 100% { background-color: #f5f3ef; }
+    50% { background-color: #dfd9bd; }
+}
 
 /* Responsive */
 @media (max-width: 1200px) {
