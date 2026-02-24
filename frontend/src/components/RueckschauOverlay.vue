@@ -1,5 +1,7 @@
 <script setup>
 import { ref, computed, watch, onUnmounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { useAuthStore } from '../stores/auth'
 import { useRueckschauState } from '../composables/useRueckschauState'
 
 const props = defineProps({
@@ -8,6 +10,30 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['close'])
+
+const router = useRouter()
+const authStore = useAuthStore()
+
+// Navbar always visible in Rückschau
+
+function navigateTo(route) {
+    emit('close')
+    router.push(route)
+}
+
+const navItems = computed(() => {
+    const items = [
+        { label: 'Erfassung', icon: 'pi pi-pencil', route: '/' }
+    ]
+    if (authStore.isAuthenticated) {
+        items.push(
+            { label: 'Editor', icon: 'pi pi-cog', route: '/editor' },
+            { label: 'Auswertung', icon: 'pi pi-chart-bar', route: '/analytics' }
+        )
+    }
+    return items
+})
+
 
 const { gridData, loading, loadFields, loadGridData } = useRueckschauState()
 
@@ -149,6 +175,29 @@ onUnmounted(() => {
     <Teleport to="body">
         <Transition name="overlay-fade">
             <div v-if="visible" class="rueckschau-overlay">
+                <!-- Nav Bar -->
+                <div class="overlay-navbar">
+                    <div class="overlay-nav-brand">
+                        <img src="@/assets/logo_wegweiser.svg" alt="Wegweiser" class="overlay-nav-logo" />
+                        <h1 class="overlay-nav-title">STATISTIK</h1>
+                    </div>
+                    <div class="overlay-nav-items">
+                        <button
+                            v-for="item in navItems"
+                            :key="item.route"
+                            class="overlay-nav-item"
+                            :class="{ active: item.route === '/' }"
+                            @click="navigateTo(item.route)"
+                        >
+                            <i :class="item.icon"></i>
+                            {{ item.label }}
+                        </button>
+                    </div>
+                    <button class="close-btn" @click="close" title="Schliessen">
+                        <i class="pi pi-times"></i>
+                    </button>
+                </div>
+
                 <!-- Header -->
                 <div class="overlay-header">
                     <div class="header-left">
@@ -166,9 +215,6 @@ onUnmounted(() => {
                             >30 Tage</button>
                         </div>
                     </div>
-                    <button class="close-btn" @click="close" title="Schliessen">
-                        <i class="pi pi-times"></i>
-                    </button>
                 </div>
 
                 <!-- Content -->
@@ -261,12 +307,79 @@ onUnmounted(() => {
     opacity: 0;
 }
 
+/* Overlay Navbar */
+.overlay-navbar {
+    display: flex;
+    align-items: center;
+    padding: 0 1rem 0 0;
+    background: #fff0c8;
+    flex-shrink: 0;
+}
+
+.overlay-nav-brand {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-left: -80px;
+    margin-right: 3rem;
+    padding: 20px;
+}
+
+.overlay-nav-logo {
+    height: 3rem;
+    opacity: 0.6;
+}
+
+.overlay-nav-title {
+    font-family: 'Din Next Rounded', sans-serif;
+    font-size: 2.0rem;
+    font-weight: 400;
+    margin: -0.7rem 0 0;
+    margin-left: 157px;
+    color: var(--text-color);
+    letter-spacing: 0.10em;
+    opacity: 0.7;
+}
+
+.overlay-nav-items {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.overlay-nav-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    border: none;
+    background: transparent;
+    border-radius: var(--border-radius, 6px);
+    font-size: 1rem;
+    font-weight: 500;
+    color: var(--text-color);
+    cursor: pointer;
+    transition: background-color 0.2s;
+    font-family: inherit;
+}
+
+.overlay-nav-item:hover {
+    background: var(--surface-hover, rgba(0, 0, 0, 0.06));
+}
+
+.overlay-nav-item.active {
+    background: var(--primary-color, #FFEA95);
+    color: var(--primary-color-text, #333);
+}
+
 /* Header */
 .overlay-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     padding: 40px 40px;
+    padding-top: 92px;
+    margin-bottom: -20px;
     background: linear-gradient(180deg, #fff0c8, transparent);
     border-bottom: none;
     flex-shrink: 0;
@@ -320,11 +433,13 @@ onUnmounted(() => {
     background: transparent;
     border-radius: 10px;
     cursor: pointer;
-    transition: color 0.15s;
+    transition: background 0.15s;
+    margin-left: auto;
+    margin-right: 3rem;
 }
 
-.close-btn:hover i {
-    color: #333;
+.close-btn:hover {
+    background: rgba(0, 0, 0, 0.06);
 }
 
 .close-btn i {
