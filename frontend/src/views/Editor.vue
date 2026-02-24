@@ -18,6 +18,7 @@ import SectionCard from '../components/editor/SectionCard.vue'
 import OptionShort from '../components/editor/OptionShort.vue'
 import OptionItemThema from '../components/editor/OptionItemThema.vue'
 import KeywordEditor from '../components/editor/KeywordEditor.vue'
+import RueckschauFieldConfig from '../components/editor/RueckschauFieldConfig.vue'
 
 import { useEditorDraft } from '../composables/useEditorDraft'
 import { users } from '../services/api'
@@ -556,6 +557,11 @@ function confirmDeleteUser(user) {
                         </DataTable>
                     </div>
                 </div>
+            </TabPanel>
+
+            <!-- Rueckschau Fields Tab -->
+            <TabPanel header="Felder Rückschau">
+                <RueckschauFieldConfig />
             </TabPanel>
         </TabView>
 

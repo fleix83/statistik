@@ -8,6 +8,7 @@ import InputText from 'primevue/inputtext'
 import DatePicker from 'primevue/datepicker'
 import Toast from 'primevue/toast'
 import { options, entries, users } from '../services/api'
+import RueckschauOverlay from '../components/RueckschauOverlay.vue'
 
 const toast = useToast()
 
@@ -61,6 +62,16 @@ const message = ref({ type: '', text: '' })
 
 // Highlight user select placeholder
 const highlightUserSelect = ref(false)
+
+// Rueckschau overlay
+const rueckschauVisible = ref(false)
+const rueckschauDays = ref(7)
+
+function openRueckschau(days) {
+    rueckschauDays.value = days
+    rueckschauVisible.value = true
+}
+
 
 // Confirmation dialog for editing existing entries
 const showConfirmDialog = ref(false)
@@ -410,6 +421,12 @@ function handleClickOutside(event) {
 <template>
     <Toast />
 
+    <RueckschauOverlay
+        :visible="rueckschauVisible"
+        :initialDays="rueckschauDays"
+        @close="rueckschauVisible = false"
+    />
+
     <!-- Confirmation Dialog for editing existing entries -->
     <div v-if="showConfirmDialog" class="confirm-overlay">
         <div class="confirm-dialog">
@@ -497,11 +514,11 @@ function handleClickOutside(event) {
                 </div>
 
                 <div class="quick-filter-row">
-                    <button class="quick-filter-btn">
+                    <button class="quick-filter-btn" @click="openRueckschau(7)">
                         <i class="pi pi-history"></i>
                         7 Tage
                     </button>
-                    <button class="quick-filter-btn">
+                    <button class="quick-filter-btn" @click="openRueckschau(30)">
                         <i class="pi pi-history"></i>
                         30 Tage
                     </button>

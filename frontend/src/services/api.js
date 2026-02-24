@@ -97,6 +97,13 @@ export const markers = {
     delete: (id) => api.delete(`/analytics/markers.php?id=${id}`)
 }
 
+// Rueckschau (Lookback)
+export const rueckschau = {
+    getFields: () => api.get('/rueckschau/fields.php'),
+    saveFields: (fields) => api.post('/rueckschau/fields.php', { fields }),
+    getData: (days = 7) => api.get('/rueckschau/data.php', { params: { days } })
+}
+
 // Saved Periods
 export const savedPeriods = {
     list: () => api.get('/analytics/periods.php'),
