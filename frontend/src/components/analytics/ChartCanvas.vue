@@ -1050,6 +1050,122 @@ const canShowStream = computed(() => {
     const hasDatasets = chartData.value?.datasets?.length > 0
     return (mode === 'timeseries' || mode === 'totals') && hasDatasets
 })
+
+// Data table rows derived from chartData
+const tableData = computed(() => {
+    if (!chartData.value) return []
+
+    const mode = chartData.value.mode
+
+    // Single period aggregate (bar, pie)
+    if (mode === 'aggregate' && chartData.value.items?.length > 0) {
+        const items = chartData.value.items
+        const total = items.reduce((s, i) => s + i.count, 0)
+        return [{
+            periodLabel: null,
+            total,
+            rows: items.map(i => ({
+                label: i.label,
+                count: i.count,
+                percent: total > 0 ? ((i.count / total) * 100).toFixed(1) : '0.0'
+            }))
+        }]
+    }
+
+    // Multi-period aggregate comparison (bar, pie)
+    if (mode === 'aggregate-compare' && chartData.value.datasets?.length > 0) {
+        const labels = chartData.value.labels
+        return chartData.value.datasets.map(ds => {
+            const total = ds.data.reduce((s, v) => s + v, 0)
+            return {
+                periodLabel: ds.label,
+                total,
+                rows: labels.map((label, j) => ({
+                    label,
+                    count: ds.data[j],
+                    percent: total > 0 ? ((ds.data[j] / total) * 100).toFixed(1) : '0.0'
+                }))
+            }
+        })
+    }
+
+    // Totals mode (line chart period comparison)
+    if (mode === 'totals' && chartData.value.datasets?.length > 0) {
+        const datasets = chartData.value.datasets
+        const grandTotal = datasets.reduce((s, ds) => s + (ds.total || ds.data.reduce((a, b) => a + b, 0)), 0)
+        return [{
+            periodLabel: null,
+            total: grandTotal,
+            rows: datasets.map(ds => {
+                const dsTotal = ds.total || ds.data.reduce((a, b) => a + b, 0)
+                return {
+                    label: ds.label,
+                    count: dsTotal,
+                    percent: grandTotal > 0 ? ((dsTotal / grandTotal) * 100).toFixed(1) : '0.0'
+                }
+            })
+        }]
+    }
+
+    // Timeseries mode (specific values over time)
+    if (mode === 'timeseries' && chartData.value.datasets?.length > 0) {
+        // Group by period
+        const numPeriods = chartData.value.numPeriods || 1
+        if (numPeriods <= 1) {
+            const datasets = chartData.value.datasets
+            const totals = datasets.map(ds => ds.data.reduce((a, b) => a + b, 0))
+            const grandTotal = totals.reduce((a, b) => a + b, 0)
+            return [{
+                periodLabel: null,
+                total: grandTotal,
+                rows: datasets.map((ds, i) => ({
+                    label: ds.label,
+                    count: totals[i],
+                    percent: grandTotal > 0 ? ((totals[i] / grandTotal) * 100).toFixed(1) : '0.0'
+                }))
+            }]
+        }
+        // Multi-period: group datasets by periodIndex
+        const periodGroups = {}
+        chartData.value.datasets.forEach(ds => {
+            const pi = ds.periodIndex ?? 0
+            if (!periodGroups[pi]) periodGroups[pi] = []
+            periodGroups[pi].push(ds)
+        })
+        return Object.entries(periodGroups).map(([pi, datasets]) => {
+            const totals = datasets.map(ds => ds.data.reduce((a, b) => a + b, 0))
+            const grandTotal = totals.reduce((a, b) => a + b, 0)
+            const periodLabel = periods.value[parseInt(pi)]?.label || `Periode ${parseInt(pi) + 1}`
+            return {
+                periodLabel,
+                total: grandTotal,
+                rows: datasets.map((ds, i) => ({
+                    label: ds.label.replace(` (${periodLabel})`, ''),
+                    count: totals[i],
+                    percent: grandTotal > 0 ? ((totals[i] / grandTotal) * 100).toFixed(1) : '0.0'
+                }))
+            }
+        })
+    }
+
+    // Stacked mode
+    if (mode === 'stacked' && chartData.value.datasets?.length > 0) {
+        const datasets = chartData.value.datasets
+        const totals = datasets.map(ds => ds.data.reduce((a, b) => a + b, 0))
+        const grandTotal = totals.reduce((a, b) => a + b, 0)
+        return [{
+            periodLabel: null,
+            total: grandTotal,
+            rows: datasets.map((ds, i) => ({
+                label: ds.label,
+                count: totals[i],
+                percent: grandTotal > 0 ? ((totals[i] / grandTotal) * 100).toFixed(1) : '0.0'
+            }))
+        }]
+    }
+
+    return []
+})
 </script>
 
 <template>
@@ -1235,6 +1351,40 @@ const canShowStream = computed(() => {
                             <p>Streamgraph: Wählen Sie mehrere Werte aus einer Kategorie für die Zeitverlauf-Darstellung</p>
                         </div>
                     </template>
+                </div>
+
+                <!-- Data Table -->
+                <div v-if="tableData.length > 0 && !loading" class="data-table-section">
+                    <div
+                        v-for="(table, tIndex) in tableData"
+                        :key="'table-' + tIndex"
+                        class="data-table-wrapper"
+                    >
+                        <h4 v-if="table.periodLabel" class="data-table-period">{{ table.periodLabel }}</h4>
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th class="col-label">Feld</th>
+                                    <th class="col-count">Anzahl</th>
+                                    <th class="col-percent">Anteil</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="(row, rIndex) in table.rows" :key="rIndex">
+                                    <td class="col-label">{{ row.label }}</td>
+                                    <td class="col-count">{{ row.count.toLocaleString('de-CH') }}</td>
+                                    <td class="col-percent">{{ row.percent }}%</td>
+                                </tr>
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <td class="col-label">Total</td>
+                                    <td class="col-count">{{ table.total.toLocaleString('de-CH') }}</td>
+                                    <td class="col-percent">100%</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
                 </div>
 
             </template>
@@ -1622,6 +1772,82 @@ const canShowStream = computed(() => {
 .pdf-export-area.exporting .fill-toggle,
 .pdf-export-area.exporting .header-right-controls {
     visibility: hidden !important;
+}
+
+/* Data Table */
+.data-table-section {
+    padding: 0 2rem 2rem;
+    margin-top: 2rem;
+    display: flex;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.data-table-wrapper {
+    flex: 1;
+    min-width: 280px;
+    background: white;
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.data-table-period {
+    font-size: 0.875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-color);
+    margin: 0;
+    padding: 0.875rem 1.25rem;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+}
+
+.data-table thead th {
+    text-align: left;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-color-secondary);
+    padding: 0.75rem 1.25rem;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.data-table tbody tr {
+    transition: background 0.1s ease;
+}
+
+.data-table tbody tr:hover {
+    background: #fafafa;
+}
+
+.data-table tbody td {
+    padding: 0.625rem 1.25rem;
+    color: var(--text-color);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.03);
+}
+
+.data-table tfoot td {
+    padding: 0.75rem 1.25rem;
+    font-weight: 600;
+    color: var(--text-color);
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.data-table .col-count,
+.data-table .col-percent {
+    text-align: right;
+}
+
+.data-table .col-count {
+    font-variant-numeric: tabular-nums;
 }
 
 /* Responsive */
