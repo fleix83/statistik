@@ -23,13 +23,17 @@ export function usePdfExport() {
         const contentWidth = pageWidth - marginLeft - marginRight
         const contentHeight = pageHeight - marginTop - marginBottom
 
+        // Use high scale for print quality (300 DPI)
+        // html2canvas scale determines pixel density of the captured image
+        const printScale = canvasOptions.scale || 3
+
         // Capture element to canvas
         const canvas = await html2canvas(element, {
-            scale: 2,
             useCORS: true,
             backgroundColor: '#ffffff',
             logging: false,
-            ...canvasOptions
+            ...canvasOptions,
+            scale: printScale
         })
 
         // Calculate scale to fit content area while maintaining aspect ratio
@@ -60,8 +64,8 @@ export function usePdfExport() {
             format: 'a4'
         })
 
-        const imgData = canvas.toDataURL('image/jpeg', 0.95)
-        pdf.addImage(imgData, 'JPEG', xOffset, yOffset, finalWidth, finalHeight)
+        const imgData = canvas.toDataURL('image/png')
+        pdf.addImage(imgData, 'PNG', xOffset, yOffset, finalWidth, finalHeight)
         pdf.save(filename)
     }
 
