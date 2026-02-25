@@ -8,14 +8,16 @@ import { useEditorDraft } from '../../composables/useEditorDraft'
 const toast = useToast()
 
 const { configuredFields, saving, loadFields, saveFields } = useRueckschauState()
-const { optionsBySection } = useEditorDraft()
+const { optionsBySection, loadDraft } = useEditorDraft()
 
 // Local working copy for drag-and-drop
 const localFields = ref([])
 const isDirty = ref(false)
 
-// All database sections
-const allSections = ['kontaktart', 'person', 'dauer', 'thema', 'zeitfenster', 'referenz']
+// All database sections split into two columns (matching Erfassung layout)
+const leftSections = ['kontaktart', 'person', 'dauer', 'thema']
+const rightSections = ['zeitfenster', 'referenz']
+const allSections = [...leftSections, ...rightSections]
 
 const sectionLabels = {
     kontaktart: 'Kontaktart',
@@ -50,9 +52,12 @@ const availableBySection = computed(() => {
     return result
 })
 
+const visibleLeftSections = computed(() => leftSections.filter(s => availableBySection.value[s]))
+const visibleRightSections = computed(() => rightSections.filter(s => availableBySection.value[s]))
+
 onMounted(async () => {
     try {
-        await loadFields()
+        await Promise.all([loadDraft(), loadFields()])
         syncFromConfigured()
     } catch {
         toast.add({ severity: 'error', summary: 'Fehler', detail: 'Felder konnten nicht geladen werden', life: 3000 })
@@ -119,7 +124,7 @@ function getSectionColor(section) {
             <!-- Left: Configured fields -->
             <div class="panel panel-configured">
                 <div class="panel-header">
-                    <h4 class="panel-title">Rückschau</h4>
+                    <h4 class="panel-title">Rückschau 7/30 Tage</h4>
                     <span class="field-count">{{ localFields.length }} Felder</span>
                 </div>
 
@@ -163,32 +168,59 @@ function getSectionColor(section) {
                 <div class="panel-header">
                     <h4 class="panel-title">Verfügbare Felder</h4>
                 </div>
+                <p class="panel-hint">Auf Feld klicken, um es zum Rückschau Screen hinzuzufügen</p>
 
                 <div v-if="Object.keys(availableBySection).length === 0" class="empty-state">
                     Alle Felder sind bereits konfiguriert.
                 </div>
 
-                <div class="available-sections">
-                    <div
-                        v-for="section in allSections"
-                        :key="section"
-                        v-show="availableBySection[section]"
-                        class="available-section"
-                    >
-                        <h5 class="available-section-title">
-                            <span class="section-dot" :style="{ background: getSectionColor(section) }"></span>
-                            {{ sectionLabels[section] }}
-                        </h5>
-                        <div class="available-fields">
-                            <button
-                                v-for="label in (availableBySection[section] || [])"
-                                :key="label"
-                                class="available-field"
-                                @click="addField(section, label)"
-                            >
-                                {{ label }}
-                                <i class="pi pi-plus add-icon"></i>
-                            </button>
+                <div v-else class="available-columns">
+                    <div class="available-column">
+                        <div
+                            v-for="(section, i) in visibleLeftSections"
+                            :key="section"
+                            class="available-section"
+                            :class="{ 'has-separator': i > 0 }"
+                        >
+                            <h5 class="available-section-title">
+                                <span class="section-dot" :style="{ background: getSectionColor(section) }"></span>
+                                {{ sectionLabels[section] }}
+                            </h5>
+                            <div class="available-fields">
+                                <button
+                                    v-for="label in availableBySection[section]"
+                                    :key="label"
+                                    class="available-field"
+                                    @click="addField(section, label)"
+                                >
+                                    {{ label }}
+                                    <i class="pi pi-plus add-icon"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="available-column">
+                        <div
+                            v-for="(section, i) in visibleRightSections"
+                            :key="section"
+                            class="available-section"
+                            :class="{ 'has-separator': i > 0 }"
+                        >
+                            <h5 class="available-section-title">
+                                <span class="section-dot" :style="{ background: getSectionColor(section) }"></span>
+                                {{ sectionLabels[section] }}
+                            </h5>
+                            <div class="available-fields">
+                                <button
+                                    v-for="label in availableBySection[section]"
+                                    :key="label"
+                                    class="available-field"
+                                    @click="addField(section, label)"
+                                >
+                                    {{ label }}
+                                    <i class="pi pi-plus add-icon"></i>
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -199,13 +231,13 @@ function getSectionColor(section) {
 
 <style scoped>
 .rueckschau-config {
-    max-width: 1177px;
+    max-width: 1400px;
     margin: 0 auto;
 }
 
 .config-panels {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: minmax(0, 390px) 1003px;
     gap: 24px;
     align-items: start;
 }
@@ -214,6 +246,10 @@ function getSectionColor(section) {
     background: #fff;
     border-radius: 12px;
     padding: 24px 28px;
+}
+
+.panel-configured {
+    border: 4px dashed #fff0c8;
 }
 
 .panel-header {
@@ -281,7 +317,7 @@ function getSectionColor(section) {
 
 .field-label {
     flex: 1;
-    font-size: 14px;
+    font-size: 16px;
     font-weight: 500;
     color: #333;
 }
@@ -343,11 +379,29 @@ function getSectionColor(section) {
     cursor: not-allowed;
 }
 
+.panel-hint {
+    font-size: 12px;
+    color: #999;
+    margin: -8px 0 16px;
+}
+
 /* Available fields */
-.available-sections {
+.available-columns {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    align-items: start;
+}
+
+.available-column {
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 24px;
+}
+
+.available-section.has-separator {
+    padding-top: 24px;
+    border-top: 1px solid #e5e5e5;
 }
 
 .available-section-title {
@@ -372,7 +426,7 @@ function getSectionColor(section) {
 .available-fields {
     display: flex;
     flex-wrap: wrap;
-    gap: 6px;
+    gap: 8px;
 }
 
 .available-field {
@@ -383,15 +437,15 @@ function getSectionColor(section) {
     border: 1px solid #e5e5e5;
     background: #fff;
     border-radius: 6px;
-    font-size: 13px;
+    font-size: 16px;
     color: #555;
     cursor: pointer;
     transition: all 0.15s;
 }
 
 .available-field:hover {
-    background: #f5f5f5;
-    border-color: #ccc;
+    background: #fff0c8;
+    border-color: #fff0c8;
 }
 
 .available-field .add-icon {
