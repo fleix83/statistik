@@ -385,7 +385,7 @@ function confirmDeleteUser(user) {
 
         <TabView class="editor-tabs">
             <!-- Options Tab -->
-            <TabPanel header="Felder">
+            <TabPanel header="Felder Erfassung">
                 <div class="tab-content-container">
                     <!-- Debug info -->
                     <div class="debug-info">
@@ -526,6 +526,11 @@ function confirmDeleteUser(user) {
                 </div>
             </TabPanel>
 
+            <!-- Rueckschau Fields Tab -->
+            <TabPanel header="Felder Rückschau">
+                <RueckschauFieldConfig />
+            </TabPanel>
+
             <!-- Users Tab -->
             <TabPanel header="Benutzer">
                 <div class="users-tab-content">
@@ -557,11 +562,6 @@ function confirmDeleteUser(user) {
                         </DataTable>
                     </div>
                 </div>
-            </TabPanel>
-
-            <!-- Rueckschau Fields Tab -->
-            <TabPanel header="Felder Rückschau">
-                <RueckschauFieldConfig />
             </TabPanel>
         </TabView>
 
@@ -609,7 +609,7 @@ function confirmDeleteUser(user) {
     justify-content: space-between;
     align-items: center;
     margin-bottom: 24px;
-    max-width: 1300px;
+    max-width: 1400px;
     margin-left: auto;
     margin-right: auto;
 }
@@ -632,7 +632,7 @@ function confirmDeleteUser(user) {
 
 .editor-tabs :deep(.p-tabview-tablist-container),
 .editor-tabs :deep(.p-tabview-nav-container) {
-    max-width: 1177px;
+    max-width: 1400px;
     margin: 0 auto;
 }
 
@@ -641,10 +641,12 @@ function confirmDeleteUser(user) {
     background: transparent;
     border: none;
     margin-bottom: 24px;
+    padding-left: 0;
+    justify-content: flex-start;
 }
 
 .tab-content-container {
-    max-width: 1177px;
+    max-width: 1400px;
     margin: 0 auto;
 }
 
@@ -654,17 +656,17 @@ function confirmDeleteUser(user) {
     margin-bottom: 16px;
     border-radius: 4px;
     font-size: 12px;
-    max-width: 1177px;
+    max-width: 1400px;
     margin-left: auto;
     margin-right: auto;
 }
 
 .options-layout {
     display: grid;
-    grid-template-columns: minmax(0, 803px) 350px;
+    grid-template-columns: minmax(0, 1003px) 390px;
     gap: 24px;
     align-items: start;
-    max-width: 1177px; /* 803 + 24 + 350 */
+    max-width: 1400px;
     margin: 0 auto;
 }
 
