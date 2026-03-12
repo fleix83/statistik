@@ -515,7 +515,7 @@ onUnmounted(() => {
 }
 
 .date-header.is-today {
-    background: rgba(91, 219, 166, 0.1);
+    background: rgba(255, 234, 149, 0.3);
 }
 
 .date-header.is-weekend {
@@ -568,6 +568,7 @@ onUnmounted(() => {
 .field-text {
     font-weight: 500;
     color: #333;
+    font-size: 16px;
 }
 
 .count-cell {
@@ -583,7 +584,7 @@ onUnmounted(() => {
 }
 
 .count-cell.is-today {
-    background: rgba(91, 219, 166, 0.06);
+    background: rgba(255, 234, 149, 0.15);
 }
 
 .count-cell.is-weekend {
@@ -597,8 +598,8 @@ onUnmounted(() => {
     width: 28px;
     height: 28px;
     border-radius: 50%;
-    background: var(--color-zeitfenster-light);
-    color: #166534;
+    background: #60a5fa;
+    color: #fff;
     font-size: 13px;
     font-weight: 600;
 }

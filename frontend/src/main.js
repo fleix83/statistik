@@ -2,6 +2,7 @@ import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import PrimeVue from 'primevue/config'
 import Aura from '@primeuix/themes/aura'
+import { definePreset } from '@primeuix/themes'
 import ToastService from 'primevue/toastservice'
 import ConfirmationService from 'primevue/confirmationservice'
 import Tooltip from 'primevue/tooltip'
@@ -11,13 +12,47 @@ import './assets/colors.css'
 import App from './App.vue'
 import router from './router'
 
+const YellowPreset = definePreset(Aura, {
+    semantic: {
+        primary: {
+            50: '#fffdf0',
+            100: '#fef9c3',
+            200: '#fef08a',
+            300: '#fdedad',
+            400: '#ffea95',
+            500: '#fee47b',
+            600: '#eab308',
+            700: '#a16207',
+            800: '#854d0e',
+            900: '#713f12',
+            950: '#422006'
+        },
+        colorScheme: {
+            light: {
+                primary: {
+                    color: '#ffea95',
+                    contrastColor: '#000000',
+                    hoverColor: '#fee47b',
+                    activeColor: '#fde047'
+                },
+                highlight: {
+                    background: '#ffea95',
+                    focusBackground: '#fee47b',
+                    color: '#000000',
+                    focusColor: '#000000'
+                }
+            }
+        }
+    }
+})
+
 const app = createApp(App)
 
 app.use(createPinia())
 app.use(router)
 app.use(PrimeVue, {
     theme: {
-        preset: Aura,
+        preset: YellowPreset,
         options: {
             darkModeSelector: '.dark-mode',
             cssLayer: false

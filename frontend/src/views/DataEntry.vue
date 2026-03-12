@@ -48,6 +48,14 @@ const expandedThema = ref(null)
 const showBorders = ref(true)
 const showCardBg = ref(true)
 
+// Formatted current date for top bar
+const formattedToday = computed(() => {
+    const now = new Date()
+    const dayNames = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag']
+    const monthNames = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember']
+    return `${dayNames[now.getDay()]}, ${now.getDate()}. ${monthNames[now.getMonth()]} ${now.getFullYear()}`
+})
+
 const loading = ref(false)
 const submitting = ref(false)
 const showSplash = ref(false)
@@ -552,15 +560,18 @@ function handleClickOutside(event) {
                     </button>
                 </div>
             </div>
-            <button class="border-toggle-btn" @click="showBorders = !showBorders">
-                {{ showBorders ? 'Borders ON' : 'Borders OFF' }}
-            </button>
-            <button class="border-toggle-btn" @click="showCardBg = !showCardBg">
-                {{ showCardBg ? 'BG ON' : 'BG OFF' }}
-            </button>
-            <div class="entry-branding">
-                <img src="@/assets/logo_wegweiser.svg" alt="Wegweiser" class="entry-logo" />
-                <h1 class="entry-branding-title">STATISTIK</h1>
+            <div class="top-bar-right">
+                <div class="top-bar-toggles">
+                    <button class="border-toggle-btn" @click="showBorders = !showBorders">
+                        {{ showBorders ? 'Borders ON' : 'Borders OFF' }}
+                    </button>
+                    <button class="border-toggle-btn" @click="showCardBg = !showCardBg">
+                        {{ showCardBg ? 'BG ON' : 'BG OFF' }}
+                    </button>
+                </div>
+                <div class="top-bar-date">
+                    {{ formattedToday }}
+                </div>
             </div>
         </div>
 
@@ -966,7 +977,6 @@ function handleClickOutside(event) {
 }
 
 .border-toggle-btn {
-    margin-left: auto;
     padding: 0.4rem 0.75rem;
     border-radius: 12px;
     border: 1px solid #ccc;
@@ -1005,28 +1015,28 @@ function handleClickOutside(event) {
 
 .grid-kontakt { grid-area: kontakt; }
 
-.entry-branding {
+.top-bar-right {
+    margin-left: auto;
     display: flex;
     flex-direction: column;
-    align-items: center;
-    padding: 0 0.5rem;
-    margin-left: -100px;
+    align-items: flex-end;
+    justify-content: space-between;
+    align-self: stretch;
+    padding: 0.5rem 0;
 }
 
-.entry-logo {
-    height: 1.6rem;
-    opacity: 0.5;
-}
-
-.entry-branding-title {
-    font-family: 'Din Next Rounded', sans-serif;
-    font-size: 0.95rem;
-    font-weight: 400;
-    margin: -0.3rem 0 0;
-    margin-left: 82px;
+.top-bar-date {
+    font-size: 1.2rem;
     color: var(--text-color);
-    letter-spacing: 0.10em;
-    opacity: 0.5;
+    white-space: nowrap;
+    font-weight: 500;
+    margin-right: 5rem;
+}
+
+.top-bar-toggles {
+    display: flex;
+    gap: 0.4rem;
+    margin-top: -12px;
 }
 .grid-zeitfenster { grid-area: zeitfenster; }
 .grid-thema { grid-area: thema; }
@@ -1296,7 +1306,7 @@ function handleClickOutside(event) {
 }
 
 .card-zeitfenster .checkbox-item.is-checked {
-    background: var(--color-zeitfenster-checked);
+    background: rgb(95 210 137);
 }
 
 .card-zeitfenster :deep(.p-checkbox-checked .p-checkbox-box),
