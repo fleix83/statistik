@@ -6,7 +6,7 @@ export default defineConfig(({ command }) => ({
     plugins: [vue()],
     // Dev: base '/' so API calls go to /api/* (intercepted by proxy)
     // Build: base '/statistik/' for production deployment
-    base: command === 'serve' ? '/' : '/statistik/',
+    base: command === 'serve' ? '/' : '/statistik-white/',
     server: {
         port: 5173,
         proxy: {
