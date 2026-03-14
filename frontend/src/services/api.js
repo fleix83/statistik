@@ -104,6 +104,12 @@ export const rueckschau = {
     getData: (days = 7) => api.get('/rueckschau/data.php', { params: { days } })
 }
 
+// Card Colors
+export const colors = {
+    getAll: () => api.get('/colors/index.php'),
+    update: (cardKey, data) => api.put(`/colors/index.php?card=${cardKey}`, data)
+}
+
 // Saved Periods
 export const savedPeriods = {
     list: () => api.get('/analytics/periods.php'),

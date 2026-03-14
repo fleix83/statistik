@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
+import { ref, computed, inject, watch, onMounted, onUnmounted } from 'vue'
 import { useToast } from 'primevue/usetoast'
 import Button from 'primevue/button'
 import Select from 'primevue/select'
@@ -7,8 +7,13 @@ import Checkbox from 'primevue/checkbox'
 import InputText from 'primevue/inputtext'
 import DatePicker from 'primevue/datepicker'
 import Toast from 'primevue/toast'
-import { options, entries, users } from '../services/api'
+import { options, entries, users, colors } from '../services/api'
+import { useAuthStore } from '../stores/auth'
 import RueckschauOverlay from '../components/RueckschauOverlay.vue'
+import CardColorModal from '../components/CardColorModal.vue'
+
+const authStore = useAuthStore()
+const isAdmin = computed(() => authStore.isAdmin)
 
 const toast = useToast()
 
@@ -45,8 +50,8 @@ const themaOptionsWithKeywords = ref([])
 const expandedThema = ref(null)
 
 // Toggle card borders and backgrounds
-const showBorders = ref(true)
-const showCardBg = ref(true)
+const showBorders = inject('showBorders')
+const showCardBg = inject('showCardBg')
 
 // Formatted current date for top bar
 const formattedToday = computed(() => {
@@ -105,6 +110,59 @@ function openRueckschau(days) {
 }
 
 
+// Card color customization
+const cardColors = ref({})
+const openModals = ref({})  // { cardKey: { anchorRect, backup } }
+
+function openColorModal(cardKey, event) {
+    if (!isAdmin.value) return
+    if (openModals.value[cardKey]) return  // Already open
+    openModals.value = {
+        ...openModals.value,
+        [cardKey]: {
+            anchorRect: event.target.getBoundingClientRect(),
+            backup: cardColors.value[cardKey] ? { ...cardColors.value[cardKey] } : null
+        }
+    }
+}
+
+function updateCardColorsPreview(cardKey, colorData) {
+    cardColors.value = { ...cardColors.value, [cardKey]: { ...colorData } }
+}
+
+async function saveCardColors(cardKey, colorData) {
+    try {
+        await colors.update(cardKey, colorData)
+        cardColors.value = { ...cardColors.value, [cardKey]: { ...colorData } }
+        const { [cardKey]: _, ...rest } = openModals.value
+        openModals.value = rest
+    } catch (error) {
+        console.error('Failed to save colors:', error)
+    }
+}
+
+function closeColorModal(cardKey) {
+    const modal = openModals.value[cardKey]
+    if (modal) {
+        // Restore backup for this card
+        cardColors.value = { ...cardColors.value, [cardKey]: modal.backup }
+    }
+    const { [cardKey]: _, ...rest } = openModals.value
+    openModals.value = rest
+}
+
+function getCardStyle(cardKey) {
+    const c = cardColors.value[cardKey]
+    if (!c) return {}
+    const style = {}
+    if (c.bg_color && showCardBg.value) style.background = c.bg_color
+    if (c.border_color && showBorders.value) style.borderColor = c.border_color
+    if (c.swatch_default) style['--custom-swatch-default'] = c.swatch_default
+    if (c.swatch_hover) style['--custom-swatch-hover'] = c.swatch_hover
+    if (c.swatch_checked) style['--custom-swatch-checked'] = c.swatch_checked
+    return style
+}
+
 // Confirmation dialog for editing existing entries
 const showConfirmDialog = ref(false)
 
@@ -133,6 +191,13 @@ onMounted(async () => {
     await loadEntries(false)  // Load entries list but don't display any - start with new entry form
     // No highlight on initial load - only on new entry tap
     document.addEventListener('click', handleClickOutside)
+    // Load card colors
+    try {
+        const res = await colors.getAll()
+        cardColors.value = res.data || {}
+    } catch (e) {
+        // Colors are optional, ignore errors
+    }
 })
 
 onUnmounted(() => {
@@ -561,14 +626,6 @@ function handleClickOutside(event) {
                 </div>
             </div>
             <div class="top-bar-right">
-                <div class="top-bar-toggles">
-                    <button class="border-toggle-btn" @click="showBorders = !showBorders">
-                        {{ showBorders ? 'Borders ON' : 'Borders OFF' }}
-                    </button>
-                    <button class="border-toggle-btn" @click="showCardBg = !showCardBg">
-                        {{ showCardBg ? 'BG ON' : 'BG OFF' }}
-                    </button>
-                </div>
                 <div class="top-bar-date">
                     {{ formattedToday }}
                 </div>
@@ -582,8 +639,8 @@ function handleClickOutside(event) {
             <div class="cards-grid">
                 <!-- Kontakt (left, spans rows) -->
                 <div class="cards-column grid-kontakt">
-                    <div class="card card-person" :class="{ 'no-borders': !showBorders, 'has-card-bg': showCardBg, 'validation-error': validationErrors.has('kontakt') }">
-                        <span class="card-dot"></span>
+                    <div class="card card-person" :class="{ 'no-borders': !showBorders, 'has-card-bg': showCardBg, 'validation-error': validationErrors.has('kontakt') }" :style="getCardStyle('person')">
+                        <span class="card-dot" :class="{ 'admin-clickable': isAdmin }" @click="openColorModal('person', $event)"></span>
                         <h3 class="card-title">Kontakt</h3>
                         <div class="card-content">
                             <!-- Kontaktart -->
@@ -655,8 +712,8 @@ function handleClickOutside(event) {
                 </div>
 
                 <!-- Zeitfenster (spans center + right, single row) -->
-                <div class="card card-zeitfenster grid-zeitfenster" :class="{ 'no-borders': !showBorders, 'has-card-bg': showCardBg, 'validation-error': validationErrors.has('zeitfenster') }">
-                    <span class="card-dot"></span>
+                <div class="card card-zeitfenster grid-zeitfenster" :class="{ 'no-borders': !showBorders, 'has-card-bg': showCardBg, 'validation-error': validationErrors.has('zeitfenster') }" :style="getCardStyle('zeitfenster')">
+                    <span class="card-dot" :class="{ 'admin-clickable': isAdmin }" @click="openColorModal('zeitfenster', $event)"></span>
                     <h3 class="card-title">Zeitfenster</h3>
                     <div
                         v-for="opt in optionsBySection.zeitfenster"
@@ -675,8 +732,8 @@ function handleClickOutside(event) {
 
                 <!-- Thema (center) -->
                 <div class="cards-column grid-thema">
-                    <div class="card card-thema" :class="{ 'no-borders': !showBorders, 'has-card-bg': showCardBg, 'validation-error': validationErrors.has('thema') }">
-                        <span class="card-dot"></span>
+                    <div class="card card-thema" :class="{ 'no-borders': !showBorders, 'has-card-bg': showCardBg, 'validation-error': validationErrors.has('thema') }" :style="getCardStyle('thema')">
+                        <span class="card-dot" :class="{ 'admin-clickable': isAdmin }" @click="openColorModal('thema', $event)"></span>
                         <h3 class="card-title">Thema</h3>
                         <div class="card-content">
                             <template v-for="opt in optionsBySection.thema" :key="opt">
@@ -720,8 +777,8 @@ function handleClickOutside(event) {
 
                 <!-- Right Column: Referenz + Save -->
                 <div class="cards-column grid-referenz">
-                    <div class="card card-referenz" :class="{ 'no-borders': !showBorders, 'has-card-bg': showCardBg, 'validation-error': validationErrors.has('referenz') }">
-                        <span class="card-dot"></span>
+                    <div class="card card-referenz" :class="{ 'no-borders': !showBorders, 'has-card-bg': showCardBg, 'validation-error': validationErrors.has('referenz') }" :style="getCardStyle('referenz')">
+                        <span class="card-dot" :class="{ 'admin-clickable': isAdmin }" @click="openColorModal('referenz', $event)"></span>
                         <h3 class="card-title">Referenz</h3>
                         <p class="card-subtitle">Auf uns aufmerksam gemacht durch:</p>
                         <div class="card-content">
@@ -775,6 +832,18 @@ function handleClickOutside(event) {
                 </div>
             </div>
         </div>
+
+        <CardColorModal
+            v-for="(modal, key) in openModals"
+            :key="key"
+            :visible="true"
+            :cardKey="key"
+            :colors="cardColors[key]"
+            :anchorRect="modal.anchorRect"
+            @save="saveCardColors"
+            @update="updateCardColorsPreview"
+            @close="closeColorModal(key)"
+        />
 
         <div v-if="showSplash" class="save-splash"></div>
         <div v-if="showSplash" class="save-splash-backdrop"></div>
@@ -869,7 +938,7 @@ function handleClickOutside(event) {
     display: flex;
     align-items: flex-end;
     gap: 3.25rem;
-    padding: 1rem 40px 1.3rem;
+    padding: 2rem 40px 1.3rem;
     background: linear-gradient(180deg, #fff0c8, transparent);
     margin-bottom: 1rem;
     margin-left: -40px;
@@ -1018,11 +1087,7 @@ function handleClickOutside(event) {
 .top-bar-right {
     margin-left: auto;
     display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    justify-content: space-between;
-    align-self: stretch;
-    padding: 0.5rem 0;
+    align-items: center;
 }
 
 .top-bar-date {
@@ -1036,7 +1101,7 @@ function handleClickOutside(event) {
 .top-bar-toggles {
     display: flex;
     gap: 0.4rem;
-    margin-top: -12px;
+    align-items: center;
 }
 .grid-zeitfenster { grid-area: zeitfenster; }
 .grid-thema { grid-area: thema; }
@@ -1062,6 +1127,17 @@ function handleClickOutside(event) {
     width: 16px;
     height: 16px;
     border-radius: 50%;
+    z-index: 1;
+}
+
+.card-dot.admin-clickable {
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.card-dot.admin-clickable:hover {
+    transform: scale(1.4);
+    box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1);
 }
 
 .card-person .card-dot {
@@ -1129,19 +1205,19 @@ function handleClickOutside(event) {
 }
 
 .card-person.has-card-bg {
-    background: rgb(217 234 255);
+    background: #9fc9fd;
 }
 
 .card-thema.has-card-bg {
-    background: rgb(255 202 202);
+    background: #ff8787;
 }
 
 .card-zeitfenster.has-card-bg {
-    background: rgb(184 248 219);
+    background: #5bd797;
 }
 
 .card-referenz.has-card-bg {
-    background: rgb(217 210 177 / 33%);
+    background: #c3bc9b54;
 }
 
 /* Checkbox Row */
@@ -1231,41 +1307,41 @@ function handleClickOutside(event) {
 
 /* Kontaktart subgroup - saturated blue */
 .card-person .subgroup-kontaktart .checkbox-item {
-    background: #fff;
+    background: var(--custom-swatch-default, #fff);
 }
 
 .card-person .subgroup-kontaktart .checkbox-item:hover {
-    background: var(--color-kontaktart-hover);
+    background: var(--custom-swatch-hover, var(--color-kontaktart-hover));
 }
 
 .card-person .subgroup-kontaktart .checkbox-item.is-checked {
-    background: var(--color-kontaktart-checked);
+    background: var(--custom-swatch-checked, #67abff);
 }
 
 /* Person subgroup - medium blue */
 .card-person .subgroup-person .checkbox-item {
-    background: #fff;
+    background: var(--custom-swatch-default, #fff);
 }
 
 .card-person .subgroup-person .checkbox-item:hover {
-    background: #bfdbfe;
+    background: var(--custom-swatch-hover, #bfdbfe);
 }
 
 .card-person .subgroup-person .checkbox-item.is-checked {
-    background: var(--color-person-checked);
+    background: var(--custom-swatch-checked, #67abff);
 }
 
 /* Dauer subgroup - light blue */
 .card-person .subgroup-dauer .checkbox-item {
-    background: #fff;
+    background: var(--custom-swatch-default, #fff);
 }
 
 .card-person .subgroup-dauer .checkbox-item:hover {
-    background: var(--color-dauer-hover);
+    background: var(--custom-swatch-hover, var(--color-dauer-hover));
 }
 
 .card-person .subgroup-dauer .checkbox-item.is-checked {
-    background: var(--color-dauer-checked);
+    background: var(--custom-swatch-checked, #67abff);
 }
 
 /* All kontakt subgroups share the same checkbox color */
@@ -1278,15 +1354,15 @@ function handleClickOutside(event) {
 
 /* === THEMA CARD CHIPS (Red/Pink) === */
 .card-thema .checkbox-item {
-    background: #fff;
+    background: var(--custom-swatch-default, #fff);
 }
 
 .card-thema .checkbox-item:hover {
-    background: var(--color-thema-hover);
+    background: var(--custom-swatch-hover, var(--color-thema-hover));
 }
 
 .card-thema .checkbox-item.is-checked {
-    background: var(--color-thema-checked);
+    background: var(--custom-swatch-checked, rgb(255 83 83 / 95%));
 }
 
 .card-thema :deep(.p-checkbox-checked .p-checkbox-box),
@@ -1298,15 +1374,15 @@ function handleClickOutside(event) {
 
 /* === ZEITFENSTER CARD CHIPS (Green) === */
 .card-zeitfenster .checkbox-item {
-    background: #fff;
+    background: var(--custom-swatch-default, #fff);
 }
 
 .card-zeitfenster .checkbox-item:hover {
-    background: var(--color-zeitfenster-hover);
+    background: var(--custom-swatch-hover, var(--color-zeitfenster-hover));
 }
 
 .card-zeitfenster .checkbox-item.is-checked {
-    background: rgb(95 210 137);
+    background: var(--custom-swatch-checked, #34c97d);
 }
 
 .card-zeitfenster :deep(.p-checkbox-checked .p-checkbox-box),
@@ -1318,15 +1394,15 @@ function handleClickOutside(event) {
 
 /* === REFERENZ CARD CHIPS (Beige/Tan) === */
 .card-referenz .checkbox-item {
-    background: #fff;
+    background: var(--custom-swatch-default, #fff);
 }
 
 .card-referenz .checkbox-item:hover {
-    background: var(--color-referenz-hover);
+    background: var(--custom-swatch-hover, var(--color-referenz-hover));
 }
 
 .card-referenz .checkbox-item.is-checked {
-    background: var(--color-referenz-checked);
+    background: var(--custom-swatch-checked, rgb(153 149 129 / 80%));
 }
 
 .card-referenz :deep(.p-checkbox-checked .p-checkbox-box),
