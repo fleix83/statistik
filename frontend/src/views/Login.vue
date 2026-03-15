@@ -63,7 +63,7 @@ async function login() {
     <div class="login-page">
         <Card class="login-card">
             <template #title>
-                <div class="flex align-items-center justify-content-center gap-2">
+                <div class="login-title">
                     <i class="pi pi-lock"></i>
                     <span>Anmelden</span>
                 </div>
@@ -119,7 +119,14 @@ async function login() {
     align-items: center;
     justify-content: center;
     padding: 1rem;
+    padding-bottom: 15vh;
     background: var(--surface-ground);
+}
+
+.login-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
 }
 
 .login-card {

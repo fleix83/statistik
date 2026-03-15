@@ -39,11 +39,15 @@ $keywords = array_values($keywords);
 
 $db = getDB();
 
-// Check for duplicate in option_definitions
-$stmt = $db->prepare('SELECT id FROM option_definitions WHERE section = ? AND label = ?');
-$stmt->execute([$section, $label]);
-if ($stmt->fetch()) {
-    errorResponse('Eine Option mit diesem Namen existiert bereits in dieser Kategorie');
+// Auto-increment label if duplicate exists
+$originalLabel = $label;
+$counter = 2;
+while (true) {
+    $stmt = $db->prepare('SELECT id FROM option_definitions WHERE section = ? AND label = ?');
+    $stmt->execute([$section, $label]);
+    if (!$stmt->fetch()) break;
+    $label = "$originalLabel $counter";
+    $counter++;
 }
 
 try {
