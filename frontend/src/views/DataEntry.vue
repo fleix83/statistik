@@ -403,9 +403,9 @@ function resetForm() {
 async function loadEntries(showLatest = false) {
     try {
         const res = await entries.list({ limit: 99999 })
-        // Sort by ID ascending for intuitive navigation
+        // Sort by date ascending for chronological navigation
         const items = res.data?.items || []
-        items.sort((a, b) => a.id - b.id)
+        items.sort((a, b) => new Date(a.created_at) - new Date(b.created_at) || a.id - b.id)
         entriesList.value = items
 
         // Show latest entry if requested
