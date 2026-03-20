@@ -1962,9 +1962,15 @@ function handleClickOutside(event) {
     border-color: var(--color-kontakt-checkbox);
 }
 
-/* DatePicker active date backgrounds */
+/* DatePicker active date backgrounds — all selected states blue */
 .p-datepicker-panel .p-datepicker-day-selected,
-.p-datepicker-panel .p-datepicker-day-selected:hover {
+.p-datepicker-panel .p-datepicker-day-selected:hover,
+.p-datepicker-panel .p-datepicker-day-selected-range,
+.p-datepicker-panel .p-datepicker-day-selected-range:hover,
+.p-datepicker-panel .p-datepicker-month-selected,
+.p-datepicker-panel .p-datepicker-month-selected:hover,
+.p-datepicker-panel .p-datepicker-year-selected,
+.p-datepicker-panel .p-datepicker-year-selected:hover {
     background: var(--color-kontakt-checkbox) !important;
     color: #fff !important;
 }

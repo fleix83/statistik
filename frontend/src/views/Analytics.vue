@@ -30,5 +30,18 @@ onMounted(async () => {
     display: flex;
     height: calc(100vh - 60px); /* Adjust based on your header height */
     overflow: hidden;
+    position: relative;
+}
+
+.analytics-dashboard::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 120px;
+    background: linear-gradient(180deg, #c8deff, transparent);
+    pointer-events: none;
+    z-index: 0;
 }
 </style>

@@ -191,11 +191,20 @@ async function handleExportPdf() {
 
     const element = pdfExportArea.value
 
+    // Collapse sidebar during export so chart gets full width
+    const sidebar = document.querySelector('.analytics-sidebar')
+    const wasSidebarOpen = sidebar && !sidebar.classList.contains('collapsed')
+    if (wasSidebarOpen) {
+        sidebar.classList.add('collapsed')
+        sidebar.querySelector('.sidebar-content').style.display = 'none'
+    }
+
     // Add class to hide UI controls and apply export styling
     element.classList.add('exporting')
 
-    // Wait for DOM to update
+    // Wait for DOM to update and chart to resize into wider layout
     await nextTick()
+    await new Promise(r => setTimeout(r, 500))
 
     try {
         const filename = `${chartTitle.value}-${periods.value[0]?.label || ''}-${format(new Date(), 'yyyy-MM-dd')}.pdf`
@@ -230,6 +239,11 @@ async function handleExportPdf() {
         })
     } finally {
         element.classList.remove('exporting')
+        // Restore sidebar if it was open
+        if (wasSidebarOpen && sidebar) {
+            sidebar.classList.remove('collapsed')
+            sidebar.querySelector('.sidebar-content').style.display = ''
+        }
         isExporting.value = false
     }
 }
@@ -1520,7 +1534,7 @@ const tableData = computed(() => {
     align-items: center;
     gap: 0.5rem;
     padding: 0.5rem 1rem;
-    background: #f5f3ef;
+    background: #b8d4ff;
     border: none;
     border-radius: 8px;
     color: #64748b;

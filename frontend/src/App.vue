@@ -11,6 +11,7 @@ provide('showBorders', showBorders)
 provide('showCardBg', showCardBg)
 
 const isDataEntryView = computed(() => route.path === '/')
+const isAnalyticsRoute = computed(() => route.path === '/analytics')
 
 const route = useRoute()
 const authStore = useAuthStore()
@@ -96,7 +97,7 @@ function isActive(item) {
 
 <template>
     <div class="app-layout">
-        <Menubar :model="menuItems" class="app-header" :class="{ 'navbar-hidden': !navbarVisible && isAnalyticsView }">
+        <Menubar :model="menuItems" class="app-header" :class="{ 'navbar-hidden': !navbarVisible && isAnalyticsView, 'navbar-blue': isAnalyticsRoute }">
             <template #start>
                 <div class="app-branding">
                     <img src="@/assets/logo_wegweiser.svg" alt="Wegweiser" class="app-logo" />
@@ -195,6 +196,10 @@ button, input, select, textarea {
     transition: max-height 0.3s ease, opacity 0.3s ease, border-color 0.3s ease;
     overflow: hidden;
     max-height: 200px;
+}
+
+.app-header.navbar-blue {
+    background: #c8deff !important;
 }
 
 .app-header.navbar-hidden {
