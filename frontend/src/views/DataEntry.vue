@@ -117,10 +117,13 @@ const openModals = ref({})  // { cardKey: { anchorRect, backup } }
 function openColorModal(cardKey, event) {
     if (!isAdmin.value) return
     if (openModals.value[cardKey]) return  // Already open
+    // Get the parent card's rect for positioning beside (not on top of) the card
+    const cardEl = event.target.closest('.card')
+    const cardRect = cardEl ? cardEl.getBoundingClientRect() : event.target.getBoundingClientRect()
     openModals.value = {
         ...openModals.value,
         [cardKey]: {
-            anchorRect: event.target.getBoundingClientRect(),
+            anchorRect: cardRect,
             backup: cardColors.value[cardKey] ? { ...cardColors.value[cardKey] } : null
         }
     }
@@ -169,6 +172,32 @@ const showConfirmDialog = ref(false)
 // Pagination state
 const entriesList = ref([])
 const currentEntryIndex = ref(-1)
+const filterMode = ref('total') // 'total' or 'year'
+
+// Filtered list based on mode
+const filteredEntries = computed(() => {
+    if (filterMode.value === 'year') {
+        const year = new Date().getFullYear()
+        return entriesList.value.filter(e => new Date(e.created_at).getFullYear() === year)
+    }
+    return entriesList.value
+})
+
+// Index within the filtered list
+const filteredIndex = computed(() => {
+    if (currentEntryIndex.value < 0) return -1
+    const entry = entriesList.value[currentEntryIndex.value]
+    if (!entry) return -1
+    return filteredEntries.value.findIndex(e => e.id === entry.id)
+})
+
+// Display number: 1-based position in filtered list
+const displayNumber = computed(() => {
+    if (filteredIndex.value < 0) return null
+    return filteredIndex.value + 1
+})
+
+// Real DB id for editing operations
 const currentEntryId = computed(() => {
     if (currentEntryIndex.value >= 0 && entriesList.value[currentEntryIndex.value]) {
         return entriesList.value[currentEntryIndex.value].id
@@ -373,7 +402,7 @@ function resetForm() {
 
 async function loadEntries(showLatest = false) {
     try {
-        const res = await entries.list({ limit: 2000 })
+        const res = await entries.list({ limit: 99999 })
         // Sort by ID ascending for intuitive navigation
         const items = res.data?.items || []
         items.sort((a, b) => a.id - b.id)
@@ -422,39 +451,54 @@ async function loadEntry(index) {
     }
 }
 
+function loadFilteredEntry(filteredIdx) {
+    const entry = filteredEntries.value[filteredIdx]
+    if (!entry) return
+    const realIndex = entriesList.value.findIndex(e => e.id === entry.id)
+    if (realIndex >= 0) loadEntry(realIndex)
+}
+
 function goToPreviousEntry() {
-    if (currentEntryIndex.value > 0) {
-        loadEntry(currentEntryIndex.value - 1)
-    } else if (currentEntryIndex.value === -1 && entriesList.value.length > 0) {
-        loadEntry(entriesList.value.length - 1)
+    const fi = filteredIndex.value
+    if (fi === -1 && filteredEntries.value.length > 0) {
+        // No entry loaded — start at newest
+        loadFilteredEntry(filteredEntries.value.length - 1)
+    } else if (fi > 0) {
+        loadFilteredEntry(fi - 1)
     }
 }
 
 function goToNextEntry() {
-    if (currentEntryIndex.value < entriesList.value.length - 1) {
-        loadEntry(currentEntryIndex.value + 1)
+    const fi = filteredIndex.value
+    if (fi === -1 && filteredEntries.value.length > 0) {
+        // No entry loaded — start at newest
+        loadFilteredEntry(filteredEntries.value.length - 1)
+    } else if (fi >= 0 && fi < filteredEntries.value.length - 1) {
+        loadFilteredEntry(fi + 1)
     }
 }
 
-// Navigate to entry by ID (from input field)
-function goToEntryById(event) {
-    const inputId = parseInt(event.target.value, 10)
-    if (isNaN(inputId) || inputId <= 0) {
-        event.target.value = currentEntryId.value || ''
+// Navigate to entry by display number (1-based position in filtered list)
+function goToEntryByNumber(event) {
+    const num = parseInt(event.target.value, 10)
+    if (isNaN(num) || num <= 0 || num > filteredEntries.value.length) {
+        event.target.value = displayNumber.value || ''
+        if (num > filteredEntries.value.length) {
+            showMessage('warn', `Nur ${filteredEntries.value.length} Einträge vorhanden`)
+        }
         return
     }
 
-    // Find entry with this ID
-    const matchingIndex = entriesList.value.findIndex(entry => entry.id === inputId)
-
-    if (matchingIndex >= 0) {
-        loadEntry(matchingIndex)
+    const entry = filteredEntries.value[num - 1]
+    const realIndex = entriesList.value.findIndex(e => e.id === entry.id)
+    if (realIndex >= 0) {
+        loadEntry(realIndex)
         event.target.blur()
-    } else {
-        // Entry not found - reset input to current value
-        event.target.value = currentEntryId.value || ''
-        showMessage('warn', `Eintrag #${inputId} nicht gefunden`)
     }
+}
+
+function toggleFilterMode() {
+    filterMode.value = filterMode.value === 'total' ? 'year' : 'total'
 }
 
 // Find and load entries for a specific date
@@ -584,30 +628,34 @@ function handleClickOutside(event) {
                 />
             </div>
 
-            <div class="top-bar-separator"></div>
-
             <div class="top-bar-entries-group">
                 <div class="top-bar-field">
-                    <label>Einträge</label>
+                    <label>
+                        Einträge
+                        <a class="filter-toggle" @click="toggleFilterMode">
+                            {{ filterMode === 'total' ? 'Total' : currentYear }}
+                        </a>
+                    </label>
                     <div class="entry-pagination">
                         <button
                             class="pagination-btn"
                             @click="goToPreviousEntry"
-                            :disabled="entriesList.length === 0 || currentEntryIndex === 0"
+                            :disabled="filteredEntries.length === 0 || filteredIndex === 0"
                         >
                             <i class="pi pi-chevron-left"></i>
                         </button>
                         <input
                             type="text"
                             class="pagination-id"
-                            :value="currentEntryId || ''"
-                            placeholder="–"
-                            @keydown.enter="goToEntryById($event)"
+                            :value="displayNumber || ''"
+                            :placeholder="filteredEntries.length ? '–' : '0'"
+                            @keydown.enter="goToEntryByNumber($event)"
                         />
+                        <span class="pagination-total">/ {{ filteredEntries.length }}</span>
                         <button
                             class="pagination-btn"
                             @click="goToNextEntry"
-                            :disabled="currentEntryIndex >= entriesList.length - 1"
+                            :disabled="filteredEntries.length === 0 || (filteredIndex >= 0 && filteredIndex >= filteredEntries.length - 1)"
                         >
                             <i class="pi pi-chevron-right"></i>
                         </button>
@@ -937,7 +985,7 @@ function handleClickOutside(event) {
 .top-bar {
     display: flex;
     align-items: flex-end;
-    gap: 3.25rem;
+    gap: 2.6rem;
     padding: 2rem 40px 1.3rem;
     background: linear-gradient(180deg, #fff0c8, transparent);
     margin-bottom: 1rem;
@@ -1020,6 +1068,7 @@ function handleClickOutside(event) {
     display: flex;
     gap: 0.4rem;
     margin-bottom: 1px;
+    margin-left: 30px;
 }
 
 .quick-filter-btn {
@@ -1091,11 +1140,12 @@ function handleClickOutside(event) {
 }
 
 .top-bar-date {
-    font-size: 1.2rem;
+    font-size: 1.6rem;
     color: var(--text-color);
     white-space: nowrap;
     font-weight: 500;
-    margin-right: 5rem;
+    margin-right: 2rem;
+    margin-bottom: 0.1rem;
 }
 
 .top-bar-toggles {
@@ -1647,6 +1697,24 @@ function handleClickOutside(event) {
     color: #333;
 }
 
+.filter-toggle {
+    text-decoration: underline;
+    cursor: pointer;
+    color: var(--text-color);
+    font-weight: 500;
+    margin-left: 0.3rem;
+}
+
+.filter-toggle:hover {
+    color: var(--color-kontakt-text);
+}
+
+.pagination-total {
+    font-size: 0.85rem;
+    color: #999;
+    white-space: nowrap;
+}
+
 .pagination-id {
     width: 60px;
     text-align: center;
@@ -1874,6 +1942,6 @@ function handleClickOutside(event) {
 
 .data-entry .p-inputtext {
     border-radius: 30px;
-    width: 220px;
+    width: 230px;
 }
 </style>

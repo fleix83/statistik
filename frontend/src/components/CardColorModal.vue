@@ -156,14 +156,32 @@ function close() {
     emit('close')
 }
 
+const MODAL_WIDTH = 340
+
 const modalStyle = computed(() => {
     if (!props.anchorRect) return {}
     const r = props.anchorRect
-    return {
-        position: 'fixed',
-        top: `${r.bottom + 8}px`,
-        right: `${window.innerWidth - r.right}px`
+    const gap = 12
+    const spaceRight = window.innerWidth - r.right
+    const spaceLeft = r.left
+
+    const style = { position: 'fixed' }
+
+    // Vertically align with card top
+    style.top = `${r.top}px`
+
+    // Prefer right side, fall back to left
+    if (spaceRight >= MODAL_WIDTH + gap) {
+        style.left = `${r.right + gap}px`
+    } else if (spaceLeft >= MODAL_WIDTH + gap) {
+        style.left = `${r.left - MODAL_WIDTH - gap}px`
+    } else {
+        // Not enough space on either side — place below the card
+        style.top = `${r.bottom + gap}px`
+        style.right = `${window.innerWidth - r.right}px`
     }
+
+    return style
 })
 </script>
 

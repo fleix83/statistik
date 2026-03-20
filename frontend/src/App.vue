@@ -1,9 +1,16 @@
 <script setup>
-import { computed, ref, watch, onMounted, onUnmounted } from 'vue'
+import { computed, ref, provide, watch, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useAuthStore } from './stores/auth'
 import Menubar from 'primevue/menubar'
 import Button from 'primevue/button'
+
+const showBorders = ref(true)
+const showCardBg = ref(true)
+provide('showBorders', showBorders)
+provide('showCardBg', showCardBg)
+
+const isDataEntryView = computed(() => route.path === '/')
 
 const route = useRoute()
 const authStore = useAuthStore()
@@ -107,7 +114,15 @@ function isActive(item) {
                 </router-link>
             </template>
             <template #end>
-                <div class="auth-buttons flex align-items-center gap-2">
+                <div class="nav-end flex align-items-center gap-2">
+                    <div v-if="isDataEntryView" class="nav-toggles">
+                        <button class="nav-toggle-btn" @click="showBorders = !showBorders">
+                            {{ showBorders ? 'Umrandung an' : 'Umrandung aus' }}
+                        </button>
+                        <button class="nav-toggle-btn" @click="showCardBg = !showCardBg">
+                            {{ showCardBg ? 'Hintergrund an' : 'Hintergrund aus' }}
+                        </button>
+                    </div>
                     <Button
                         v-if="authStore.isAuthenticated"
                         icon="pi pi-sign-out"
@@ -212,7 +227,7 @@ button, input, select, textarea {
     font-weight: 400;
     margin: -0.7rem 0 0;
     margin-left: 157px;
-    color: var(--text-color);
+    color: black;
     letter-spacing: 0.10em;
     opacity: 0.7;
 }
@@ -253,8 +268,35 @@ button, input, select, textarea {
     background-color: #2563eb !important;
 }
 
+.nav-end {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.nav-toggles {
+    display: flex;
+    gap: 0.4rem;
+    margin-right: 0.5rem;
+}
+
+.nav-toggle-btn {
+    padding: 0.4rem 0.75rem;
+    border-radius: 12px;
+    border: 1px solid #ccc;
+    background: rgba(255, 255, 255, 0.6);
+    font-size: 0.8rem;
+    cursor: pointer;
+    color: #555;
+    transition: all 0.15s;
+}
+
+.nav-toggle-btn:hover {
+    background: rgba(255, 255, 255, 0.9);
+}
+
 /* Navbar auth buttons icon spacing */
-.auth-buttons .p-button .pi {
+.nav-end .p-button .pi {
     margin-right: 5px;
 }
 </style>
