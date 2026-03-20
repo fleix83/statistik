@@ -172,7 +172,7 @@ const showConfirmDialog = ref(false)
 // Pagination state
 const entriesList = ref([])
 const currentEntryIndex = ref(-1)
-const filterMode = ref('total') // 'total' or 'year'
+const filterMode = ref('year') // 'total' or 'year'
 
 // Filtered list based on mode
 const filteredEntries = computed(() => {
@@ -651,7 +651,6 @@ function handleClickOutside(event) {
                             :placeholder="filteredEntries.length ? '–' : '0'"
                             @keydown.enter="goToEntryByNumber($event)"
                         />
-                        <span class="pagination-total">/ {{ filteredEntries.length }}</span>
                         <button
                             class="pagination-btn"
                             @click="goToNextEntry"
@@ -995,9 +994,14 @@ function handleClickOutside(event) {
 
 .top-bar :deep(.p-select-label) {
     font-size: 1rem;
+    color: #334155;
 }
 
 .top-bar :deep(.p-select-label.p-placeholder) {
+    color: #334155;
+}
+
+.top-bar :deep(.p-inputtext) {
     color: #334155;
 }
 
@@ -1021,7 +1025,7 @@ function handleClickOutside(event) {
     padding: 1.1rem 1.75rem;
     border: none;
     background: var(--color-primary, #FFEA95);
-    color: #404040;
+    color: #334155;
     font-size: 1.2em;
     font-weight: 600;
     border-radius: 30px;
@@ -1068,7 +1072,7 @@ function handleClickOutside(event) {
     display: flex;
     gap: 0.4rem;
     margin-bottom: 1px;
-    margin-left: 30px;
+    margin-left: 2.5rem;
 }
 
 .quick-filter-btn {
@@ -1140,7 +1144,7 @@ function handleClickOutside(event) {
 }
 
 .top-bar-date {
-    font-size: 1.6rem;
+    font-size: 1.8rem;
     color: var(--text-color);
     white-space: nowrap;
     font-weight: 500;
@@ -1694,13 +1698,13 @@ function handleClickOutside(event) {
 
 .pagination-btn i {
     font-size: 0.9rem;
-    color: #333;
+    color: #334155;
 }
 
 .filter-toggle {
     text-decoration: underline;
     cursor: pointer;
-    color: var(--text-color);
+    color: #334155;
     font-weight: 500;
     margin-left: 0.3rem;
 }
@@ -1720,11 +1724,11 @@ function handleClickOutside(event) {
     text-align: center;
     font-size: 0.95rem;
     font-weight: 500;
-    color: var(--text-color);
+    color: #334155;
     padding: 0.50rem 0.5rem;
-    background: #fff;
+    background: var(--p-inputtext-background, #fff);
     border-radius: 30px;
-    border: 1px solid #ddd;
+    border: 1px solid var(--color-kontakt-checkbox);
     outline: none;
 }
 
@@ -1917,6 +1921,17 @@ function handleClickOutside(event) {
     50% { background-color: #dfd9bd; }
 }
 
+/* Remove hover borders from top bar inputs */
+.top-bar :deep(.p-select:hover),
+.top-bar :deep(.p-inputtext:hover),
+.top-bar :deep(.p-datepicker:hover .p-inputtext) {
+    border-color: var(--p-inputtext-border-color) !important;
+}
+
+.pagination-id:hover {
+    border-color: #ddd !important;
+}
+
 /* Responsive */
 @media (max-width: 1200px) {
     .cards-grid {
@@ -1938,10 +1953,23 @@ function handleClickOutside(event) {
 <style>
 .data-entry .p-select {
     border-radius: 30px;
+    border-color: var(--color-kontakt-checkbox);
 }
 
 .data-entry .p-inputtext {
     border-radius: 30px;
     width: 230px;
+    border-color: var(--color-kontakt-checkbox);
+}
+
+/* DatePicker active date backgrounds */
+.p-datepicker-panel .p-datepicker-day-selected,
+.p-datepicker-panel .p-datepicker-day-selected:hover {
+    background: var(--color-kontakt-checkbox) !important;
+    color: #fff !important;
+}
+
+.p-datepicker-panel .p-datepicker-today > .p-datepicker-day:not(.p-datepicker-day-selected) {
+    border-color: var(--color-kontakt-checkbox) !important;
 }
 </style>

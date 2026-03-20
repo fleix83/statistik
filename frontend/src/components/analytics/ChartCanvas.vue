@@ -1271,7 +1271,7 @@ const tableData = computed(() => {
                 </div>
 
                 <!-- Custom HTML Legend -->
-                <div v-if="showCustomLegend && chartReady" class="custom-legend" :class="{ 'pie-legend': chartType === 'pie' }">
+                <div v-if="showCustomLegend && chartReady" class="custom-legend" :class="{ 'pie-legend': chartType === 'pie', 'two-columns': legendItems.length > 8 }">
                     <div
                         v-for="(item, index) in legendItems"
                         :key="index"
@@ -1668,10 +1668,21 @@ const tableData = computed(() => {
 /* Custom HTML Legend */
 .custom-legend {
     display: flex;
+    flex-wrap: wrap;
     justify-content: center;
     gap: 2rem;
     margin-top: 70px;
     margin-bottom: 1rem;
+}
+
+.custom-legend.two-columns {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    justify-items: start;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+    gap: 0.5rem 3rem;
 }
 
 /* When stacked base heading is present, reduce legend margin */
@@ -1829,7 +1840,7 @@ const tableData = computed(() => {
 .data-table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 0.875rem;
+    font-size: 1.175rem;
 }
 
 .data-table thead th {
