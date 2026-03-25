@@ -111,8 +111,9 @@ function openRueckschau(days) {
 
 
 // Card color customization
-const cardColors = ref({})
-const openModals = ref({})  // { cardKey: { anchorRect, backup } }
+const cardColors = ref({})        // Live/preview state
+const savedCardColors = ref({})   // Last persisted DB state
+const openModals = ref({})        // { cardKey: { anchorRect } }
 
 function openColorModal(cardKey, event) {
     if (!isAdmin.value) return
@@ -122,10 +123,7 @@ function openColorModal(cardKey, event) {
     const cardRect = cardEl ? cardEl.getBoundingClientRect() : event.target.getBoundingClientRect()
     openModals.value = {
         ...openModals.value,
-        [cardKey]: {
-            anchorRect: cardRect,
-            backup: cardColors.value[cardKey] ? { ...cardColors.value[cardKey] } : null
-        }
+        [cardKey]: { anchorRect: cardRect }
     }
 }
 
@@ -137,6 +135,7 @@ async function saveCardColors(cardKey, colorData) {
     try {
         await colors.update(cardKey, colorData)
         cardColors.value = { ...cardColors.value, [cardKey]: { ...colorData } }
+        savedCardColors.value = { ...savedCardColors.value, [cardKey]: { ...colorData } }
         const { [cardKey]: _, ...rest } = openModals.value
         openModals.value = rest
     } catch (error) {
@@ -145,11 +144,13 @@ async function saveCardColors(cardKey, colorData) {
 }
 
 function closeColorModal(cardKey) {
-    const modal = openModals.value[cardKey]
-    if (modal) {
-        // Restore backup for this card
-        cardColors.value = { ...cardColors.value, [cardKey]: modal.backup }
-    }
+    const { [cardKey]: _, ...rest } = openModals.value
+    openModals.value = rest
+}
+
+function discardCardColors(cardKey) {
+    // Revert to last saved DB state
+    cardColors.value = { ...cardColors.value, [cardKey]: savedCardColors.value[cardKey] || null }
     const { [cardKey]: _, ...rest } = openModals.value
     openModals.value = rest
 }
@@ -223,7 +224,9 @@ onMounted(async () => {
     // Load card colors
     try {
         const res = await colors.getAll()
-        cardColors.value = res.data || {}
+        const loaded = res.data || {}
+        cardColors.value = loaded
+        savedCardColors.value = JSON.parse(JSON.stringify(loaded))
     } catch (e) {
         // Colors are optional, ignore errors
     }
@@ -890,6 +893,7 @@ function handleClickOutside(event) {
             @save="saveCardColors"
             @update="updateCardColorsPreview"
             @close="closeColorModal(key)"
+            @discard="discardCardColors"
         />
 
         <div v-if="showSplash" class="save-splash"></div>
@@ -1728,13 +1732,15 @@ function handleClickOutside(event) {
     padding: 0.50rem 0.5rem;
     background: var(--p-inputtext-background, #fff);
     border-radius: 30px;
-    border: 1px solid var(--color-kontakt-checkbox);
+    border: 1px solid transparent;
     outline: none;
+    transition: none;
 }
 
+.pagination-id:hover,
 .pagination-id:focus {
-    border-color: var(--color-kontakt-checkbox);
-    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+    border-color: var(--color-primary, #FFEA95);
+    box-shadow: none;
 }
 
 .pagination-id::placeholder {
@@ -1921,16 +1927,31 @@ function handleClickOutside(event) {
     50% { background-color: #dfd9bd; }
 }
 
-/* Remove hover borders from top bar inputs */
-.top-bar :deep(.p-select:hover),
-.top-bar :deep(.p-inputtext:hover),
-.top-bar :deep(.p-datepicker:hover .p-inputtext) {
-    border-color: var(--p-inputtext-border-color) !important;
+/* Top bar input styling: no border, yellow on hover/active */
+.top-bar :deep(.p-select),
+.top-bar :deep(.p-inputtext) {
+    border-color: transparent !important;
+    transition: none;
 }
 
-.pagination-id:hover {
-    border-color: #ddd !important;
+.top-bar :deep(.p-select-label) {
+    padding: 10px 14px;
 }
+
+.top-bar :deep(.p-inputtext) {
+    padding: 10px 14px;
+}
+
+.top-bar :deep(.p-select:hover),
+.top-bar :deep(.p-select:focus),
+.top-bar :deep(.p-select.p-focus),
+.top-bar :deep(.p-inputtext:hover),
+.top-bar :deep(.p-inputtext:focus),
+.top-bar :deep(.p-datepicker:hover .p-inputtext),
+.top-bar :deep(.p-datepicker:focus-within .p-inputtext) {
+    border-color: var(--color-primary, #FFEA95) !important;
+}
+
 
 /* Responsive */
 @media (max-width: 1200px) {

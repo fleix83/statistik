@@ -237,15 +237,22 @@ button, input, select, textarea {
     opacity: 0.7;
 }
 
+/* Align nav items vertically with STATISTIK title */
+.app-header :deep(.p-menubar-root-list) {
+    margin-left: -1.5rem;
+    gap: 0.5rem;
+}
+
 .menu-item {
     display: flex;
     align-items: center;
     gap: 0.5rem;
     padding: 0.75rem 1rem;
     text-decoration: none;
-    color: var(--text-color);
+    color: #000;
     border-radius: var(--border-radius);
     transition: background-color 0.2s;
+    font-size: 1.1rem;
 }
 
 .menu-item:hover {

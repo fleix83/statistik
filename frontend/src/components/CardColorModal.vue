@@ -8,7 +8,7 @@ const props = defineProps({
     anchorRect: Object
 })
 
-const emit = defineEmits(['save', 'update', 'close'])
+const emit = defineEmits(['save', 'update', 'close', 'discard'])
 
 // CSS defaults per card, per field
 const defaults = {
@@ -119,6 +119,13 @@ function setOpacity(key, opacity) {
     emitUpdate()
 }
 
+function applyHexInput(key, value) {
+    const hex = value.trim().startsWith('#') ? value.trim() : '#' + value.trim()
+    if (/^#[0-9a-fA-F]{6}$/.test(hex)) {
+        setHex(key, hex)
+    }
+}
+
 function clearField(key) {
     const def = defaults[props.cardKey] || {}
     localColors.value[key] = def[key] || null
@@ -154,6 +161,10 @@ function save() {
 
 function close() {
     emit('close')
+}
+
+function discard() {
+    emit('discard', props.cardKey)
 }
 
 const MODAL_WIDTH = 340
@@ -207,6 +218,14 @@ const modalStyle = computed(() => {
                                 class="color-picker"
                             />
                             <input
+                                type="text"
+                                :value="getHex(f.key)"
+                                @change="applyHexInput(f.key, $event.target.value)"
+                                class="hex-input"
+                                maxlength="7"
+                                spellcheck="false"
+                            />
+                            <input
                                 type="range"
                                 min="0"
                                 max="100"
@@ -228,8 +247,8 @@ const modalStyle = computed(() => {
                 </div>
 
                 <div class="color-modal-footer">
-                    <button class="modal-btn modal-btn-reset" @click="resetAll">
-                        Zurücksetzen
+                    <button class="modal-btn modal-btn-reset" @click="discard">
+                        Verwerfen
                     </button>
                     <button class="modal-btn modal-btn-save" @click="save">
                         Speichern
@@ -326,6 +345,21 @@ const modalStyle = computed(() => {
 .color-picker::-webkit-color-swatch {
     border: none;
     border-radius: 2px;
+}
+
+.hex-input {
+    width: 62px;
+    font-size: 0.75rem;
+    font-family: monospace;
+    padding: 2px 4px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    color: #333;
+}
+
+.hex-input:focus {
+    outline: none;
+    border-color: #999;
 }
 
 .opacity-slider {
