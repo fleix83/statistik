@@ -121,15 +121,15 @@ function onReset() {
     gap: 8px;
 }
 
-/* Veröffentlichen button - primary yellow style */
+/* Veröffentlichen button - primary style */
 .header-actions :deep(.p-button:not(.p-button-outlined):not(.p-button-secondary):not(.p-button-danger)) {
-    background: var(--color-primary) !important;
+    background: #ffb5b5 !important;
     border-color: transparent !important;
-    color: var(--color-primary-text) !important;
+    color: #000 !important;
 }
 
 .header-actions :deep(.p-button:not(.p-button-outlined):not(.p-button-secondary):not(.p-button-danger):hover) {
-    background: var(--color-primary-hover) !important;
+    background: #ff9a9a !important;
     border-color: transparent !important;
 }
 

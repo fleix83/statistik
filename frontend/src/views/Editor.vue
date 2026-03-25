@@ -608,10 +608,10 @@ function confirmDeleteUser(user) {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 24px;
-    max-width: 1400px;
-    margin-left: auto;
-    margin-right: auto;
+    padding: 2rem 40px 1.3rem;
+    background: linear-gradient(180deg, #ffb5b5, transparent);
+    margin: -24px -40px 24px;
+    max-width: none;
 }
 
 .page-title {
@@ -712,27 +712,27 @@ function confirmDeleteUser(user) {
     margin-bottom: 16px;
 }
 
-/* Primary button styling to match DataEntry */
+/* Primary button styling */
 .users-toolbar :deep(.p-button) {
-    background: var(--color-primary) !important;
+    background: #ffb5b5 !important;
     border-color: transparent !important;
-    color: var(--color-primary-text) !important;
+    color: #000 !important;
 }
 
 .users-toolbar :deep(.p-button:hover) {
-    background: var(--color-primary-hover) !important;
+    background: #ff9a9a !important;
     border-color: transparent !important;
 }
 
 /* Dialog primary button styling */
 :deep(.p-dialog-footer .p-button:not(.p-button-secondary)) {
-    background: var(--color-primary) !important;
+    background: #ffb5b5 !important;
     border-color: transparent !important;
-    color: var(--color-primary-text) !important;
+    color: #000 !important;
 }
 
 :deep(.p-dialog-footer .p-button:not(.p-button-secondary):hover) {
-    background: var(--color-primary-hover) !important;
+    background: #ff9a9a !important;
     border-color: transparent !important;
 }
 
@@ -799,5 +799,11 @@ function confirmDeleteUser(user) {
     .options-layout {
         grid-template-columns: 1fr;
     }
+}
+</style>
+
+<style>
+.editor-page .p-toggleswitch.p-toggleswitch-checked .p-toggleswitch-slider {
+    background: #ff5555 !important;
 }
 </style>
