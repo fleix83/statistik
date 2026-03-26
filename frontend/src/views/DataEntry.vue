@@ -22,6 +22,15 @@ const selectedUser = ref(null)
 const erfassungsdatum = ref(new Date())
 const referenzAndere = ref('')
 
+const isFormValid = computed(() => {
+    return selectedUser.value
+        && formData.value.kontaktart.length > 0
+        && formData.value.person.length > 0
+        && formData.value.thema.length > 0
+        && formData.value.zeitfenster.length > 0
+        && (formData.value.referenz.length > 0 || referenzAndere.value.trim())
+})
+
 // Checkbox states (arrays for multi-select)
 const formData = ref({
     kontaktart: [],
@@ -876,6 +885,7 @@ function handleClickOutside(event) {
                         label="Eingabe speichern"
                         icon="pi pi-save"
                         :loading="submitting"
+                        :disabled="!isFormValid"
                         @click="submitEntry"
                         class="save-btn-full"
                     />
@@ -1794,9 +1804,17 @@ function handleClickOutside(event) {
     height: 67px;
 }
 
-.save-btn-full:hover {
+.save-btn-full:hover:not(:disabled) {
     background: var(--color-primary-hover) !important;
     border-color: transparent !important;
+}
+
+.save-btn-full:disabled {
+    background: #20202038 !important;
+    border-color: transparent !important;
+    color: #999 !important;
+    cursor: not-allowed;
+    opacity: 1;
 }
 
 .save-splash {
