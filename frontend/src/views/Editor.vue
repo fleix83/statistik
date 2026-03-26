@@ -720,7 +720,7 @@ function confirmDeleteUser(user) {
 }
 
 .users-toolbar :deep(.p-button:hover) {
-    background: #ff9a9a !important;
+    background: #ffd4d4 !important;
     border-color: transparent !important;
 }
 
@@ -732,7 +732,7 @@ function confirmDeleteUser(user) {
 }
 
 :deep(.p-dialog-footer .p-button:not(.p-button-secondary):hover) {
-    background: #ff9a9a !important;
+    background: #ffd4d4 !important;
     border-color: transparent !important;
 }
 

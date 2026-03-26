@@ -256,7 +256,7 @@ function onEditKeywords() {
 }
 
 .option-thema:hover {
-    background: #fff5a79e;
+    background: #ffd4d4;
     border-color: #999;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
     cursor: move;
@@ -373,7 +373,7 @@ function onEditKeywords() {
 }
 
 .keywords-overflow-chevron:hover {
-    background: #f0f0f0;
+    background: #ffd4d4;
     color: #555;
 }
 
@@ -397,6 +397,6 @@ function onEditKeywords() {
 }
 
 .keyword-tag:hover {
-    background: #EBEBEB;
+    background: #ffd4d4;
 }
 </style>

@@ -129,7 +129,7 @@ function onReset() {
 }
 
 .header-actions :deep(.p-button:not(.p-button-outlined):not(.p-button-secondary):not(.p-button-danger):hover) {
-    background: #ff9a9a !important;
+    background: #ffd4d4 !important;
     border-color: transparent !important;
 }
 

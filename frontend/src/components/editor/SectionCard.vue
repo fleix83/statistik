@@ -103,7 +103,7 @@ function onDragEnd() {
 }
 
 .add-option-btn:hover {
-    background: #F8F8F8;
+    background: #ffd4d4;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
 }
 

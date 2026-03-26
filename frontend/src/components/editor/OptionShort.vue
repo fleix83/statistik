@@ -148,7 +148,7 @@ function toggleActive() {
 }
 
 .option-short:hover {
-    background: #fff5a79e;
+    background: #ffd4d4;
     border-color: #999;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
     cursor: move;

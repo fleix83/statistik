@@ -183,6 +183,7 @@ function onDelete() {
 }
 
 .option-item:hover {
+    background: #ffd4d4;
     border-color: var(--surface-300);
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }

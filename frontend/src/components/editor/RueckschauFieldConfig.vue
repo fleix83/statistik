@@ -300,7 +300,7 @@ function getSectionColor(section) {
 }
 
 .configured-field:hover {
-    background: #f0f0f0;
+    background: #ffd4d4;
 }
 
 .ghost-field {
@@ -345,7 +345,7 @@ function getSectionColor(section) {
 }
 
 .field-remove:hover {
-    background: #fee2e2;
+    background: #ffd4d4;
     color: #dc2626;
 }
 
@@ -371,7 +371,7 @@ function getSectionColor(section) {
 }
 
 .save-btn:hover {
-    background: #ff9a9a;
+    background: #ffd4d4;
 }
 
 .save-btn:disabled {
