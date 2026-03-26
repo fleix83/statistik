@@ -5,7 +5,7 @@ import { useAuthStore } from './stores/auth'
 import Menubar from 'primevue/menubar'
 import Button from 'primevue/button'
 
-const showBorders = ref(true)
+const showBorders = ref(false)
 const showCardBg = ref(true)
 provide('showBorders', showBorders)
 provide('showCardBg', showCardBg)

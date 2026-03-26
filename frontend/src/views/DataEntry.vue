@@ -1071,6 +1071,7 @@ function handleClickOutside(event) {
     text-transform: uppercase;
     letter-spacing: 0.03em;
     margin-left: 12px;
+    margin-bottom: 2px;
 }
 
 .top-bar-field .user-select {
