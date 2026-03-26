@@ -602,6 +602,7 @@ function confirmDeleteUser(user) {
     min-height: 100vh;
     background: #F5F3EF;
     padding: 24px 40px;
+    overflow-x: hidden;
 }
 
 .editor-header {

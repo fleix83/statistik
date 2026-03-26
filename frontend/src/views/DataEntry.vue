@@ -1036,7 +1036,7 @@ function handleClickOutside(event) {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    padding: 1.1rem 1.75rem;
+    padding: 1.1rem 2.75rem;
     border: none;
     background: var(--color-primary, #FFEA95);
     color: #334155;
