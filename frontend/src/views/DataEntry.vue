@@ -1162,7 +1162,7 @@ function handleClickOutside(event) {
     color: var(--text-color);
     white-space: nowrap;
     font-weight: 500;
-    margin-right: 2rem;
+    margin-right: 3rem;
     margin-bottom: 0.1rem;
 }
 
@@ -1793,7 +1793,7 @@ function handleClickOutside(event) {
 }
 
 .save-btn-full {
-    border-radius: 12px;
+    border-radius: 30px;
     width: 100%;
     background: var(--color-primary) !important;
     border-color: transparent !important;
