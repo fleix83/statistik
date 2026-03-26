@@ -13,6 +13,11 @@ export function useRueckschauState() {
             const res = await rueckschau.getFields()
             configuredFields.value = res.data
         } catch (err) {
+            // API endpoint may not exist yet — treat as empty
+            if (err.response && err.response.status === 404) {
+                configuredFields.value = []
+                return
+            }
             console.error('Failed to load rueckschau fields:', err)
             throw err
         }
