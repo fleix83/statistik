@@ -1490,7 +1490,7 @@ function handleClickOutside(event) {
 }
 
 .thema-chip.is-expanded {
-    background: var(--color-thema-hover);
+    background: transparent;
     padding: 25px 20px;
     overflow: visible;
 }
@@ -1523,7 +1523,8 @@ function handleClickOutside(event) {
 
 
 .thema-chip-content.is-expanded {
-    flex-wrap: wrap;
+    flex-direction: column;
+    align-items: flex-start;
     overflow: visible;
 }
 
