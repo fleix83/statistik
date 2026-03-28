@@ -305,7 +305,7 @@ function getSectionColor(section) {
 
 .ghost-field {
     opacity: 0.5;
-    background: #fff5a79e !important;
+    background: #fbc7b9 !important;
 }
 
 .field-dot {

@@ -22,7 +22,8 @@ const error = ref(null)
 export function useEditorDraft() {
     // Load draft data from API
     async function loadDraft() {
-        loading.value = true
+        const isInitialLoad = Object.keys(optionsBySection.value).length === 0
+        if (isInitialLoad) loading.value = true
         error.value = null
         try {
             const response = await options.getDraft()
