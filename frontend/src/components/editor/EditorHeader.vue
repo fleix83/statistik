@@ -123,13 +123,13 @@ function onReset() {
 
 /* Veröffentlichen button - primary style */
 .header-actions :deep(.p-button:not(.p-button-outlined):not(.p-button-secondary):not(.p-button-danger)) {
-    background: #ffb5b5 !important;
+    background: #ff9d85 !important;
     border-color: transparent !important;
     color: #000 !important;
 }
 
 .header-actions :deep(.p-button:not(.p-button-outlined):not(.p-button-secondary):not(.p-button-danger):hover) {
-    background: #ffd4d4 !important;
+    background: #ff9d85 !important;
     border-color: transparent !important;
 }
 

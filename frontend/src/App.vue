@@ -204,7 +204,7 @@ button, input, select, textarea {
 }
 
 .app-header.navbar-editor {
-    background: #ffb5b5 !important;
+    background: #ff9d85 !important;
 }
 
 .app-header.navbar-hidden {

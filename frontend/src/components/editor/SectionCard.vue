@@ -70,7 +70,7 @@ function onDragEnd() {
     background: #FFF;
     border-radius: 12px;
     padding: 24px 28px;
-    border: 4px dashed #ffd4d4;
+    border: 4px dashed #ff9d85;
 }
 
 .section-header {
@@ -103,7 +103,7 @@ function onDragEnd() {
 }
 
 .add-option-btn:hover {
-    background: #ffd4d4;
+    background: #ff9d85;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
 }
 

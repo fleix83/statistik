@@ -249,7 +249,7 @@ function getSectionColor(section) {
 }
 
 .panel-configured {
-    border: 4px dashed #ffd4d4;
+    border: 4px dashed #ff9d85;
 }
 
 .panel-header {
@@ -300,7 +300,7 @@ function getSectionColor(section) {
 }
 
 .configured-field:hover {
-    background: #ffd4d4;
+    background: #ff9d85;
 }
 
 .ghost-field {
@@ -345,7 +345,7 @@ function getSectionColor(section) {
 }
 
 .field-remove:hover {
-    background: #ffd4d4;
+    background: #ff9d85;
     color: #dc2626;
 }
 
@@ -361,7 +361,7 @@ function getSectionColor(section) {
     gap: 8px;
     padding: 8px 20px;
     border: none;
-    background: #ffb5b5;
+    background: #ff9d85;
     color: #000;
     border-radius: 8px;
     font-size: 14px;
@@ -371,7 +371,7 @@ function getSectionColor(section) {
 }
 
 .save-btn:hover {
-    background: #ffd4d4;
+    background: #ff9d85;
 }
 
 .save-btn:disabled {
@@ -444,8 +444,8 @@ function getSectionColor(section) {
 }
 
 .available-field:hover {
-    background: #ffd4d4;
-    border-color: #ffd4d4;
+    background: #ff9d85;
+    border-color: #ff9d85;
 }
 
 .available-field .add-icon {
