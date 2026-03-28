@@ -610,7 +610,7 @@ function confirmDeleteUser(user) {
     justify-content: space-between;
     align-items: center;
     padding: 2rem 40px 1.3rem;
-    background: linear-gradient(180deg, #ff9d85, transparent);
+    background: linear-gradient(180deg, #ff9d85, #F5F3EF);
     margin: -24px -40px 24px;
     max-width: none;
 }
@@ -653,7 +653,7 @@ function confirmDeleteUser(user) {
 
 .debug-info {
     padding: 10px;
-    background: #fff3cd;
+    background: #fbc7b9;
     margin-bottom: 16px;
     border-radius: 4px;
     font-size: 12px;

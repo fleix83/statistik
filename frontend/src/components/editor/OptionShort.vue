@@ -157,7 +157,7 @@ function toggleActive() {
 .option-short:active,
 .option-short.sortable-chosen,
 .option-short.sortable-ghost {
-    background: #fff5a79e;
+    background: #fbc7b9;
     cursor: move;
 }
 

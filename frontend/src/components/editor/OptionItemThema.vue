@@ -265,7 +265,7 @@ function onEditKeywords() {
 .option-thema:active,
 .option-thema.sortable-chosen,
 .option-thema.sortable-ghost {
-    background: #fff5a79e;
+    background: #fbc7b9;
     cursor: move;
 }
 
