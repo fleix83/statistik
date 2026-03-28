@@ -26,6 +26,7 @@ const isFormValid = computed(() => {
     return selectedUser.value
         && formData.value.kontaktart.length > 0
         && formData.value.person.length > 0
+        && formData.value.dauer.length > 0
         && formData.value.thema.length > 0
         && formData.value.zeitfenster.length > 0
         && (formData.value.referenz.length > 0 || referenzAndere.value.trim())
@@ -92,8 +93,8 @@ const validationErrors = ref(new Set())
 watch(selectedUser, (val) => {
     if (val) validationErrors.value.delete('user')
 })
-watch(() => formData.value.kontaktart.length + formData.value.person.length, () => {
-    if (formData.value.kontaktart.length > 0 && formData.value.person.length > 0) {
+watch(() => formData.value.kontaktart.length + formData.value.person.length + formData.value.dauer.length, () => {
+    if (formData.value.kontaktart.length > 0 && formData.value.person.length > 0 && formData.value.dauer.length > 0) {
         validationErrors.value.delete('kontakt')
     }
 })
@@ -307,12 +308,12 @@ function showMessage(type, text, duration = 5000) {
 
 function validateForm() {
     // Validate all groups have at least one selection and user is selected
-    // Note: dauer (länger als 20 minuten) is optional
     const errors = new Set()
 
     if (!selectedUser.value) errors.add('user')
     if (formData.value.kontaktart.length === 0) errors.add('kontakt')
     if (formData.value.person.length === 0) errors.add('kontakt')
+    if (formData.value.dauer.length === 0) errors.add('kontakt')
     if (formData.value.thema.length === 0) errors.add('thema')
     if (formData.value.zeitfenster.length === 0) errors.add('zeitfenster')
     if (formData.value.referenz.length === 0 && !referenzAndere.value.trim()) errors.add('referenz')
@@ -1273,20 +1274,11 @@ function handleClickOutside(event) {
     border-color: transparent;
 }
 
-.card-person.has-card-bg {
-    background: #9fc9fd;
-}
-
-.card-thema.has-card-bg {
-    background: #ff8787;
-}
-
-.card-zeitfenster.has-card-bg {
-    background: #5bd797;
-}
-
+.card-person.has-card-bg,
+.card-thema.has-card-bg,
+.card-zeitfenster.has-card-bg,
 .card-referenz.has-card-bg {
-    background: #c3bc9b54;
+    background: transparent;
 }
 
 /* Checkbox Row */
