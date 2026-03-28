@@ -625,7 +625,7 @@ function handleClickOutside(event) {
                     optionLabel="username"
                     placeholder="Auswählen"
                     class="user-select"
-                    :class="{ 'highlight-placeholder': highlightUserSelect && !selectedUser, 'validation-error-field': validationErrors.has('user') }"
+                    :class="{ 'highlight-placeholder': highlightUserSelect && !selectedUser, 'has-selection': !!selectedUser, 'validation-error-field': validationErrors.has('user') }"
                     :loading="loading"
                     @change="highlightUserSelect = false"
                 />
@@ -1134,7 +1134,12 @@ function handleClickOutside(event) {
     padding: 0;
 }
 
-.user-select.highlight-placeholder :deep(.p-select-label.p-placeholder) {
+.user-select.highlight-placeholder :deep(.p-select-label) {
+    background: var(--color-primary);
+    border-radius: 30px;
+}
+
+.user-select.has-selection :deep(.p-select-label) {
     background: var(--color-primary);
     border-radius: 30px;
 }
