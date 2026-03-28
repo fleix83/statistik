@@ -1,0 +1,11 @@
+CREATE TABLE IF NOT EXISTS card_colors (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    card_key VARCHAR(32) NOT NULL,
+    bg_color VARCHAR(64) DEFAULT NULL,
+    border_color VARCHAR(64) DEFAULT NULL,
+    swatch_default VARCHAR(64) DEFAULT NULL,
+    swatch_hover VARCHAR(64) DEFAULT NULL,
+    swatch_checked VARCHAR(64) DEFAULT NULL,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uk_card_key (card_key)
+);
