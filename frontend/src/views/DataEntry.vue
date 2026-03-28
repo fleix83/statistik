@@ -169,7 +169,7 @@ function getCardStyle(cardKey) {
     const c = cardColors.value[cardKey]
     if (!c) return {}
     const style = {}
-    if (c.bg_color && showCardBg.value) style.background = c.bg_color
+    if (c.bg_color && showCardBg.value) style['--card-bg-color'] = c.bg_color
     if (c.border_color && showBorders.value) style.borderColor = c.border_color
     if (c.swatch_default) style['--custom-swatch-default'] = c.swatch_default
     if (c.swatch_hover) style['--custom-swatch-hover'] = c.swatch_hover
@@ -771,26 +771,7 @@ function handleClickOutside(event) {
                     </div>
                 </div>
 
-                <!-- Zeitfenster (spans center + right, single row) -->
-                <div class="card card-zeitfenster grid-zeitfenster" :class="{ 'no-borders': !showBorders, 'has-card-bg': showCardBg, 'validation-error': validationErrors.has('zeitfenster') }" :style="getCardStyle('zeitfenster')">
-                    <span class="card-dot" :class="{ 'admin-clickable': isAdmin }" @click="openColorModal('zeitfenster', $event)"></span>
-                    <h3 class="card-title">Zeitfenster</h3>
-                    <div
-                        v-for="opt in optionsBySection.zeitfenster"
-                        :key="opt"
-                        class="checkbox-item zeitfenster-item"
-                        :class="{ 'is-checked': formData.zeitfenster.includes(opt) }"
-                    >
-                        <Checkbox
-                            :inputId="'zeit-' + opt"
-                            :value="opt"
-                            v-model="formData.zeitfenster"
-                        />
-                        <label :for="'zeit-' + opt">{{ opt }}</label>
-                    </div>
-                </div>
-
-                <!-- Thema (center) -->
+                <!-- Thema -->
                 <div class="cards-column grid-thema">
                     <div class="card card-thema" :class="{ 'no-borders': !showBorders, 'has-card-bg': showCardBg, 'validation-error': validationErrors.has('thema') }" :style="getCardStyle('thema')">
                         <span class="card-dot" :class="{ 'admin-clickable': isAdmin }" @click="openColorModal('thema', $event)"></span>
@@ -835,7 +816,30 @@ function handleClickOutside(event) {
                     </div>
                 </div>
 
-                <!-- Right Column: Referenz + Save -->
+                <!-- Zeitfenster (vertical, 2 per row) -->
+                <div class="cards-column grid-zeitfenster">
+                    <div class="card card-zeitfenster" :class="{ 'no-borders': !showBorders, 'has-card-bg': showCardBg, 'validation-error': validationErrors.has('zeitfenster') }" :style="getCardStyle('zeitfenster')">
+                        <span class="card-dot" :class="{ 'admin-clickable': isAdmin }" @click="openColorModal('zeitfenster', $event)"></span>
+                        <h3 class="card-title">Zeitfenster</h3>
+                        <div class="zeitfenster-grid">
+                            <div
+                                v-for="opt in optionsBySection.zeitfenster"
+                                :key="opt"
+                                class="checkbox-item zeitfenster-item"
+                                :class="{ 'is-checked': formData.zeitfenster.includes(opt) }"
+                            >
+                                <Checkbox
+                                    :inputId="'zeit-' + opt"
+                                    :value="opt"
+                                    v-model="formData.zeitfenster"
+                                />
+                                <label :for="'zeit-' + opt">{{ opt }}</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Referenz -->
                 <div class="cards-column grid-referenz">
                     <div class="card card-referenz" :class="{ 'no-borders': !showBorders, 'has-card-bg': showCardBg, 'validation-error': validationErrors.has('referenz') }" :style="getCardStyle('referenz')">
                         <span class="card-dot" :class="{ 'admin-clickable': isAdmin }" @click="openColorModal('referenz', $event)"></span>
@@ -1146,17 +1150,12 @@ function handleClickOutside(event) {
 
 /* Cards Grid */
 .cards-grid {
-    display: grid;
-    grid-template-columns: 1fr minmax(0, 2.3fr) 1fr;
-    grid-template-rows: auto 1fr;
-    grid-template-areas:
-        "kontakt zeitfenster zeitfenster"
-        "kontakt thema referenz";
-    gap: 1rem;
-    align-items: start;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
 }
 
-.grid-kontakt { grid-area: kontakt; }
+.grid-kontakt { width: 400px; margin-top: 10px; flex-shrink: 1; }
 
 .top-bar-right {
     margin-left: auto;
@@ -1178,9 +1177,9 @@ function handleClickOutside(event) {
     gap: 0.4rem;
     align-items: center;
 }
-.grid-zeitfenster { grid-area: zeitfenster; }
-.grid-thema { grid-area: thema; }
-.grid-referenz { grid-area: referenz; }
+.grid-thema { width: 500px; margin-top: 60px; flex-shrink: 1; }
+.grid-zeitfenster { width: 220px; flex-shrink: 0; margin-top: 10px; }
+.grid-referenz { flex-shrink: 0; margin-top: 40px; }
 
 .cards-column {
     display: flex;
@@ -1193,6 +1192,20 @@ function handleClickOutside(event) {
     border-radius: 25px;
     padding: 1.4rem;
     position: relative;
+    overflow: hidden;
+}
+
+.card::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: url('@/assets/Card.png');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    opacity: 0.07;
+    z-index: 0;
+    pointer-events: none;
 }
 
 .card-dot {
@@ -1202,7 +1215,7 @@ function handleClickOutside(event) {
     width: 16px;
     height: 16px;
     border-radius: 50%;
-    z-index: 1;
+    z-index: 2;
 }
 
 .card-dot.admin-clickable {
@@ -1251,12 +1264,19 @@ function handleClickOutside(event) {
     flex-direction: column;
 }
 
-/* Card backgrounds */
-.card-person,
-.card-thema,
-.card-zeitfenster,
-.card-referenz {
-    background: #f5f3ef;
+/* Card color overlay (below content, above bg image) */
+.card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: var(--card-bg-color, rgba(245, 243, 239, 0.92));
+    z-index: 0;
+}
+
+.card > *:not(.card-dot) {
+    position: relative;
+    z-index: 1;
 }
 
 .card-person {
@@ -1277,13 +1297,6 @@ function handleClickOutside(event) {
 
 .card.no-borders {
     border-color: transparent;
-}
-
-.card-person.has-card-bg,
-.card-thema.has-card-bg,
-.card-zeitfenster.has-card-bg,
-.card-referenz.has-card-bg {
-    background: transparent;
 }
 
 /* Checkbox Row */
@@ -1608,19 +1621,15 @@ function handleClickOutside(event) {
     transform: rotate(180deg);
 }
 
-/* Zeitfenster & Referenz chip layouts */
+/* Zeitfenster vertical layout */
 .card-zeitfenster {
-    display: flex;
-    flex-wrap: nowrap;
-    align-items: center;
-    gap: 0.75rem;
+    display: block;
 }
 
-.card-zeitfenster .card-title {
-    margin: 0;
-    padding: 0;
-    border: none;
-    white-space: nowrap;
+.zeitfenster-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
 }
 
 .card-referenz .card-content {
@@ -1973,13 +1982,29 @@ function handleClickOutside(event) {
 /* Responsive */
 @media (max-width: 1200px) {
     .cards-grid {
-        grid-template-columns: 1fr 1fr;
+        flex-wrap: wrap;
+    }
+
+    .grid-kontakt,
+    .grid-thema,
+    .grid-zeitfenster,
+    .grid-referenz {
+        margin-top: 0;
     }
 }
 
 @media (max-width: 768px) {
     .cards-grid {
-        grid-template-columns: 1fr;
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .grid-kontakt,
+    .grid-thema,
+    .grid-zeitfenster,
+    .grid-referenz {
+        width: 100%;
+        margin-top: 0;
     }
 
     .cards-column {
