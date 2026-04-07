@@ -143,9 +143,10 @@ try {
     // Delete in correct order to respect foreign keys
     $pdo->exec("DELETE FROM stats_entry_values");
     $pdo->exec("DELETE FROM stats_entries");
+    $pdo->exec("ALTER TABLE stats_entries AUTO_INCREMENT = 1");
 
     $pdo->commit();
-    echo "✓ All existing entries cleared\n\n";
+    echo "✓ All existing entries cleared (auto-increment reset to 1)\n\n";
 
 } catch (PDOException $e) {
     $pdo->rollBack();
@@ -199,10 +200,6 @@ foreach ($csv_files as $csv_file) {
     // Create header index for fast lookup
     $header_index = array_flip($header);
 
-    // Extract year from filename (e.g., "statistik_24.csv" → "24")
-    preg_match('/statistik_(\d{2})/', $csv_file, $matches);
-    $year_prefix = $matches[1] ?? '';
-
     // Track statistics for this file
     $file_stats = [
         'total_rows' => 0,
@@ -221,9 +218,6 @@ foreach ($csv_files as $csv_file) {
             $file_stats['skipped']++;
             continue;
         }
-
-        // Prepend year to ID (e.g., "1" with year "24" becomes "241")
-        $entry_id = $year_prefix . $raw_id;
 
         try {
             $pdo->beginTransaction();
@@ -256,17 +250,17 @@ foreach ($csv_files as $csv_file) {
                 ? $row[$header_index['Andere Bem']]
                 : null;
 
-            // Insert main entry
+            // Insert main entry (auto-increment ID for clean sequential IDs)
             $stmt = $pdo->prepare("
-                INSERT INTO stats_entries (id, user_id, created_at, reference_remarks)
-                VALUES (:id, :user_id, :created_at, :remarks)
+                INSERT INTO stats_entries (user_id, created_at, reference_remarks)
+                VALUES (:user_id, :created_at, :remarks)
             ");
             $stmt->execute([
-                'id' => $entry_id,
                 'user_id' => $user_id,
                 'created_at' => $created_at,
                 'remarks' => $remarks
             ]);
+            $entry_id = $pdo->lastInsertId();
 
             // Insert values for each checked field
             $stmt_value = $pdo->prepare("

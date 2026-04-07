@@ -1,8 +1,7 @@
 # Dependencies
 frontend/node_modules/
 
-# Build output
-frontend/dist/
+# Build output (tracked on deploy branches)
 
 # Local env files
 *.local
