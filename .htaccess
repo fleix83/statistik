@@ -1,0 +1,8 @@
+RewriteEngine On
+
+# Serve API requests directly
+RewriteRule ^api/ - [L]
+
+# Serve frontend from frontend/dist
+RewriteCond %{REQUEST_URI} !^/statistik-mix/frontend/dist/
+RewriteRule ^(.*)$ frontend/dist/$1 [L]
