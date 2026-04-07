@@ -1155,7 +1155,7 @@ function handleClickOutside(event) {
     align-items: flex-start;
 }
 
-.grid-kontakt { width: 400px; margin-top: 10px; flex-shrink: 1; }
+.grid-kontakt { width: 400px; margin-top: 40px; flex-shrink: 1; }
 
 .top-bar-right {
     margin-left: auto;
@@ -1177,9 +1177,9 @@ function handleClickOutside(event) {
     gap: 0.4rem;
     align-items: center;
 }
-.grid-thema { width: 500px; margin-top: 60px; flex-shrink: 1; }
-.grid-zeitfenster { width: 220px; flex-shrink: 0; margin-top: 10px; }
-.grid-referenz { flex-shrink: 0; margin-top: 40px; }
+.grid-thema { width: 500px; margin-top: 20px; flex-shrink: 1; }
+.grid-zeitfenster { width: 220px; flex-shrink: 0; margin-top: 40px; }
+.grid-referenz { flex-shrink: 0; margin-top: 20px; }
 
 .cards-column {
     display: flex;
