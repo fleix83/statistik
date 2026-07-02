@@ -10,6 +10,8 @@
 require_once __DIR__ . '/../config/cors.php';
 require_once __DIR__ . '/../config/database.php';
 
+requireAdmin();
+
 if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
     errorResponse('Method not allowed', 405);
 }

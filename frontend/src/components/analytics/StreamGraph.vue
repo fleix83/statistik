@@ -34,26 +34,15 @@ const colors = computed(() => [
 const transformedData = computed(() => {
     if (!props.data) return null
 
-    // Handle timeseries mode (selected values over time)
-    if (props.data.mode === 'timeseries' && props.data.datasets?.length > 0) {
+    // A streamgraph stacks bands into a single whole, so it must only stack
+    // series that belong to the SAME period. Comparison-period datasets are
+    // excluded — otherwise the stacked height would be a meaningless sum of
+    // e.g. 2024 + 2025 counts.
+    if ((props.data.mode === 'timeseries' || props.data.mode === 'totals') && props.data.datasets?.length > 0) {
         const labels = props.data.labels || []
-        const datasets = props.data.datasets || []
+        const datasets = (props.data.datasets || []).filter(ds => !ds.isComparison)
 
         // Create array of objects: [{date, value1, value2, ...}, ...]
-        return labels.map((label, i) => {
-            const row = { date: label }
-            datasets.forEach(ds => {
-                row[ds.label] = ds.data[i] || 0
-            })
-            return row
-        })
-    }
-
-    // Handle totals mode (year comparison)
-    if (props.data.mode === 'totals' && props.data.datasets?.length > 0) {
-        const labels = props.data.labels || []
-        const datasets = props.data.datasets || []
-
         return labels.map((label, i) => {
             const row = { date: label }
             datasets.forEach(ds => {
@@ -68,7 +57,7 @@ const transformedData = computed(() => {
 
 const seriesKeys = computed(() => {
     if (!props.data?.datasets) return []
-    return props.data.datasets.map(ds => ds.label)
+    return props.data.datasets.filter(ds => !ds.isComparison).map(ds => ds.label)
 })
 
 function renderChart() {
@@ -170,7 +159,7 @@ function renderChart() {
         .attr('text-anchor', 'middle')
         .style('font-size', '12px')
         .style('fill', 'var(--text-color-secondary)')
-        .text('Besuche')
+        .text('Anfragen')
 
     // Legend - horizontal, centered at top
     const legendItemWidth = 120

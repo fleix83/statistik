@@ -5,25 +5,13 @@
  * GET /analytics/export.php?section=thema&start_date=2025-01-01&end_date=2025-12-31
  */
 
+require_once __DIR__ . '/../config/cors.php';
 require_once __DIR__ . '/../config/database.php';
 
-// CORS for file download
-$origin = $_SERVER['HTTP_ORIGIN'] ?? '';
-$allowedOrigins = ['http://localhost:5173', 'http://localhost'];
-if (in_array($origin, $allowedOrigins)) {
-    header('Access-Control-Allow-Origin: ' . $origin);
-}
-header('Access-Control-Allow-Credentials: true');
-
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    header('Access-Control-Allow-Methods: GET, OPTIONS');
-    header('Access-Control-Allow-Headers: Content-Type, Authorization');
-    exit;
-}
+requireAdmin();
 
 if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
-    http_response_code(405);
-    exit('Method not allowed');
+    errorResponse('Method not allowed', 405);
 }
 
 $section = $_GET['section'] ?? '';
@@ -113,6 +101,13 @@ foreach ($results as $row) {
     $dataMatrix[$row['date']][$row['label']] = $row['count'];
 }
 
+// Without an explicit date range, emit every date that actually has data
+// (otherwise the export would contain only the header row).
+if (empty($dates)) {
+    $dates = array_keys($dataMatrix);
+    sort($dates);
+}
+
 // Generate CSV
 $filename = "statistik-{$section}-" . date('Y-m-d') . '.csv';
 
@@ -126,7 +121,7 @@ fprintf($output, chr(0xEF).chr(0xBB).chr(0xBF));
 
 // Header row: Zeitraum + each selected value
 $header = array_merge(['Zeitraum'], $selectedValues);
-fputcsv($output, $header, ';');
+fputcsv($output, array_map('sanitizeCsvCell', $header), ';');
 
 // Data rows: one per day
 foreach ($dates as $date) {
@@ -139,7 +134,7 @@ foreach ($dates as $date) {
         $row[] = $count;
     }
 
-    fputcsv($output, $row, ';');
+    fputcsv($output, array_map('sanitizeCsvCell', $row), ';');
 }
 
 fclose($output);

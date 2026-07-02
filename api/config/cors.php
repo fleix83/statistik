@@ -3,9 +3,6 @@
  * CORS and Response Headers Configuration
  */
 
-// Start session early for all requests
-session_start();
-
 // CORS: Allow localhost in development, same-origin in production
 $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
 $allowedOrigins = ['http://localhost:5173', 'http://localhost'];
@@ -55,14 +52,12 @@ function getJsonBody(): array {
 }
 
 /**
- * Require authentication
- * Validates token against database (not sessions)
+ * Extract the Bearer token from the request, trying multiple header sources
+ * for Apache/proxy compatibility. Returns null when no token is present.
  */
-function requireAuth(): array {
-    // Try multiple methods to get Authorization header (Apache compatibility)
+function getBearerToken(): ?string {
     $authHeader = '';
 
-    // Method 1: getallheaders()
     $headers = getallheaders();
     if (isset($headers['Authorization'])) {
         $authHeader = $headers['Authorization'];
@@ -70,21 +65,65 @@ function requireAuth(): array {
         $authHeader = $headers['authorization'];
     }
 
-    // Method 2: $_SERVER (for proxied requests)
     if (empty($authHeader) && isset($_SERVER['HTTP_AUTHORIZATION'])) {
         $authHeader = $_SERVER['HTTP_AUTHORIZATION'];
     }
 
-    // Method 3: Apache-specific
     if (empty($authHeader) && isset($_SERVER['REDIRECT_HTTP_AUTHORIZATION'])) {
         $authHeader = $_SERVER['REDIRECT_HTTP_AUTHORIZATION'];
     }
 
     if (!preg_match('/Bearer\s+(.+)/', $authHeader, $matches)) {
-        errorResponse('Unauthorized', 401);
+        return null;
     }
 
-    $token = $matches[1];
+    return $matches[1];
+}
+
+/**
+ * Try to authenticate the request. Returns the user array on a valid,
+ * non-expired token, or null otherwise. Never sends a response — use this
+ * for endpoints that are public but expose more data to authenticated users.
+ */
+function tryAuth(): ?array {
+    $token = getBearerToken();
+    if ($token === null) {
+        return null;
+    }
+
+    require_once __DIR__ . '/database.php';
+    $db = getDB();
+
+    $stmt = $db->prepare('
+        SELECT u.id, u.username, u.role, t.expires_at
+        FROM auth_tokens t
+        JOIN users u ON t.user_id = u.id
+        WHERE t.token = ?
+    ');
+    $stmt->execute([$token]);
+    $result = $stmt->fetch();
+
+    if (!$result || strtotime($result['expires_at']) < time()) {
+        return null;
+    }
+
+    return [
+        'id' => $result['id'],
+        'username' => $result['username'],
+        'role' => $result['role']
+    ];
+}
+
+/**
+ * Require authentication
+ * Validates token against database (not sessions)
+ */
+function requireAuth(): array {
+    $token = getBearerToken();
+
+    if ($token === null) {
+        errorResponse('Unauthorized', 401);
+    }
 
     // Validate token against database
     require_once __DIR__ . '/database.php';
@@ -129,4 +168,17 @@ function requireAdmin(): array {
     }
 
     return $user;
+}
+
+/**
+ * Neutralize CSV formula injection: spreadsheet apps execute cells that begin
+ * with =, +, -, @ (or a leading tab/CR). Prefix those with a single quote so
+ * they are treated as text when an admin opens an export in Excel/Calc.
+ */
+function sanitizeCsvCell($value): string {
+    $value = (string)$value;
+    if ($value !== '' && in_array($value[0], ['=', '+', '-', '@', "\t", "\r"], true)) {
+        return "'" . $value;
+    }
+    return $value;
 }

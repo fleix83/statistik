@@ -21,7 +21,10 @@ api.interceptors.request.use(config => {
 api.interceptors.response.use(
     response => response,
     error => {
-        if (error.response?.status === 401) {
+        // Don't treat the login request's own 401 as a session expiry — let
+        // Login.vue show the "wrong credentials" message instead of reloading.
+        const isLoginRequest = error.config?.url?.includes('/auth/login.php')
+        if (error.response?.status === 401 && !isLoginRequest) {
             localStorage.removeItem('auth_token')
             window.location.href = import.meta.env.BASE_URL + 'login'
         }

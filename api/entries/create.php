@@ -20,6 +20,17 @@ if ($userId <= 0) {
     errorResponse('User ID required');
 }
 
+// Optional explicit entry date (local wall-clock string). Falls back to now.
+$createdAt = $data['created_at'] ?? null;
+$createdAtSql = null;
+if ($createdAt !== null && $createdAt !== '') {
+    $ts = strtotime($createdAt);
+    if ($ts === false) {
+        errorResponse('Invalid created_at');
+    }
+    $createdAtSql = date('Y-m-d H:i:s', $ts);
+}
+
 $validSections = ['kontaktart', 'person', 'thema', 'zeitfenster', 'tageszeit', 'dauer', 'referenz'];
 
 $db = getDB();
@@ -35,8 +46,13 @@ $db->beginTransaction();
 
 try {
     // Create main entry
-    $stmt = $db->prepare('INSERT INTO stats_entries (user_id, created_at) VALUES (?, NOW())');
-    $stmt->execute([$userId]);
+    if ($createdAtSql !== null) {
+        $stmt = $db->prepare('INSERT INTO stats_entries (user_id, created_at) VALUES (?, ?)');
+        $stmt->execute([$userId, $createdAtSql]);
+    } else {
+        $stmt = $db->prepare('INSERT INTO stats_entries (user_id, created_at) VALUES (?, NOW())');
+        $stmt->execute([$userId]);
+    }
     $entryId = $db->lastInsertId();
 
     // Insert values for each section
@@ -52,8 +68,11 @@ try {
         }
 
         foreach ($sectionValues as $value) {
+            if (!is_string($value)) {
+                continue;
+            }
             $value = trim($value);
-            if (!empty($value)) {
+            if ($value !== '') {
                 $stmt->execute([$entryId, $section, $value]);
             }
         }
@@ -64,10 +83,11 @@ try {
     jsonResponse([
         'id' => $entryId,
         'user_id' => $userId,
-        'created_at' => date('Y-m-d H:i:s'),
+        'created_at' => $createdAtSql ?? date('Y-m-d H:i:s'),
         'values' => $values
     ], 201);
-} catch (Exception $e) {
+} catch (Throwable $e) {
     $db->rollBack();
+    error_log('create.php failed: ' . $e->getMessage());
     errorResponse('Failed to create entry', 500);
 }

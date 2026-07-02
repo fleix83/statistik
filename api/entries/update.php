@@ -8,6 +8,8 @@
 require_once __DIR__ . '/../config/cors.php';
 require_once __DIR__ . '/../config/database.php';
 
+requireAdmin();
+
 if ($_SERVER['REQUEST_METHOD'] !== 'PUT') {
     errorResponse('Method not allowed', 405);
 }
@@ -44,13 +46,25 @@ if (!$stmt->fetch()) {
     errorResponse('User not found', 404);
 }
 
+// Validate optional entry date up front: strtotime() returns false on garbage,
+// which date() would silently turn into 1970-01-01 and hide the entry from all
+// date-filtered views.
+$createdAtSql = null;
+if ($createdAt !== null && $createdAt !== '') {
+    $ts = strtotime($createdAt);
+    if ($ts === false) {
+        errorResponse('Invalid created_at');
+    }
+    $createdAtSql = date('Y-m-d H:i:s', $ts);
+}
+
 $db->beginTransaction();
 
 try {
     // Update main entry
-    if ($createdAt) {
+    if ($createdAtSql !== null) {
         $stmt = $db->prepare('UPDATE stats_entries SET user_id = ?, created_at = ? WHERE id = ?');
-        $stmt->execute([$userId, date('Y-m-d H:i:s', strtotime($createdAt)), $entryId]);
+        $stmt->execute([$userId, $createdAtSql, $entryId]);
     } else {
         $stmt = $db->prepare('UPDATE stats_entries SET user_id = ? WHERE id = ?');
         $stmt->execute([$userId, $entryId]);
@@ -73,8 +87,11 @@ try {
         }
 
         foreach ($sectionValues as $value) {
+            if (!is_string($value)) {
+                continue;
+            }
             $value = trim($value);
-            if (!empty($value)) {
+            if ($value !== '') {
                 $stmt->execute([$entryId, $section, $value]);
             }
         }
@@ -85,10 +102,11 @@ try {
     jsonResponse([
         'id' => $entryId,
         'user_id' => $userId,
-        'created_at' => $createdAt ?? date('Y-m-d H:i:s'),
+        'created_at' => $createdAtSql ?? date('Y-m-d H:i:s'),
         'values' => $values
     ]);
-} catch (Exception $e) {
+} catch (Throwable $e) {
     $db->rollBack();
+    error_log('update.php failed: ' . $e->getMessage());
     errorResponse('Failed to update entry', 500);
 }
