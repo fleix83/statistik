@@ -311,6 +311,7 @@ function validateForm() {
     const errors = new Set()
 
     if (!selectedUser.value) errors.add('user')
+    if (!erfassungsdatum.value) errors.add('datum')
     if (formData.value.kontaktart.length === 0) errors.add('kontakt')
     if (formData.value.person.length === 0) errors.add('kontakt')
     if (formData.value.dauer.length === 0) errors.add('kontakt')
@@ -352,6 +353,25 @@ function cancelSave() {
     showConfirmDialog.value = false
 }
 
+// Format a Date (or date string) as local wall-clock time, never UTC. The app
+// stores created_at as naive local (Swiss) time, so toISOString() would shift
+// the value across the timezone offset and land entries on the wrong day.
+function toLocalYmd(value) {
+    const d = value instanceof Date ? value : new Date(value)
+    const y = d.getFullYear()
+    const m = String(d.getMonth() + 1).padStart(2, '0')
+    const day = String(d.getDate()).padStart(2, '0')
+    return `${y}-${m}-${day}`
+}
+
+function toLocalDateTime(value) {
+    const d = value instanceof Date ? value : new Date(value)
+    const hh = String(d.getHours()).padStart(2, '0')
+    const mm = String(d.getMinutes()).padStart(2, '0')
+    const ss = String(d.getSeconds()).padStart(2, '0')
+    return `${toLocalYmd(d)} ${hh}:${mm}:${ss}`
+}
+
 async function performSave() {
     submitting.value = true
     const isEditing = currentEntryId.value !== null
@@ -366,7 +386,7 @@ async function performSave() {
 
         const payload = {
             user_id: selectedUser.value.id,
-            created_at: erfassungsdatum.value.toISOString(),
+            created_at: toLocalDateTime(erfassungsdatum.value),
             values
         }
 
@@ -518,13 +538,13 @@ function toggleFilterMode() {
 function onDateSelect(date) {
     if (!date) return
 
-    // Format selected date as YYYY-MM-DD for comparison
-    const selectedDateStr = date.toISOString().split('T')[0]
+    // Compare on local calendar dates (not UTC) so the day the user picked
+    // matches the day the entries were recorded.
+    const selectedDateStr = toLocalYmd(date)
 
     // Find first entry matching this date
     const matchingIndex = entriesList.value.findIndex(entry => {
-        const entryDateStr = new Date(entry.created_at).toISOString().split('T')[0]
-        return entryDateStr === selectedDateStr
+        return toLocalYmd(entry.created_at) === selectedDateStr
     })
 
     if (matchingIndex >= 0) {
