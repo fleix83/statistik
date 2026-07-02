@@ -1214,6 +1214,7 @@ const tableData = computed(() => {
                                     v-model="chartType"
                                     :options="chartTypes"
                                     optionValue="value"
+                                    :allowEmpty="false"
                                     class="chart-type-selector"
                                 >
                                     <template #option="{ option }">

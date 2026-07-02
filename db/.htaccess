@@ -1,0 +1,10 @@
+# Deny all web access to the db/ directory.
+# It contains schema/migration SQL, import & maintenance scripts, and legacy
+# CSV consultation data that must never be reachable over HTTP.
+<IfModule mod_authz_core.c>
+    Require all denied
+</IfModule>
+<IfModule !mod_authz_core.c>
+    Order allow,deny
+    Deny from all
+</IfModule>

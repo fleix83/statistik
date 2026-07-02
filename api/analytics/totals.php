@@ -14,6 +14,8 @@ require_once __DIR__ . '/../config/cors.php';
 require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../config/filters.php';
 
+requireAdmin();
+
 if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
     errorResponse('Method not allowed', 405);
 }
@@ -102,7 +104,8 @@ try {
     $stmt->execute($queryParams);
     $results = $stmt->fetchAll();
 } catch (PDOException $e) {
-    errorResponse('Query failed: ' . $e->getMessage() . ' | SQL: ' . $sql . ' | Params: ' . json_encode($queryParams), 500);
+    error_log('totals.php query failed: ' . $e->getMessage());
+    errorResponse('Query failed', 500);
 }
 
 // Map results to labels
@@ -127,7 +130,8 @@ try {
     $stmt->execute($totalParams);
     $total = intval($stmt->fetchColumn());
 } catch (PDOException $e) {
-    errorResponse('Total query failed: ' . $e->getMessage(), 500);
+    error_log('totals.php total query failed: ' . $e->getMessage());
+    errorResponse('Query failed', 500);
 }
 
 jsonResponse([

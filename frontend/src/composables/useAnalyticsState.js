@@ -69,6 +69,13 @@ const activeSavedPeriodIds = ref([])
 // Debounce timer for data fetching
 let fetchDebounceTimer = null
 
+// Monotonic token so a slow fetch can't overwrite a newer one's results
+let fetchGeneration = 0
+
+// The state below is a module-level singleton shared by every component that
+// calls useAnalyticsState(); register the watchers only once.
+let watchersInitialized = false
+
 let nextPeriodId = 3
 
 export function useAnalyticsState() {
@@ -333,10 +340,12 @@ export function useAnalyticsState() {
 
     // Fetch chart data based on current state
     async function fetchData() {
-        console.log('=== FETCH DATA CALLED ===')
-        console.log('orderedSelections at start:', JSON.stringify(orderedSelections.value))
-
         if (periods.value.length === 0) return
+
+        // Guard against out-of-order responses: only the most recent fetchData
+        // call is allowed to commit its results to the shared state.
+        const myGen = ++fetchGeneration
+        const isStale = () => myGen !== fetchGeneration
 
         loading.value = true
         error.value = null
@@ -488,6 +497,7 @@ export function useAnalyticsState() {
                     // Calculate total (sum of leaf values for primary period)
                     const primaryPeriodTotal = stackedDatasets.reduce((sum, ds) => sum + (ds.data[0] || 0), 0)
 
+                    if (isStale()) return
                     chartData.value = {
                         mode: 'stacked',
                         subsetMode: true,
@@ -544,6 +554,7 @@ export function useAnalyticsState() {
 
                     // Stacked bar chart mode - X-axis is periods, bars stacked by values
                     if (chartType.value === 'stacked') {
+                        if (isStale()) return
                         chartData.value = {
                             mode: 'stacked',
                             labels: periods.value.map(p => p.label),  // Period labels on X-axis
@@ -560,6 +571,7 @@ export function useAnalyticsState() {
                     }
                     // For single period, use simple aggregate mode
                     else if (periods.value.length === 1) {
+                        if (isStale()) return
                         chartData.value = {
                             mode: 'aggregate',
                             items: periodDatasets[0].items,
@@ -567,6 +579,7 @@ export function useAnalyticsState() {
                         }
                     } else {
                         // Multiple periods - use aggregate-compare mode (for both bar and pie)
+                        if (isStale()) return
                         chartData.value = {
                             mode: 'aggregate-compare',
                             labels: labels,
@@ -623,7 +636,7 @@ export function useAnalyticsState() {
                                     const [year, week] = l.split('-W')
                                     const jan4 = new Date(parseInt(year), 0, 4)
                                     const weekStart = new Date(jan4)
-                                    weekStart.setDate(jan4.getDate() - jan4.getDay() + 1 + (parseInt(week) - 1) * 7)
+                                    weekStart.setDate(jan4.getDate() - (jan4.getDay() || 7) + 1 + (parseInt(week) - 1) * 7)
                                     return format(weekStart, 'd. MMMM yyyy', { locale: de })
                                 } else {
                                     // Format: 2025-01 → Januar 2025
@@ -669,6 +682,7 @@ export function useAnalyticsState() {
                         allLabels = allLabels.map(m => monthNames[parseInt(m) - 1] || m)
                     }
 
+                    if (isStale()) return
                     chartData.value = {
                         mode: 'totals',
                         granularity: granularityUsed,
@@ -887,7 +901,7 @@ export function useAnalyticsState() {
                                             const [year, week] = l.split('-W')
                                             const jan4 = new Date(parseInt(year), 0, 4)
                                             const weekStart = new Date(jan4)
-                                            weekStart.setDate(jan4.getDate() - jan4.getDay() + 1 + (parseInt(week) - 1) * 7)
+                                            weekStart.setDate(jan4.getDate() - (jan4.getDay() || 7) + 1 + (parseInt(week) - 1) * 7)
                                             return format(weekStart, 'd. MMMM yyyy', { locale: de })
                                         } else {
                                             const [year, month] = l.split('-')
@@ -971,7 +985,7 @@ export function useAnalyticsState() {
                                         const [year, week] = l.split('-W')
                                         const jan4 = new Date(parseInt(year), 0, 4)
                                         const weekStart = new Date(jan4)
-                                        weekStart.setDate(jan4.getDate() - jan4.getDay() + 1 + (parseInt(week) - 1) * 7)
+                                        weekStart.setDate(jan4.getDate() - (jan4.getDay() || 7) + 1 + (parseInt(week) - 1) * 7)
                                         return format(weekStart, 'd. MMMM yyyy', { locale: de })
                                     } else {
                                         const [year, month] = l.split('-')
@@ -1016,6 +1030,7 @@ export function useAnalyticsState() {
                     console.log('allDatasets.length:', allDatasets.length)
                     console.log('numValues:', useSubsetMode ? allSelections.length : activeValues.value.length)
 
+                    if (isStale()) return
                     chartData.value = {
                         mode: 'timeseries',
                         subsetMode: useSubsetMode,
@@ -1067,28 +1082,39 @@ export function useAnalyticsState() {
                 }
             }
         } catch (err) {
-            console.error('Failed to fetch data:', err)
-            error.value = 'Daten konnten nicht geladen werden'
-            chartData.value = null
+            if (!isStale()) {
+                console.error('Failed to fetch data:', err)
+                error.value = 'Daten konnten nicht geladen werden'
+                chartData.value = null
+            }
         } finally {
-            loading.value = false
+            if (!isStale()) {
+                loading.value = false
+            }
         }
     }
 
-    // Watch for chart type changes to refetch data
-    watch(chartType, () => {
-        fetchData()
-    })
+    // Register watchers once for the shared singleton state, otherwise every
+    // component that calls useAnalyticsState() adds its own copy and a single
+    // change triggers a burst of concurrent fetches.
+    if (!watchersInitialized) {
+        watchersInitialized = true
 
-    // Watch for period changes to refetch data automatically
-    watch(periods, () => {
-        debouncedFetch()
-    }, { deep: true })
+        // Chart type change → refetch
+        watch(chartType, () => {
+            fetchData()
+        })
 
-    // Watch for active section changes to refetch data
-    watch(activeSection, () => {
-        debouncedFetch()
-    })
+        // Period change → refetch (debounced)
+        watch(periods, () => {
+            debouncedFetch()
+        }, { deep: true })
+
+        // Active section change → refetch (debounced)
+        watch(activeSection, () => {
+            debouncedFetch()
+        })
+    }
 
     // Load markers from API
     async function loadMarkers() {

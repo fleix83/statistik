@@ -6,25 +6,13 @@
  * Exports all entries with their values for backup/migration purposes.
  */
 
+require_once __DIR__ . '/../config/cors.php';
 require_once __DIR__ . '/../config/database.php';
 
-// CORS for file download
-$origin = $_SERVER['HTTP_ORIGIN'] ?? '';
-$allowedOrigins = ['http://localhost:5173', 'http://localhost'];
-if (in_array($origin, $allowedOrigins)) {
-    header('Access-Control-Allow-Origin: ' . $origin);
-}
-header('Access-Control-Allow-Credentials: true');
-
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    header('Access-Control-Allow-Methods: GET, OPTIONS');
-    header('Access-Control-Allow-Headers: Content-Type, Authorization');
-    exit;
-}
+requireAdmin();
 
 if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
-    http_response_code(405);
-    exit('Method not allowed');
+    errorResponse('Method not allowed', 405);
 }
 
 $db = getDB();
@@ -87,7 +75,7 @@ $header = ['ID', 'Datum', 'Uhrzeit', 'Benutzer'];
 foreach ($sections as $section) {
     $header[] = ucfirst($section);
 }
-fputcsv($output, $header, ';');
+fputcsv($output, array_map('sanitizeCsvCell', $header), ';');
 
 // Data rows
 foreach ($entries as $entry) {
@@ -108,7 +96,7 @@ foreach ($entries as $entry) {
         $row[] = implode(', ', $entry[$section]);
     }
 
-    fputcsv($output, $row, ';');
+    fputcsv($output, array_map('sanitizeCsvCell', $row), ';');
 }
 
 fclose($output);

@@ -76,16 +76,27 @@ function clearAll() {
     }
 }
 
-// Select all options in this section
+// Select all options in this section. Route through toggleParam so that
+// orderedSelections and selectionHierarchy stay in sync (writing selectedParams
+// directly leaves the hierarchy stale and silently changes filter semantics).
 function selectAll() {
+    const addAll = (section, opts) => {
+        for (const opt of opts) {
+            const value = getOptionLabel(opt)
+            if (!selectedParams.value[section]?.includes(value)) {
+                toggleParam(section, value, getOptionGroup(opt), getOptionBehavior(opt))
+            }
+        }
+    }
+
     if (props.groups) {
         for (const [groupSection, groupOptions] of Object.entries(props.groups)) {
-            selectedParams.value[groupSection] = groupOptions.map(opt => getOptionLabel(opt))
+            addAll(groupSection, groupOptions)
         }
     } else {
-        selectedParams.value[props.section] = props.options.map(opt => getOptionLabel(opt))
+        addAll(props.section, props.options)
     }
-    fetchData()
+    // toggleParam already schedules a debounced fetch.
 }
 
 // Group label mapping
