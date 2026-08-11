@@ -74,8 +74,89 @@ const formattedToday = computed(() => {
 const loading = ref(false)
 const submitting = ref(false)
 const showSplash = ref(false)
+const splashFlowers = ref([])
+
+const flowerFallbackPalette = [
+    { petal: '#ffe27a', petalDark: '#f5c542', center: '#e8961e' },
+    { petal: '#ffd75e', petalDark: '#eab308', center: '#d97f10' },
+]
+
+function rgbToHsl(r, g, b) {
+    r /= 255; g /= 255; b /= 255
+    const max = Math.max(r, g, b), min = Math.min(r, g, b)
+    const l = (max + min) / 2
+    if (max === min) return [0, 0, Math.round(l * 100)]
+    const d = max - min
+    const s = l > 0.5 ? d / (2 - max - min) : d / (max + min)
+    let h
+    switch (max) {
+        case r: h = (g - b) / d + (g < b ? 6 : 0); break
+        case g: h = (b - r) / d + 2; break
+        default: h = (r - g) / d + 4
+    }
+    return [Math.round(h * 60), Math.round(s * 100), Math.round(l * 100)]
+}
+
+// Petal colors follow the live card backgrounds so admin recoloring carries into the splash.
+// The card element itself is transparent — the fill lives in the --card-bg-color property.
+function splashPalette() {
+    const palette = []
+    const probe = document.createElement('div')
+    document.body.appendChild(probe)
+    document.querySelectorAll('.card').forEach(card => {
+        const cs = getComputedStyle(card)
+        probe.style.color = ''
+        probe.style.color = cs.getPropertyValue('--card-bg-color').trim() || cs.backgroundColor
+        const m = getComputedStyle(probe).color.match(/[\d.]+/g)
+        if (!m || m.length < 3) return
+        const n = m.map(Number)
+        const a = n.length > 3 ? n[3] : 1
+        if (a === 0) return
+        // Flatten semi-transparent card colors onto the splash backdrop (#f5f3ef)
+        const [h, s] = rgbToHsl(n[0] * a + 245 * (1 - a), n[1] * a + 243 * (1 - a), n[2] * a + 239 * (1 - a))
+        const ps = Math.min(Math.max(s, 45), 70)
+        palette.push({
+            petal: `hsl(${h} ${ps}% 68%)`,
+            petalDark: `hsl(${h} ${ps}% 54%)`,
+            center: '#e8a23d',
+        })
+    })
+    probe.remove()
+    return palette.length ? palette : flowerFallbackPalette
+}
+
+const flowerShapes = ['daisy', 'aster', 'wildflower', 'poppy']
+
+function makeSplashFlowers() {
+    const palette = splashPalette()
+    const flowers = []
+    for (let i = 0; i < 28; i++) {
+        let x, y
+        // Scatter across and slightly beyond the viewport, keeping the center clear for the text
+        do {
+            x = Math.random() * 116 - 8
+            y = Math.random() * 116 - 8
+        } while (Math.abs(x - 50) < 34 && Math.abs(y - 50) < 24)
+        const edgeDist = Math.max(Math.abs(x - 50), Math.abs(y - 50))
+        flowers.push({
+            id: i,
+            x,
+            y,
+            size: 50 + edgeDist * 2 + Math.random() * 50,
+            delay: Math.random() * 0.8,
+            duration: 0.5 + Math.random() * 0.5,
+            rotate: Math.random() * 60 - 30,
+            sway: 1.6 + Math.random() * 1.4,
+            swayPhase: Math.random() * 3,
+            shape: flowerShapes[i % flowerShapes.length],
+            ...palette[Math.floor(Math.random() * palette.length)],
+        })
+    }
+    return flowers
+}
 
 function triggerSplash() {
+    splashFlowers.value = makeSplashFlowers()
     showSplash.value = true
     setTimeout(() => { showSplash.value = false }, 3000)
 }
@@ -933,6 +1014,47 @@ function handleClickOutside(event) {
 
         <div v-if="showSplash" class="save-splash"></div>
         <div v-if="showSplash" class="save-splash-backdrop"></div>
+        <div v-if="showSplash" class="save-splash-flowers">
+            <svg
+                v-for="f in splashFlowers"
+                :key="f.id"
+                class="splash-flower"
+                viewBox="0 0 100 100"
+                :style="{
+                    left: f.x + '%',
+                    top: f.y + '%',
+                    width: f.size + 'px',
+                    height: f.size + 'px',
+                    animationDelay: f.delay + 's',
+                    animationDuration: f.duration + 's',
+                    '--rot': f.rotate + 'deg',
+                    '--sway-dur': f.sway + 's',
+                    '--sway-phase': -f.swayPhase + 's',
+                }"
+            >
+                <g v-if="f.shape === 'daisy'">
+                    <ellipse v-for="n in 8" :key="'b' + n" cx="50" cy="22" rx="12" ry="22" :fill="f.petalDark" :transform="`rotate(${n * 45 + 22.5} 50 50)`" />
+                    <ellipse v-for="n in 8" :key="'p' + n" cx="50" cy="24" rx="11" ry="20" :fill="f.petal" :transform="`rotate(${n * 45} 50 50)`" />
+                    <circle cx="50" cy="50" r="11" :fill="f.center" />
+                    <circle cx="47" cy="47" r="4" fill="#ffffff" opacity="0.55" />
+                </g>
+                <g v-else-if="f.shape === 'aster'">
+                    <ellipse v-for="n in 16" :key="'a' + n" cx="50" cy="26" rx="4.5" ry="24" :fill="n % 2 ? f.petal : f.petalDark" :transform="`rotate(${n * 22.5} 50 50)`" />
+                    <circle cx="50" cy="50" r="8.5" :fill="f.center" />
+                    <circle cx="47.5" cy="47.5" r="3" fill="#ffffff" opacity="0.55" />
+                </g>
+                <g v-else-if="f.shape === 'wildflower'">
+                    <path v-for="n in 5" :key="'w' + n" d="M50 52 C 37 40, 41 13, 50 6 C 59 13, 63 40, 50 52 Z" :fill="n % 2 ? f.petal : f.petalDark" :transform="`rotate(${n * 72} 50 50)`" />
+                    <circle cx="50" cy="50" r="8" :fill="f.center" />
+                    <circle cx="47.5" cy="47.5" r="3" fill="#ffffff" opacity="0.55" />
+                </g>
+                <g v-else>
+                    <circle v-for="n in 6" :key="'o' + n" cx="50" cy="31" r="16" :fill="n % 2 ? f.petal : f.petalDark" :transform="`rotate(${n * 60 + 30} 50 50)`" />
+                    <circle cx="50" cy="50" r="10" :fill="f.center" />
+                    <circle cx="47" cy="47" r="3.5" fill="#ffffff" opacity="0.55" />
+                </g>
+            </svg>
+        </div>
         <div v-if="showSplash" class="save-splash-text"><span class="splash-check">&#10003;</span> Eintrag gespeichert</div>
     </div>
 </template>
@@ -1888,6 +2010,51 @@ function handleClickOutside(event) {
     10% { opacity: 1; }
     70% { opacity: 1; }
     100% { opacity: 0; }
+}
+
+.save-splash-flowers {
+    position: fixed;
+    inset: 0;
+    overflow: hidden;
+    z-index: 9999;
+    pointer-events: none;
+    animation: splash-flowers-layer 3s ease-out forwards;
+}
+
+@keyframes splash-flowers-layer {
+    0% { opacity: 0; transform: scale(0.92); }
+    10% { opacity: 0.35; }
+    65% { opacity: 0.35; }
+    92% { opacity: 0; }
+    100% { opacity: 0; transform: scale(1.18); }
+}
+
+.splash-flower {
+    position: absolute;
+    transform: translate(-50%, -50%) rotate(calc(var(--rot) - 50deg)) scale(0);
+    animation-name: flower-bloom;
+    animation-timing-function: cubic-bezier(0.34, 1.56, 0.64, 1);
+    animation-fill-mode: forwards;
+}
+
+@keyframes flower-bloom {
+    from {
+        transform: translate(-50%, -50%) rotate(calc(var(--rot) - 50deg)) scale(0);
+    }
+    to {
+        transform: translate(-50%, -50%) rotate(var(--rot)) scale(1);
+    }
+}
+
+.splash-flower g {
+    transform-origin: 50px 50px;
+    animation: flower-sway var(--sway-dur, 2.4s) ease-in-out infinite alternate;
+    animation-delay: var(--sway-phase, 0s);
+}
+
+@keyframes flower-sway {
+    from { transform: rotate(-6deg); }
+    to { transform: rotate(6deg); }
 }
 
 .splash-check {
