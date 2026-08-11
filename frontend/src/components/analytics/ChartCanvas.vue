@@ -1422,6 +1422,8 @@ const tableData = computed(() => {
     position: absolute;
     top: 0;
     right: 1.5rem;
+    margin-right: 39.5px;
+    margin-top: 3px;
     z-index: 10;
 }
 

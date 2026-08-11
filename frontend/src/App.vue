@@ -193,18 +193,18 @@ button, input, select, textarea {
     border: none !important;
     box-shadow: none !important;
     border-bottom: none !important;
-    background: #fff0c8 !important;
+    background: #ffecba !important;
     transition: max-height 0.3s ease, opacity 0.3s ease, border-color 0.3s ease;
     overflow: hidden;
     max-height: 200px;
 }
 
 .app-header.navbar-blue {
-    background: #c8deff !important;
+    background: #bad6ff !important;
 }
 
 .app-header.navbar-editor {
-    background: #ff9d85 !important;
+    background: #ffc8ba !important;
 }
 
 .app-header.navbar-hidden {
