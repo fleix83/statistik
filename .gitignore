@@ -27,6 +27,10 @@ npm-debug.log*
 api/config/database.local.php
 api/config/database.prod.php
 
+# Uploaded card background images (runtime data)
+api/uploads/card-images/*
+!api/uploads/card-images/.htaccess
+
 # Legacy data imports
 db/statistik_2025.csv
 statistik legacy data/

@@ -1,12 +1,14 @@
 <script setup>
 import { ref, watch, computed, onMounted } from 'vue'
+import { colors as colorsApi, apiFileUrl } from '../services/api'
 
 const props = defineProps({
     visible: Boolean,
     cardKey: String,
     colors: Object,
     anchorRect: Object,
-    showImageOpacity: Boolean
+    showImageOpacity: Boolean,
+    defaultImage: String
 })
 
 const emit = defineEmits(['save', 'update', 'close', 'discard'])
@@ -54,11 +56,18 @@ const fields = [
 const localColors = ref({})
 const customized = ref(new Set())
 
-// Background image (Card.png texture) opacity, stored as 0-1
+// Background image (default texture or uploaded file) and its opacity (0-1)
 const IMAGE_OPACITY_DEFAULT = 0.07
 const imageOpacity = ref(IMAGE_OPACITY_DEFAULT)
 const imageCustomized = ref(false)
 const imageOpacityPercent = computed(() => Math.round(imageOpacity.value * 100))
+
+const imageFile = ref(null)   // Path of an uploaded image (relative to api/), null = default
+const uploading = ref(false)
+const fileInputEl = ref(null)
+const imagePreviewSrc = computed(() =>
+    imageFile.value ? apiFileUrl(imageFile.value) : (props.defaultImage || null)
+)
 
 function initColors() {
     const src = props.colors || {}
@@ -73,6 +82,7 @@ function initColors() {
     const imgVal = src.bg_image_opacity
     imageCustomized.value = imgVal !== null && imgVal !== undefined
     imageOpacity.value = imageCustomized.value ? parseFloat(imgVal) : IMAGE_OPACITY_DEFAULT
+    imageFile.value = src.bg_image || null
 }
 
 onMounted(initColors)
@@ -149,10 +159,31 @@ function setImageOpacity(percent) {
     emitUpdate()
 }
 
-function clearImageOpacity() {
+function clearImageSettings() {
+    imageFile.value = null
     imageOpacity.value = IMAGE_OPACITY_DEFAULT
     imageCustomized.value = false
     emitUpdate()
+}
+
+function pickImage() {
+    if (!uploading.value) fileInputEl.value?.click()
+}
+
+async function onImageSelected(event) {
+    const file = event.target.files?.[0]
+    event.target.value = ''
+    if (!file) return
+    uploading.value = true
+    try {
+        const res = await colorsApi.uploadImage(props.cardKey, file)
+        imageFile.value = res.data.path
+        emitUpdate()
+    } catch (error) {
+        console.error('Failed to upload image:', error)
+    } finally {
+        uploading.value = false
+    }
 }
 
 function resetAll() {
@@ -161,6 +192,7 @@ function resetAll() {
         localColors.value[f.key] = def[f.key] || null
     }
     customized.value.clear()
+    imageFile.value = null
     imageOpacity.value = IMAGE_OPACITY_DEFAULT
     imageCustomized.value = false
     emitUpdate()
@@ -173,6 +205,7 @@ function buildData() {
         data[f.key] = customized.value.has(f.key) ? localColors.value[f.key] : null
     }
     if (props.showImageOpacity) {
+        data.bg_image = imageFile.value
         data.bg_image_opacity = imageCustomized.value ? imageOpacity.value : null
     }
     return data
@@ -275,6 +308,27 @@ const modalStyle = computed(() => {
                     <div v-if="showImageOpacity" class="color-row">
                         <span class="color-label">Hintergrundbild</span>
                         <div class="color-controls">
+                            <button
+                                class="image-upload-btn"
+                                :disabled="uploading"
+                                @click="pickImage"
+                                title="Bild hochladen"
+                            >
+                                <img
+                                    v-if="imagePreviewSrc"
+                                    :src="imagePreviewSrc"
+                                    class="image-preview"
+                                    alt=""
+                                />
+                                <i :class="uploading ? 'pi pi-spinner pi-spin' : 'pi pi-upload'"></i>
+                            </button>
+                            <input
+                                ref="fileInputEl"
+                                type="file"
+                                accept="image/png,image/jpeg,image/webp,image/gif"
+                                class="image-file-input"
+                                @change="onImageSelected"
+                            />
                             <input
                                 type="range"
                                 min="0"
@@ -285,9 +339,9 @@ const modalStyle = computed(() => {
                             />
                             <span class="opacity-value">{{ imageOpacityPercent }}%</span>
                             <button
-                                v-if="imageCustomized"
+                                v-if="imageCustomized || imageFile"
                                 class="clear-btn"
-                                @click="clearImageOpacity"
+                                @click="clearImageSettings"
                                 title="Zurücksetzen"
                             >
                                 <i class="pi pi-times-circle"></i>
@@ -423,6 +477,48 @@ const modalStyle = computed(() => {
     color: #888;
     width: 32px;
     text-align: right;
+}
+
+.image-upload-btn {
+    position: relative;
+    width: 32px;
+    height: 28px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 0;
+    cursor: pointer;
+    background: #fafafa;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.image-upload-btn:disabled {
+    cursor: wait;
+}
+
+.image-preview {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.image-upload-btn i {
+    position: relative;
+    z-index: 1;
+    font-size: 0.7rem;
+    color: #555;
+    background: rgba(255, 255, 255, 0.75);
+    border-radius: 3px;
+    padding: 1px 2px;
+}
+
+.image-file-input {
+    display: none;
 }
 
 .clear-btn {
