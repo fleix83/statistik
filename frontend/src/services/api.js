@@ -110,8 +110,16 @@ export const rueckschau = {
 // Card Colors
 export const colors = {
     getAll: () => api.get('/colors/index.php'),
-    update: (cardKey, data) => api.put(`/colors/index.php?card=${cardKey}`, data)
+    update: (cardKey, data) => api.put(`/colors/index.php?card=${cardKey}`, data),
+    uploadImage: (cardKey, file) => {
+        const formData = new FormData()
+        formData.append('image', file)
+        return api.post(`/colors/upload.php?card=${cardKey}`, formData)
+    }
 }
+
+// Browser URL for files stored under the api directory (e.g. uploaded card images)
+export const apiFileUrl = (path) => `${api.defaults.baseURL}/${path}`
 
 // Saved Periods
 export const savedPeriods = {

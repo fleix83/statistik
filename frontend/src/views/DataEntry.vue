@@ -7,7 +7,8 @@ import Checkbox from 'primevue/checkbox'
 import InputText from 'primevue/inputtext'
 import DatePicker from 'primevue/datepicker'
 import Toast from 'primevue/toast'
-import { options, entries, users, colors } from '../services/api'
+import { options, entries, users, colors, apiFileUrl } from '../services/api'
+import defaultCardImage from '@/assets/Card.png'
 import { useAuthStore } from '../stores/auth'
 import RueckschauOverlay from '../components/RueckschauOverlay.vue'
 import CardColorModal from '../components/CardColorModal.vue'
@@ -255,6 +256,7 @@ function getCardStyle(cardKey) {
     if (c.swatch_default) style['--custom-swatch-default'] = c.swatch_default
     if (c.swatch_hover) style['--custom-swatch-hover'] = c.swatch_hover
     if (c.swatch_checked) style['--custom-swatch-checked'] = c.swatch_checked
+    if (c.bg_image) style['--card-bg-image'] = `url("${apiFileUrl(c.bg_image)}")`
     if (c.bg_image_opacity !== null && c.bg_image_opacity !== undefined) style['--card-bg-image-opacity'] = c.bg_image_opacity
     return style
 }
@@ -1008,6 +1010,7 @@ function handleClickOutside(event) {
             :colors="cardColors[key]"
             :anchorRect="modal.anchorRect"
             :showImageOpacity="true"
+            :defaultImage="defaultCardImage"
             @save="saveCardColors"
             @update="updateCardColorsPreview"
             @close="closeColorModal(key)"
@@ -1343,7 +1346,7 @@ function handleClickOutside(event) {
     content: '';
     position: absolute;
     inset: 0;
-    background-image: url('@/assets/Card.png');
+    background-image: var(--card-bg-image, url('@/assets/Card.png'));
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
