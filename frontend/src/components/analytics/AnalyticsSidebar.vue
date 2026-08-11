@@ -386,12 +386,12 @@ function onFetch() {
 }
 
 :deep(.action-btn-primary.p-button) {
-    background: #3b82f6 !important;
+    background: #69a2ff !important;
     border: none !important;
     border-radius: 8px !important;
 }
 
 :deep(.action-btn-primary.p-button:hover) {
-    background: #2563eb !important;
+    background: #4a8bff !important;
 }
 </style>

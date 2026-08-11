@@ -255,6 +255,7 @@ function getCardStyle(cardKey) {
     if (c.swatch_default) style['--custom-swatch-default'] = c.swatch_default
     if (c.swatch_hover) style['--custom-swatch-hover'] = c.swatch_hover
     if (c.swatch_checked) style['--custom-swatch-checked'] = c.swatch_checked
+    if (c.bg_image_opacity !== null && c.bg_image_opacity !== undefined) style['--card-bg-image-opacity'] = c.bg_image_opacity
     return style
 }
 
@@ -1006,6 +1007,7 @@ function handleClickOutside(event) {
             :cardKey="key"
             :colors="cardColors[key]"
             :anchorRect="modal.anchorRect"
+            :showImageOpacity="true"
             @save="saveCardColors"
             @update="updateCardColorsPreview"
             @close="closeColorModal(key)"
@@ -1147,7 +1149,7 @@ function handleClickOutside(event) {
     align-items: flex-end;
     gap: 2.6rem;
     padding: 2rem 40px 1.3rem;
-    background: linear-gradient(180deg, #fff0c8, transparent);
+    background: linear-gradient(180deg, #ffecba, transparent);
     margin-bottom: 1rem;
     margin-left: -40px;
     margin-right: -40px;
@@ -1345,7 +1347,7 @@ function handleClickOutside(event) {
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
-    opacity: 0.07;
+    opacity: var(--card-bg-image-opacity, 0.07);
     z-index: 0;
     pointer-events: none;
 }

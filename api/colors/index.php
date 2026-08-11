@@ -14,7 +14,7 @@ $validCards = ['person', 'zeitfenster', 'thema', 'referenz'];
 
 switch ($_SERVER['REQUEST_METHOD']) {
     case 'GET':
-        $stmt = $db->query('SELECT card_key, bg_color, border_color, swatch_default, swatch_hover, swatch_checked FROM card_colors');
+        $stmt = $db->query('SELECT card_key, bg_color, border_color, swatch_default, swatch_hover, swatch_checked, bg_image_opacity FROM card_colors');
         $rows = $stmt->fetchAll();
 
         $result = [];
@@ -52,6 +52,15 @@ switch ($_SERVER['REQUEST_METHOD']) {
             }
         }
 
+        // Background image opacity: number between 0 and 1, or null for CSS default
+        if (array_key_exists('bg_image_opacity', $data)) {
+            $val = $data['bg_image_opacity'];
+            if ($val !== null && (!is_numeric($val) || $val < 0 || $val > 1)) {
+                errorResponse('Ungültiger Wert für bg_image_opacity (0-1)', 400);
+            }
+            $values['bg_image_opacity'] = $val;
+        }
+
         if (empty($values)) {
             errorResponse('Keine Farbwerte angegeben', 400);
         }
@@ -77,7 +86,7 @@ switch ($_SERVER['REQUEST_METHOD']) {
         $stmt->execute($params);
 
         // Return updated row
-        $stmt = $db->prepare('SELECT card_key, bg_color, border_color, swatch_default, swatch_hover, swatch_checked FROM card_colors WHERE card_key = ?');
+        $stmt = $db->prepare('SELECT card_key, bg_color, border_color, swatch_default, swatch_hover, swatch_checked, bg_image_opacity FROM card_colors WHERE card_key = ?');
         $stmt->execute([$card]);
         $row = $stmt->fetch();
 

@@ -312,7 +312,7 @@ onUnmounted(() => {
     display: flex;
     align-items: center;
     padding: 0 1rem 0 0;
-    background: #fff0c8;
+    background: #ffecba;
     flex-shrink: 0;
 }
 
@@ -380,7 +380,7 @@ onUnmounted(() => {
     padding: 40px 40px;
     padding-top: 92px;
     margin-bottom: -20px;
-    background: linear-gradient(180deg, #fff0c8, transparent);
+    background: linear-gradient(180deg, #ffecba, transparent);
     border-bottom: none;
     flex-shrink: 0;
 }

@@ -5,7 +5,8 @@ const props = defineProps({
     visible: Boolean,
     cardKey: String,
     colors: Object,
-    anchorRect: Object
+    anchorRect: Object,
+    showImageOpacity: Boolean
 })
 
 const emit = defineEmits(['save', 'update', 'close', 'discard'])
@@ -53,6 +54,12 @@ const fields = [
 const localColors = ref({})
 const customized = ref(new Set())
 
+// Background image (Card.png texture) opacity, stored as 0-1
+const IMAGE_OPACITY_DEFAULT = 0.07
+const imageOpacity = ref(IMAGE_OPACITY_DEFAULT)
+const imageCustomized = ref(false)
+const imageOpacityPercent = computed(() => Math.round(imageOpacity.value * 100))
+
 function initColors() {
     const src = props.colors || {}
     const def = defaults[props.cardKey] || {}
@@ -63,6 +70,9 @@ function initColors() {
     customized.value = new Set(
         fields.filter(f => src[f.key]).map(f => f.key)
     )
+    const imgVal = src.bg_image_opacity
+    imageCustomized.value = imgVal !== null && imgVal !== undefined
+    imageOpacity.value = imageCustomized.value ? parseFloat(imgVal) : IMAGE_OPACITY_DEFAULT
 }
 
 onMounted(initColors)
@@ -133,30 +143,47 @@ function clearField(key) {
     emitUpdate()
 }
 
+function setImageOpacity(percent) {
+    imageOpacity.value = percent / 100
+    imageCustomized.value = true
+    emitUpdate()
+}
+
+function clearImageOpacity() {
+    imageOpacity.value = IMAGE_OPACITY_DEFAULT
+    imageCustomized.value = false
+    emitUpdate()
+}
+
 function resetAll() {
     const def = defaults[props.cardKey] || {}
     for (const f of fields) {
         localColors.value[f.key] = def[f.key] || null
     }
     customized.value.clear()
+    imageOpacity.value = IMAGE_OPACITY_DEFAULT
+    imageCustomized.value = false
     emitUpdate()
 }
 
-function emitUpdate() {
-    // Live preview: emit only customized fields, null for defaults
+function buildData() {
+    // Only customized fields carry values, null for defaults
     const data = {}
     for (const f of fields) {
         data[f.key] = customized.value.has(f.key) ? localColors.value[f.key] : null
     }
-    emit('update', props.cardKey, data)
+    if (props.showImageOpacity) {
+        data.bg_image_opacity = imageCustomized.value ? imageOpacity.value : null
+    }
+    return data
+}
+
+function emitUpdate() {
+    emit('update', props.cardKey, buildData())
 }
 
 function save() {
-    const data = {}
-    for (const f of fields) {
-        data[f.key] = customized.value.has(f.key) ? localColors.value[f.key] : null
-    }
-    emit('save', props.cardKey, data)
+    emit('save', props.cardKey, buildData())
 }
 
 function close() {
@@ -238,6 +265,29 @@ const modalStyle = computed(() => {
                                 v-if="customized.has(f.key)"
                                 class="clear-btn"
                                 @click="clearField(f.key)"
+                                title="Zurücksetzen"
+                            >
+                                <i class="pi pi-times-circle"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div v-if="showImageOpacity" class="color-row">
+                        <span class="color-label">Hintergrundbild</span>
+                        <div class="color-controls">
+                            <input
+                                type="range"
+                                min="0"
+                                max="100"
+                                :value="imageOpacityPercent"
+                                @input="setImageOpacity(parseInt($event.target.value))"
+                                class="opacity-slider"
+                            />
+                            <span class="opacity-value">{{ imageOpacityPercent }}%</span>
+                            <button
+                                v-if="imageCustomized"
+                                class="clear-btn"
+                                @click="clearImageOpacity"
                                 title="Zurücksetzen"
                             >
                                 <i class="pi pi-times-circle"></i>

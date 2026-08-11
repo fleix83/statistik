@@ -40,7 +40,7 @@ onMounted(async () => {
     left: 0;
     right: 0;
     height: 120px;
-    background: linear-gradient(180deg, #c8deff, transparent);
+    background: linear-gradient(180deg, #bad6ff, transparent);
     pointer-events: none;
     z-index: 0;
 }
