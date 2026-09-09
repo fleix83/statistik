@@ -98,52 +98,56 @@ function isActive(item) {
 
 <template>
     <div class="app-layout">
-        <Menubar :model="menuItems" class="app-header" :class="{ 'navbar-hidden': !navbarVisible && isAnalyticsView, 'navbar-blue': isAnalyticsRoute, 'navbar-editor': isEditorRoute }">
-            <template #start>
-                <div class="app-branding">
-                    <img src="@/assets/logo_wegweiser.svg" alt="Wegweiser" class="app-logo" />
-                    <h1 class="app-branding-title">STATISTIK</h1>
-                </div>
-            </template>
-            <template #item="{ item }">
-                <router-link
-                    :to="item.route"
-                    class="menu-item"
-                    :class="{ active: isActive(item) }"
-                >
-                    <i :class="item.icon" class="mr-2"></i>
-                    {{ item.label }}
-                </router-link>
-            </template>
-            <template #end>
-                <div class="nav-end flex align-items-center gap-2">
-                    <div v-if="isDataEntryView" class="nav-toggles">
-                        <button class="nav-toggle-btn" @click="showBorders = !showBorders">
-                            {{ showBorders ? 'Umrandung an' : 'Umrandung aus' }}
-                        </button>
-                        <button class="nav-toggle-btn" @click="showCardBg = !showCardBg">
-                            {{ showCardBg ? 'Hintergrund an' : 'Hintergrund aus' }}
-                        </button>
-                    </div>
-                    <Button
-                        v-if="authStore.isAuthenticated"
-                        icon="pi pi-sign-out"
-                        label="Abmelden"
-                        severity="secondary"
-                        text
-                        @click="authStore.logout"
-                    />
-                    <router-link v-else to="/login">
-                        <Button
-                            icon="pi pi-sign-in"
-                            label="Admin"
-                            severity="secondary"
-                            text
-                        />
-                    </router-link>
-                </div>
-            </template>
-        </Menubar>
+        <div class="app-header-slot" :class="{ 'navbar-hidden': !navbarVisible && isAnalyticsView }">
+            <div class="app-header-clip">
+                <Menubar :model="menuItems" class="app-header" :class="{ 'navbar-blue': isAnalyticsRoute, 'navbar-editor': isEditorRoute }">
+                    <template #start>
+                        <div class="app-branding">
+                            <img src="@/assets/logo_wegweiser.svg" alt="Wegweiser" class="app-logo" />
+                            <h1 class="app-branding-title">STATISTIK</h1>
+                        </div>
+                    </template>
+                    <template #item="{ item }">
+                        <router-link
+                            :to="item.route"
+                            class="menu-item"
+                            :class="{ active: isActive(item) }"
+                        >
+                            <i :class="item.icon" class="mr-2"></i>
+                            {{ item.label }}
+                        </router-link>
+                    </template>
+                    <template #end>
+                        <div class="nav-end flex align-items-center gap-2">
+                            <div v-if="isDataEntryView" class="nav-toggles">
+                                <button class="nav-toggle-btn" @click="showBorders = !showBorders">
+                                    {{ showBorders ? 'Umrandung an' : 'Umrandung aus' }}
+                                </button>
+                                <button class="nav-toggle-btn" @click="showCardBg = !showCardBg">
+                                    {{ showCardBg ? 'Hintergrund an' : 'Hintergrund aus' }}
+                                </button>
+                            </div>
+                            <Button
+                                v-if="authStore.isAuthenticated"
+                                icon="pi pi-sign-out"
+                                label="Abmelden"
+                                severity="secondary"
+                                text
+                                @click="authStore.logout"
+                            />
+                            <router-link v-else to="/login">
+                                <Button
+                                    icon="pi pi-sign-in"
+                                    label="Admin"
+                                    severity="secondary"
+                                    text
+                                />
+                            </router-link>
+                        </div>
+                    </template>
+                </Menubar>
+            </div>
+        </div>
 
         <main class="app-main">
             <router-view />
@@ -179,6 +183,13 @@ html, body, #app {
     min-height: 100vh;
 }
 
+/* Always reserve the vertical scrollbar so content never reflows sideways when the
+   page height crosses the viewport height (e.g. while the navbar collapses).
+   scrollbar-gutter: stable is not honoured for the viewport by current Chrome. */
+html {
+    overflow-y: scroll;
+}
+
 button, input, select, textarea {
     font-family: inherit;
 }
@@ -189,14 +200,35 @@ button, input, select, textarea {
     flex-direction: column;
 }
 
+/* The navbar sits in a grid slot whose row animates between its real height and 0,
+   so it slides away with proper easing while keeping its own padding and background
+   (no dead zone from a guessed max-height, no instant style jumps). */
+.app-header-slot {
+    display: grid;
+    grid-template-rows: 1fr;
+    transition: grid-template-rows 0.3s ease;
+}
+
+.app-header-slot.navbar-hidden {
+    grid-template-rows: 0fr;
+}
+
+/* Padding-free child of the grid row: it can shrink to 0 and clips the bar */
+.app-header-slot > .app-header-clip {
+    min-height: 0;
+    overflow: hidden;
+}
+
 .app-header {
     border: none !important;
     box-shadow: none !important;
     border-bottom: none !important;
     background: #ffecba !important;
-    transition: max-height 0.3s ease, opacity 0.3s ease, border-color 0.3s ease;
-    overflow: hidden;
-    max-height: 200px;
+    transition: opacity 0.3s ease;
+}
+
+.app-header-slot.navbar-hidden .app-header {
+    opacity: 0;
 }
 
 .app-header.navbar-blue {
@@ -205,16 +237,6 @@ button, input, select, textarea {
 
 .app-header.navbar-editor {
     background: #ffc8ba !important;
-}
-
-.app-header.navbar-hidden {
-    max-height: 0;
-    opacity: 0;
-    border: none !important;
-    background: transparent !important;
-    box-shadow: none !important;
-    padding: 0 !important;
-    min-height: 0 !important;
 }
 
 .app-branding {
