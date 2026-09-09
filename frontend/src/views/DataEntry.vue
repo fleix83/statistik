@@ -23,16 +23,6 @@ const selectedUser = ref(null)
 const erfassungsdatum = ref(new Date())
 const referenzAndere = ref('')
 
-const isFormValid = computed(() => {
-    return selectedUser.value
-        && formData.value.kontaktart.length > 0
-        && formData.value.person.length > 0
-        && formData.value.dauer.length > 0
-        && formData.value.thema.length > 0
-        && formData.value.zeitfenster.length > 0
-        && (formData.value.referenz.length > 0 || referenzAndere.value.trim())
-})
-
 // Checkbox states (arrays for multi-select)
 const formData = ref({
     kontaktart: [],
@@ -178,10 +168,14 @@ const validationErrors = ref(new Set())
 watch(selectedUser, (val) => {
     if (val) validationErrors.value.delete('user')
 })
-watch(() => formData.value.kontaktart.length + formData.value.person.length + formData.value.dauer.length, () => {
-    if (formData.value.kontaktart.length > 0 && formData.value.person.length > 0 && formData.value.dauer.length > 0) {
-        validationErrors.value.delete('kontakt')
-    }
+watch(() => formData.value.kontaktart.length, (len) => {
+    if (len > 0) validationErrors.value.delete('kontaktart')
+})
+watch(() => formData.value.person.length, (len) => {
+    if (len > 0) validationErrors.value.delete('person')
+})
+watch(() => formData.value.dauer.length, (len) => {
+    if (len > 0) validationErrors.value.delete('dauer')
 })
 watch(() => formData.value.thema.length, (len) => {
     if (len > 0) validationErrors.value.delete('thema')
@@ -419,9 +413,9 @@ function validateForm() {
 
     if (!selectedUser.value) errors.add('user')
     if (!erfassungsdatum.value) errors.add('datum')
-    if (formData.value.kontaktart.length === 0) errors.add('kontakt')
-    if (formData.value.person.length === 0) errors.add('kontakt')
-    if (formData.value.dauer.length === 0) errors.add('kontakt')
+    if (formData.value.kontaktart.length === 0) errors.add('kontaktart')
+    if (formData.value.person.length === 0) errors.add('person')
+    if (formData.value.dauer.length === 0) errors.add('dauer')
     if (formData.value.thema.length === 0) errors.add('thema')
     if (formData.value.zeitfenster.length === 0) errors.add('zeitfenster')
     if (formData.value.referenz.length === 0 && !referenzAndere.value.trim()) errors.add('referenz')
@@ -825,12 +819,12 @@ function handleClickOutside(event) {
             <div class="cards-grid">
                 <!-- Kontakt (left, spans rows) -->
                 <div class="cards-column grid-kontakt">
-                    <div class="card card-person" :class="{ 'no-borders': !showBorders, 'has-card-bg': showCardBg, 'validation-error': validationErrors.has('kontakt') }" :style="getCardStyle('person')">
+                    <div class="card card-person" :class="{ 'no-borders': !showBorders, 'has-card-bg': showCardBg }" :style="getCardStyle('person')">
                         <span class="card-dot" :class="{ 'admin-clickable': isAdmin }" @click="openColorModal('person', $event)"></span>
                         <h3 class="card-title">Kontakt</h3>
                         <div class="card-content">
                             <!-- Kontaktart -->
-                            <div class="checkbox-row subgroup-kontaktart subgroup-last">
+                            <div class="checkbox-row subgroup-kontaktart subgroup-last" :class="{ missing: validationErrors.has('kontaktart') }">
                                 <div
                                     v-for="opt in optionsBySection.kontaktart"
                                     :key="opt"
@@ -848,7 +842,7 @@ function handleClickOutside(event) {
                             <hr class="subgroup-separator" />
 
                             <!-- Person -->
-                            <div class="checkbox-row subgroup-person subgroup-first subgroup-last">
+                            <div class="checkbox-row subgroup-person subgroup-first subgroup-last" :class="{ missing: validationErrors.has('person') }">
                                 <template v-for="opt in optionsBySection.person.filter(o => o !== 'Migrationshintergrund')" :key="opt">
                                     <div
                                         class="checkbox-item"
@@ -879,7 +873,7 @@ function handleClickOutside(event) {
                             <hr class="subgroup-separator" />
 
                             <!-- Dauer (optional) -->
-                            <div class="checkbox-row no-border subgroup-dauer subgroup-first">
+                            <div class="checkbox-row no-border subgroup-dauer subgroup-first" :class="{ missing: validationErrors.has('dauer') }">
                                 <div
                                     v-for="opt in optionsBySection.dauer"
                                     :key="opt"
@@ -900,10 +894,10 @@ function handleClickOutside(event) {
 
                 <!-- Thema -->
                 <div class="cards-column grid-thema">
-                    <div class="card card-thema" :class="{ 'no-borders': !showBorders, 'has-card-bg': showCardBg, 'validation-error': validationErrors.has('thema') }" :style="getCardStyle('thema')">
+                    <div class="card card-thema" :class="{ 'no-borders': !showBorders, 'has-card-bg': showCardBg }" :style="getCardStyle('thema')">
                         <span class="card-dot" :class="{ 'admin-clickable': isAdmin }" @click="openColorModal('thema', $event)"></span>
                         <h3 class="card-title">Thema</h3>
-                        <div class="card-content">
+                        <div class="card-content" :class="{ missing: validationErrors.has('thema') }">
                             <template v-for="opt in optionsBySection.thema" :key="opt">
                                 <div
                                     v-if="opt !== 'Migrationshintergrund'"
@@ -945,10 +939,10 @@ function handleClickOutside(event) {
 
                 <!-- Zeitfenster (vertical, 2 per row) -->
                 <div class="cards-column grid-zeitfenster">
-                    <div class="card card-zeitfenster" :class="{ 'no-borders': !showBorders, 'has-card-bg': showCardBg, 'validation-error': validationErrors.has('zeitfenster') }" :style="getCardStyle('zeitfenster')">
+                    <div class="card card-zeitfenster" :class="{ 'no-borders': !showBorders, 'has-card-bg': showCardBg }" :style="getCardStyle('zeitfenster')">
                         <span class="card-dot" :class="{ 'admin-clickable': isAdmin }" @click="openColorModal('zeitfenster', $event)"></span>
                         <h3 class="card-title">Zeitfenster</h3>
-                        <div class="zeitfenster-grid">
+                        <div class="zeitfenster-grid" :class="{ missing: validationErrors.has('zeitfenster') }">
                             <div
                                 v-for="opt in optionsBySection.zeitfenster"
                                 :key="opt"
@@ -968,11 +962,11 @@ function handleClickOutside(event) {
 
                 <!-- Referenz -->
                 <div class="cards-column grid-referenz">
-                    <div class="card card-referenz" :class="{ 'no-borders': !showBorders, 'has-card-bg': showCardBg, 'validation-error': validationErrors.has('referenz') }" :style="getCardStyle('referenz')">
+                    <div class="card card-referenz" :class="{ 'no-borders': !showBorders, 'has-card-bg': showCardBg }" :style="getCardStyle('referenz')">
                         <span class="card-dot" :class="{ 'admin-clickable': isAdmin }" @click="openColorModal('referenz', $event)"></span>
                         <h3 class="card-title">Referenz</h3>
                         <p class="card-subtitle">Auf uns aufmerksam gemacht durch:</p>
-                        <div class="card-content">
+                        <div class="card-content" :class="{ missing: validationErrors.has('referenz') }">
                             <div
                                 v-for="opt in optionsBySection.referenz.filter(o => o.toLowerCase() !== 'andere')"
                                 :key="opt"
@@ -1017,7 +1011,6 @@ function handleClickOutside(event) {
                         label="Eingabe speichern"
                         icon="pi pi-save"
                         :loading="submitting"
-                        :disabled="!isFormValid"
                         @click="submitEntry"
                         class="save-btn-full"
                     />
@@ -2189,46 +2182,41 @@ function handleClickOutside(event) {
 }
 
 
-/* Validation error highlight — slow pulsing background */
-.card-person.validation-error {
-    animation: pulse-kontakt 2s ease-in-out infinite;
+/* Missing mandatory group: its unselected chips pulse in the group's selected color */
+.missing .checkbox-item:not(.is-checked) {
+    animation: pulse-missing 1.4s ease-in-out infinite;
 }
 
-.card-zeitfenster.validation-error {
-    animation: pulse-zeitfenster 2s ease-in-out infinite;
+.card-person .missing .checkbox-item {
+    --pulse-to: var(--custom-swatch-checked, #67abff);
 }
 
-.card-thema.validation-error {
-    animation: pulse-thema 2s ease-in-out infinite;
+.card-thema .missing .checkbox-item {
+    --pulse-to: var(--custom-swatch-checked, rgb(255 83 83 / 95%));
 }
 
-.card-referenz.validation-error {
-    animation: pulse-referenz 2s ease-in-out infinite;
+.card-zeitfenster .missing .checkbox-item {
+    --pulse-to: var(--custom-swatch-checked, #34c97d);
 }
 
-.validation-error-field :deep(.p-select) {
-    animation: pulse-kontakt 2s ease-in-out infinite;
+.card-referenz .missing .checkbox-item {
+    --pulse-to: var(--custom-swatch-checked, rgb(153 149 129 / 80%));
+}
+
+@keyframes pulse-missing {
+    0%, 100% { background-color: var(--custom-swatch-default, #fff); }
+    50% { background-color: var(--pulse-to); }
+}
+
+/* Missing name: the field pulses in the primary (selected) yellow */
+.validation-error-field :deep(.p-select-label) {
     border-radius: 30px;
+    animation: pulse-missing-user 1.4s ease-in-out infinite;
 }
 
-@keyframes pulse-kontakt {
-    0%, 100% { background-color: #f5f3ef; }
-    50% { background-color: #b5d6ff; }
-}
-
-@keyframes pulse-zeitfenster {
-    0%, 100% { background-color: #f5f3ef; }
-    50% { background-color: #9ae2c0; }
-}
-
-@keyframes pulse-thema {
-    0%, 100% { background-color: #f5f3ef; }
-    50% { background-color: #ffc6c6; }
-}
-
-@keyframes pulse-referenz {
-    0%, 100% { background-color: #f5f3ef; }
-    50% { background-color: #dfd9bd; }
+@keyframes pulse-missing-user {
+    0%, 100% { background-color: transparent; }
+    50% { background-color: var(--color-primary, #FFEA95); }
 }
 
 /* Top bar input styling: no border, yellow on hover/active */
