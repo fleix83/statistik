@@ -270,15 +270,37 @@ const showConfirmDialog = ref(false)
 // Pagination state
 const entriesList = ref([])
 const currentEntryIndex = ref(-1)
-const filterMode = ref('year') // 'total' or 'year'
+// Counter filter: a year as string (e.g. '2026') or 'total' for all years
+const filterMode = ref(String(new Date().getFullYear()))
 
-// Filtered list based on mode
-const filteredEntries = computed(() => {
-    if (filterMode.value === 'year') {
-        const year = new Date().getFullYear()
-        return entriesList.value.filter(e => new Date(e.created_at).getFullYear() === year)
+// Dropdown options: current year first, then every older year back to the
+// earliest entry, then Total. Adapts automatically when the year changes.
+const filterOptions = computed(() => {
+    const current = new Date().getFullYear()
+    let earliest = current
+    for (const e of entriesList.value) {
+        const y = new Date(e.created_at).getFullYear()
+        if (!isNaN(y) && y < earliest) earliest = y
     }
-    return entriesList.value
+    const years = []
+    for (let y = current; y >= earliest; y--) {
+        years.push({ label: String(y), value: String(y) })
+    }
+    return [...years, { label: 'Total', value: 'total' }]
+})
+
+// Filtered list based on the selected year (or all entries for Total)
+const filteredEntries = computed(() => {
+    if (filterMode.value === 'total') return entriesList.value
+    const year = Number(filterMode.value)
+    return entriesList.value.filter(e => new Date(e.created_at).getFullYear() === year)
+})
+
+// Selecting a year (or Total) jumps to the newest entry of that selection,
+// so the counter immediately shows how many entries it contains
+watch(filterMode, () => {
+    const list = filteredEntries.value
+    if (list.length > 0) loadFilteredEntry(list.length - 1)
 })
 
 // Index within the filtered list
@@ -310,8 +332,6 @@ const formattedDate = computed(() => {
     const d = new Date()
     return `${days[d.getDay()]}, ${d.getDate()}. ${months[d.getMonth()]} ${d.getFullYear()}`
 })
-
-const currentYear = computed(() => new Date().getFullYear())
 
 onMounted(async () => {
     await loadData()
@@ -617,10 +637,6 @@ function goToEntryByNumber(event) {
     }
 }
 
-function toggleFilterMode() {
-    filterMode.value = filterMode.value === 'total' ? 'year' : 'total'
-}
-
 // Find and load entries for a specific date
 function onDateSelect(date) {
     if (!date) return
@@ -752,9 +768,12 @@ function handleClickOutside(event) {
                 <div class="top-bar-field">
                     <label>
                         Einträge
-                        <a class="filter-toggle" @click="toggleFilterMode">
-                            {{ filterMode === 'total' ? 'Total' : currentYear }}
-                        </a>
+                        <span class="filter-select-wrap">
+                            <select v-model="filterMode" class="filter-select" aria-label="Einträge nach Jahr filtern">
+                                <option v-for="opt in filterOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+                            </select>
+                            <i class="pi pi-chevron-down"></i>
+                        </span>
                     </label>
                     <div class="entry-pagination">
                         <button
@@ -1901,16 +1920,52 @@ function handleClickOutside(event) {
     color: #334155;
 }
 
-.filter-toggle {
-    text-decoration: underline;
-    cursor: pointer;
-    color: #334155;
-    font-weight: 500;
+/* Year / Total dropdown in the Einträge label, styled like the former text link */
+.filter-select-wrap {
+    position: relative;
+    display: inline-block;
     margin-left: 0.3rem;
+    color: #334155;
+    border-bottom: 1px solid currentColor;
+    cursor: pointer;
 }
 
-.filter-toggle:hover {
+.filter-select-wrap:hover {
     color: var(--color-kontakt-text);
+}
+
+.filter-select {
+    appearance: none;
+    -webkit-appearance: none;
+    border: none;
+    background: transparent;
+    padding: 0 0.8rem 0 0;
+    margin: 0;
+    font: inherit;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: inherit;
+    color: inherit;
+    cursor: pointer;
+}
+
+.filter-select:focus {
+    outline: none;
+}
+
+.filter-select-wrap:focus-within {
+    color: var(--color-kontakt-text);
+    border-bottom-width: 2px;
+    margin-bottom: -1px;
+}
+
+.filter-select-wrap .pi {
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 0.5rem;
+    pointer-events: none;
 }
 
 .pagination-total {
