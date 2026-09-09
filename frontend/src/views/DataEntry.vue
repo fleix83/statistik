@@ -1238,9 +1238,14 @@ function handleClickOutside(event) {
     width: 180px !important;
 }
 
+/* Wide enough for the longest German date, e.g. "Donnerstag, 30. September 2026" */
 .top-bar-field .date-input {
-    width: 240px !important;
+    width: 280px !important;
     flex: none;
+}
+
+.top-bar-field .date-input :deep(.p-inputtext) {
+    width: 100%;
 }
 
 .quick-filter-row {
@@ -2198,7 +2203,7 @@ function handleClickOutside(event) {
 
 
 /* Responsive */
-@media (max-width: 1700px) {
+@media (max-width: 1760px) {
     .top-bar {
         gap: 0.75rem 1.5rem;
     }
@@ -2212,7 +2217,7 @@ function handleClickOutside(event) {
     }
 }
 
-@media (max-width: 1560px) {
+@media (max-width: 1640px) {
     .top-bar-right {
         display: none;
     }
