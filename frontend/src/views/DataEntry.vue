@@ -45,6 +45,9 @@ const formData = ref({
 
 // Options loaded from API
 const userList = ref([])
+// Force a new line in the Kontakt card's Person group after these options
+const PERSON_ROW_BREAK_AFTER = ['Frau', 'über 80', 'Institution']
+
 const optionsBySection = ref({
     kontaktart: [],
     person: [],
@@ -827,19 +830,20 @@ function handleClickOutside(event) {
 
                             <!-- Person -->
                             <div class="checkbox-row subgroup-person subgroup-first subgroup-last">
-                                <div
-                                    v-for="opt in optionsBySection.person.filter(o => o !== 'Migrationshintergrund')"
-                                    :key="opt"
-                                    class="checkbox-item"
-                                    :class="{ 'is-checked': formData.person.includes(opt) }"
-                                >
-                                    <Checkbox
-                                        :inputId="'person-' + opt"
-                                        :value="opt"
-                                        v-model="formData.person"
-                                    />
-                                    <label :for="'person-' + opt">{{ opt }}</label>
-                                </div>
+                                <template v-for="opt in optionsBySection.person.filter(o => o !== 'Migrationshintergrund')" :key="opt">
+                                    <div
+                                        class="checkbox-item"
+                                        :class="{ 'is-checked': formData.person.includes(opt) }"
+                                    >
+                                        <Checkbox
+                                            :inputId="'person-' + opt"
+                                            :value="opt"
+                                            v-model="formData.person"
+                                        />
+                                        <label :for="'person-' + opt">{{ opt }}</label>
+                                    </div>
+                                    <div v-if="PERSON_ROW_BREAK_AFTER.includes(opt)" class="row-break"></div>
+                                </template>
                                 <!-- Migrationshintergrund -->
                                 <div
                                     class="checkbox-item"
@@ -1148,11 +1152,15 @@ function handleClickOutside(event) {
 
 /* Top Bar */
 .top-bar {
+    position: sticky;
+    top: 0;
+    z-index: 10;
     display: flex;
+    flex-wrap: wrap;
     align-items: flex-end;
-    gap: 2.6rem;
+    gap: 0.75rem 2.6rem;
     padding: 2rem 40px 1.3rem;
-    background: linear-gradient(180deg, #ffecba, transparent);
+    background: linear-gradient(180deg, #ffecba, #fafafa);
     margin-bottom: 1rem;
     margin-left: -40px;
     margin-right: -40px;
@@ -1300,9 +1308,10 @@ function handleClickOutside(event) {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
+    gap: 1.5rem;
 }
 
-.grid-kontakt { width: 400px; margin-top: 40px; flex-shrink: 1; }
+.grid-kontakt { flex: 0 1 400px; min-width: 0; margin-top: 20px; }
 
 .top-bar-right {
     margin-left: auto;
@@ -1324,9 +1333,9 @@ function handleClickOutside(event) {
     gap: 0.4rem;
     align-items: center;
 }
-.grid-thema { width: 500px; margin-top: 20px; flex-shrink: 1; }
-.grid-zeitfenster { width: 220px; flex-shrink: 0; margin-top: 40px; }
-.grid-referenz { flex-shrink: 0; margin-top: 20px; }
+.grid-thema { flex: 0 1 500px; min-width: 0; margin-top: 20px; }
+.grid-zeitfenster { flex: 0 0 220px; margin-top: 20px; }
+.grid-referenz { flex: 0 1 400px; min-width: 0; margin-top: 20px; }
 
 .cards-column {
     display: flex;
@@ -1453,6 +1462,22 @@ function handleClickOutside(event) {
     gap: 0.5rem;
     padding: 0.5rem 0;
     border-bottom: 1px solid var(--surface-border);
+}
+
+/* Forced line break inside a wrapping checkbox row */
+.checkbox-row .row-break {
+    flex-basis: 100%;
+    height: 0;
+}
+
+/* Rows with forced breaks carry the row spacing on the items, so a break doesn't add a double gap */
+.checkbox-row:has(.row-break) {
+    row-gap: 0;
+    margin-bottom: -0.5rem;
+}
+
+.checkbox-row:has(.row-break) > .checkbox-item {
+    margin-bottom: 0.5rem;
 }
 
 .checkbox-row.no-border {
@@ -1816,6 +1841,7 @@ function handleClickOutside(event) {
 
 .andere-input {
     flex: 1;
+    min-width: 0;
     font-size: 1rem;
     color: var(--p-inputtext-color);
     background: var(--p-inputtext-background);
@@ -2172,6 +2198,26 @@ function handleClickOutside(event) {
 
 
 /* Responsive */
+@media (max-width: 1700px) {
+    .top-bar {
+        gap: 0.75rem 1.5rem;
+    }
+
+    .quick-filter-row {
+        margin-left: 1rem;
+    }
+
+    .top-bar-date {
+        margin-right: 1rem;
+    }
+}
+
+@media (max-width: 1560px) {
+    .top-bar-right {
+        display: none;
+    }
+}
+
 @media (max-width: 1200px) {
     .cards-grid {
         flex-wrap: wrap;
@@ -2181,6 +2227,7 @@ function handleClickOutside(event) {
     .grid-thema,
     .grid-zeitfenster,
     .grid-referenz {
+        flex-grow: 1;
         margin-top: 0;
     }
 }
@@ -2195,6 +2242,7 @@ function handleClickOutside(event) {
     .grid-thema,
     .grid-zeitfenster,
     .grid-referenz {
+        flex: 0 0 auto;
         width: 100%;
         margin-top: 0;
     }
