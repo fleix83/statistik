@@ -27,6 +27,7 @@ import { useAnalyticsState } from '../../composables/useAnalyticsState'
 import { usePdfExport } from '../../composables/usePdfExport'
 import { useReportStore } from '../../stores/report'
 import html2canvas from 'html2canvas'
+import { cropCanvasToContent } from '../../utils/canvasCrop'
 import { analytics } from '../../services/api'
 import { format, parseISO, isWithinInterval } from 'date-fns'
 import { de } from 'date-fns/locale'
@@ -281,7 +282,8 @@ async function captureChartImage() {
 
     try {
         const raw = await html2canvas(el, { scale: 2, useCORS: true, backgroundColor: '#ffffff', logging: false })
-        const canvas = downscaleCanvas(raw, 1800)
+        const cropped = chartType.value === 'pie' ? cropCanvasToContent(raw) : raw
+        const canvas = downscaleCanvas(cropped, 1800)
         return { src: canvas.toDataURL('image/png'), width: canvas.width, height: canvas.height }
     } finally {
         charts.forEach((ch, i) => {

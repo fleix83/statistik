@@ -29,8 +29,9 @@ function periodSummary(item) {
 async function handleExport() {
     if (store.count === 0 || exporting.value) return
     exporting.value = true
-    await nextTick()
     try {
+        await store.cropLegacyPies()   // older pie captures: crop to the donuts first
+        await nextTick()
         await exportReport(documentRef.value?.pageElements() || [])
         toast.add({ severity: 'success', summary: 'Report', detail: 'PDF exportiert', life: 3000 })
         emit('close')

@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
+import { cropImageDataUrl } from '../utils/canvasCrop'
 
 // Report: an ordered list of analytics view snapshots (image + legend + numbers),
 // kept in localStorage so it survives reloads. Display-only, nothing touches the API.
@@ -60,5 +61,21 @@ export const useReportStore = defineStore('report', () => {
         persist()
     }
 
-    return { items, count, addItem, removeItem, setItems, clear }
+    // Pie views captured before cropping was introduced are wide strips with a
+    // small donut in the middle; crop them once so they render large and round.
+    async function cropLegacyPies() {
+        for (const item of items.value) {
+            const img = item.image
+            if (item.chartType !== 'pie' || !img?.src || !(img.width / img.height > 2.5)) continue
+            try {
+                item.image = await cropImageDataUrl(img.src)
+            } catch {
+                // keep the original capture
+            }
+        }
+        persist()
+    }
+    cropLegacyPies()
+
+    return { items, count, addItem, removeItem, setItems, clear, cropLegacyPies }
 })
