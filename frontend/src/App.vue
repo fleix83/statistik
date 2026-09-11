@@ -4,6 +4,9 @@ import { useRoute } from 'vue-router'
 import { useAuthStore } from './stores/auth'
 import Menubar from 'primevue/menubar'
 import Button from 'primevue/button'
+import Popover from 'primevue/popover'
+import ReportPanel from './components/report/ReportPanel.vue'
+import { useReportStore } from './stores/report'
 
 const showBorders = ref(false)
 const showCardBg = ref(true)
@@ -16,6 +19,25 @@ const isEditorRoute = computed(() => route.path === '/editor')
 
 const route = useRoute()
 const authStore = useAuthStore()
+const reportStore = useReportStore()
+
+// Report popover under the "Report" menu item
+const reportPopover = ref(null)
+const reportOpen = ref(false)
+
+function toggleReport(event) {
+    reportPopover.value?.toggle(event)
+}
+
+function onReportShow() {
+    reportOpen.value = true
+    if (hideTimer) clearTimeout(hideTimer)
+}
+
+function onReportHide() {
+    reportOpen.value = false
+    resetHideTimer()
+}
 
 // Auto-hide navbar for Analytics view
 const navbarVisible = ref(true)
@@ -32,7 +54,7 @@ function resetHideTimer() {
     if (hideTimer) clearTimeout(hideTimer)
     if (isAnalyticsView.value) {
         hideTimer = setTimeout(() => {
-            navbarVisible.value = false
+            if (!reportOpen.value) navbarVisible.value = false
         }, 4000)
     }
 }
@@ -84,6 +106,11 @@ const menuItems = computed(() => {
                 label: 'Auswertung',
                 icon: 'pi pi-chart-bar',
                 route: '/analytics'
+            },
+            {
+                label: 'Report',
+                icon: 'pi pi-file-pdf',
+                key: 'report'
             }
         )
     }
@@ -109,6 +136,7 @@ function isActive(item) {
                     </template>
                     <template #item="{ item }">
                         <router-link
+                            v-if="item.route"
                             :to="item.route"
                             class="menu-item"
                             :class="{ active: isActive(item) }"
@@ -116,6 +144,17 @@ function isActive(item) {
                             <i :class="item.icon" class="mr-2"></i>
                             {{ item.label }}
                         </router-link>
+                        <button
+                            v-else-if="item.key === 'report'"
+                            type="button"
+                            class="menu-item menu-item-button"
+                            :class="{ active: reportOpen }"
+                            @click="toggleReport"
+                        >
+                            <i :class="item.icon" class="mr-2"></i>
+                            {{ item.label }}
+                            <span v-if="reportStore.count > 0" class="menu-badge">{{ reportStore.count }}</span>
+                        </button>
                     </template>
                     <template #end>
                         <div class="nav-end flex align-items-center gap-2">
@@ -152,6 +191,15 @@ function isActive(item) {
         <main class="app-main">
             <router-view />
         </main>
+
+        <Popover
+            ref="reportPopover"
+            class="report-popover"
+            @show="onReportShow"
+            @hide="onReportHide"
+        >
+            <ReportPanel @close="reportPopover?.hide()" />
+        </Popover>
     </div>
 </template>
 
@@ -289,6 +337,38 @@ button, input, select, textarea {
 .menu-item.active {
     background: var(--primary-color);
     color: var(--primary-color-text);
+}
+
+/* Report menu entry: a button instead of a route */
+.menu-item-button {
+    background: none;
+    border: none;
+    font: inherit;
+    cursor: pointer;
+}
+
+.menu-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.35rem;
+    height: 1.35rem;
+    padding: 0 0.4rem;
+    margin-left: 0.4rem;
+    border-radius: 999px;
+    background: var(--color-primary, #FFEA95);
+    color: #1e293b;
+    font-size: 0.75rem;
+    font-weight: 600;
+    line-height: 1;
+}
+
+.report-popover {
+    border-radius: 20px;
+}
+
+.report-popover .p-popover-content {
+    padding: 1rem;
 }
 
 .app-main {

@@ -25,6 +25,8 @@ import StreamGraph from './StreamGraph.vue'
 import SelectionHierarchy from './SelectionHierarchy.vue'
 import { useAnalyticsState } from '../../composables/useAnalyticsState'
 import { usePdfExport } from '../../composables/usePdfExport'
+import { useReportStore } from '../../stores/report'
+import html2canvas from 'html2canvas'
 import { analytics } from '../../services/api'
 import { format, parseISO, isWithinInterval } from 'date-fns'
 import { de } from 'date-fns/locale'
@@ -68,6 +70,11 @@ const { exportToPdf } = usePdfExport()
 const pdfExportArea = ref(null)
 const isExporting = ref(false)
 
+// Report: snapshot of the current view (see stores/report.js)
+const reportStore = useReportStore()
+const isAddingToReport = ref(false)
+const chartContainer = ref(null)
+
 const {
     chartType,
     chartData,
@@ -78,7 +85,8 @@ const {
     activeValues,
     isShowingTotals,
     periods,
-    markers
+    markers,
+    selectionHierarchy
 } = useAnalyticsState()
 
 // Export menu
@@ -245,6 +253,99 @@ async function handleExportPdf() {
             sidebar.querySelector('.sidebar-content').style.display = ''
         }
         isExporting.value = false
+    }
+}
+
+// --- Report: add the current view as a snapshot -------------------------------
+
+function downscaleCanvas(canvas, maxWidth) {
+    if (canvas.width <= maxWidth) return canvas
+    const ratio = maxWidth / canvas.width
+    const out = document.createElement('canvas')
+    out.width = Math.round(canvas.width * ratio)
+    out.height = Math.round(canvas.height * ratio)
+    out.getContext('2d').drawImage(canvas, 0, 0, out.width, out.height)
+    return out
+}
+
+// Rasterise the chart area. Chart.js canvases are temporarily re-rendered at 3x
+// so the snapshot is sharp in print; the D3 streamgraph (SVG) rasterises as is.
+async function captureChartImage() {
+    const el = chartContainer.value
+    if (!el) return null
+
+    const charts = [...el.querySelectorAll('canvas')].map(c => ChartJS.getChart(c)).filter(Boolean)
+    const previousRatios = charts.map(ch => ch.options.devicePixelRatio)
+    charts.forEach(ch => { ch.options.devicePixelRatio = 3; ch.resize() })
+    await new Promise(resolve => setTimeout(resolve, 150))
+
+    try {
+        const raw = await html2canvas(el, { scale: 2, useCORS: true, backgroundColor: '#ffffff', logging: false })
+        const canvas = downscaleCanvas(raw, 1800)
+        return { src: canvas.toDataURL('image/png'), width: canvas.width, height: canvas.height }
+    } finally {
+        charts.forEach((ch, i) => {
+            ch.options.devicePixelRatio = previousRatios[i] ?? window.devicePixelRatio
+            ch.resize()
+        })
+    }
+}
+
+async function handleAddToReport() {
+    if (isAddingToReport.value) return
+    if (!chartData.value || loading.value) {
+        toast.add({ severity: 'warn', summary: 'Report', detail: 'Zuerst eine Ansicht anzeigen', life: 3000 })
+        return
+    }
+    isAddingToReport.value = true
+    try {
+        const image = await captureChartImage()
+        if (!image) throw new Error('capture-failed')
+
+        reportStore.addItem({
+            title: chartTitle.value,
+            subtitle: chartSubtitle.value.replace(/^-\s*/, ''),
+            section: activeSection.value,
+            chartType: chartType.value,
+            mode: chartData.value.mode,
+            hierarchy: selectionHierarchy.value.map(level => Object.values(level.selections).flat().join(' + ')),
+            periods: formattedPeriods.value.map(p => ({
+                label: p.label,
+                dateRange: p.dateRange,
+                start: format(p.start, 'yyyy-MM-dd'),
+                end: format(p.end, 'yyyy-MM-dd'),
+                count: p.count,
+                isComparison: !!p.isComparison
+            })),
+            legend: legendItems.value.map(l => ({ label: l.label, color: l.color })),
+            tables: tableData.value.map(t => ({
+                periodLabel: t.periodLabel,
+                total: t.total,
+                rows: t.rows.map(r => ({ label: r.label, count: r.count, percent: r.percent }))
+            })),
+            stackedBaseLabel: chartType.value === 'stacked' && chartData.value.subsetMode ? chartData.value.baseLabel : null,
+            image
+        })
+
+        toast.add({
+            severity: 'success',
+            summary: 'Report',
+            detail: `«${chartTitle.value}» hinzugefügt (${reportStore.count} im Report)`,
+            life: 3000
+        })
+    } catch (error) {
+        console.error('Add to report error:', error)
+        const full = error?.message === 'report-storage-full'
+        toast.add({
+            severity: 'error',
+            summary: 'Report',
+            detail: full
+                ? 'Der Report-Speicher ist voll. Bitte Ansichten aus dem Report entfernen.'
+                : 'Ansicht konnte nicht hinzugefügt werden',
+            life: 4000
+        })
+    } finally {
+        isAddingToReport.value = false
     }
 }
 
@@ -1165,6 +1266,16 @@ const tableData = computed(() => {
         <!-- Export menu - positioned at top edge -->
         <div class="export-menu-top">
             <button
+                class="export-btn report-add-btn"
+                :disabled="isAddingToReport || !chartData"
+                @click="handleAddToReport"
+                title="Aktuelle Ansicht zum Report hinzufügen"
+            >
+                <i :class="isAddingToReport ? 'pi pi-spin pi-spinner' : 'pi pi-plus'"></i>
+                <span>Zum Report</span>
+                <span v-if="reportStore.count > 0" class="report-add-count">{{ reportStore.count }}</span>
+            </button>
+            <button
                 class="export-btn"
                 @click="toggleExportMenu"
                 title="Daten exportieren"
@@ -1297,7 +1408,7 @@ const tableData = computed(() => {
                     </div>
                 </div>
 
-                <div v-if="chartReady" class="chart-container">
+                <div v-if="chartReady" ref="chartContainer" class="chart-container">
                     <!-- Bar Chart -->
                     <Bar
                         v-if="chartType === 'bar' && barChartData"
@@ -1425,6 +1536,40 @@ const tableData = computed(() => {
     margin-right: 39.5px;
     margin-top: 3px;
     z-index: 10;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* "Zum Report" sits next to Export in the primary yellow */
+.report-add-btn {
+    background: var(--color-primary, #FFEA95);
+    color: #1e293b;
+}
+
+.report-add-btn:hover:not(:disabled) {
+    background: var(--color-primary-hover, #fee47b);
+    color: #1e293b;
+}
+
+.report-add-btn:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
+.report-add-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.25rem;
+    height: 1.25rem;
+    padding: 0 0.35rem;
+    border-radius: 999px;
+    background: #1e293b;
+    color: #fff;
+    font-size: 0.7rem;
+    font-weight: 600;
+    line-height: 1;
 }
 
 .chart-card {
