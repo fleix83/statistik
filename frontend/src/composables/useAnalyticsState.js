@@ -172,8 +172,13 @@ export function useAnalyticsState() {
         const current = selectedParams.value[section]
         const index = current.indexOf(value)
 
-        // Use section as fallback group if no group provided
-        const effectiveGroup = group || section
+        // Values without a param_group (e.g. options added later in the Editor) join the
+        // level that already holds selections of the same section, so they act as an
+        // OR alternative instead of opening a new AND level; else the section itself.
+        const sameSectionLevel = !group
+            ? selectionHierarchy.value.find(h => h.behavior !== 'subtract_only' && h.selections[section]?.length)
+            : null
+        const effectiveGroup = group || sameSectionLevel?.group || section
 
         // For subtract_only behavior, always use a unique group key to force subtraction
         // This ensures it never joins an existing group (always subtracts)
