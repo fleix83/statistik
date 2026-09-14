@@ -4,5 +4,5 @@ RewriteEngine On
 RewriteRule ^api/ - [L]
 
 # Serve frontend from frontend/dist
-RewriteCond %{REQUEST_URI} !^/statistik-float/frontend/dist/
+RewriteCond %{REQUEST_URI} !^/statistik/frontend/dist/
 RewriteRule ^(.*)$ frontend/dist/$1 [L]
