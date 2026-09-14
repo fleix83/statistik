@@ -76,27 +76,18 @@ function clearAll() {
     }
 }
 
-// Select all options in this section. Route through toggleParam so that
-// orderedSelections and selectionHierarchy stay in sync (writing selectedParams
-// directly leaves the hierarchy stale and silently changes filter semantics).
-function selectAll() {
-    const addAll = (section, opts) => {
-        for (const opt of opts) {
-            const value = getOptionLabel(opt)
-            if (!selectedParams.value[section]?.includes(value)) {
-                toggleParam(section, value, getOptionGroup(opt), getOptionBehavior(opt))
-            }
-        }
+// "Alle": show every value of one section side by side on the chart.
+// The section's current selection is replaced by all its values on a single
+// hierarchy level keyed by the section (OR semantics, regardless of the values'
+// param_groups or subtract-only behaviour), and the section becomes the one
+// being visualised. Routed through toggleParam so orderedSelections and
+// selectionHierarchy stay in sync; toggleParam schedules the fetch.
+function selectAllValues(section, opts) {
+    clearSection(section)
+    for (const opt of opts) {
+        toggleParam(section, getOptionLabel(opt), section, 'standard')
     }
-
-    if (props.groups) {
-        for (const [groupSection, groupOptions] of Object.entries(props.groups)) {
-            addAll(groupSection, groupOptions)
-        }
-    } else {
-        addAll(props.section, props.options)
-    }
-    // toggleParam already schedules a debounced fetch.
+    activeSection.value = section
 }
 
 // Group label mapping
@@ -105,6 +96,10 @@ const groupLabels = {
     person: 'Person',
     dauer: 'Dauer'
 }
+
+// Subgroups whose values mix several parameter groups (gender, age, ...) and
+// therefore make no sense side by side in one chart: no "Alle" link for them.
+const noSelectAll = ['person']
 
 // Helper to get option label (supports both string and object format)
 function getOptionLabel(opt) {
@@ -133,7 +128,11 @@ function getOptionBehavior(opt) {
         <template #header>
             <div class="panel-header">
                 <span class="panel-title">{{ title }}</span>
-                <button class="select-all-link" @click.stop="selectAll">Alle</button>
+                <button
+                    v-if="!groups"
+                    class="select-all-link"
+                    @click.stop="selectAllValues(section, options)"
+                >Alle</button>
                 <span v-if="selectionCount > 0" class="selection-badge">
                     {{ selectionCount }}
                 </span>
@@ -161,6 +160,11 @@ function getOptionBehavior(opt) {
             >
                 <div class="group-header">
                     <span class="group-label">{{ groupLabels[groupSection] || groupSection }}</span>
+                    <button
+                        v-if="!noSelectAll.includes(groupSection)"
+                        class="select-all-link"
+                        @click="selectAllValues(groupSection, groupOptions)"
+                    >Alle</button>
                 </div>
                 <div class="chips-container">
                     <Chip
@@ -261,8 +265,8 @@ function getOptionBehavior(opt) {
 
 .group-header {
     display: flex;
-    justify-content: space-between;
     align-items: center;
+    gap: 0.25rem;
     margin-bottom: 0.5rem;
 }
 

@@ -26,8 +26,9 @@ function periodSummary(item) {
     return (item.periods || []).map(p => p.label).join(' · ')
 }
 
-// Inline title editing: click the title, Enter/blur saves, Escape cancels.
-// The new title is written to the store, so the PDF (ReportDocument) picks it up.
+// Inline editing: click a title, Enter/blur saves, Escape cancels. Values go to
+// the store, so the PDF (ReportDocument) picks them up. editingId is an item id
+// or 'heading' for the report's own heading.
 const editingId = ref(null)
 const editTitle = ref('')
 const titleInput = ref(null)
@@ -36,18 +37,34 @@ function setTitleInput(el) {
     titleInput.value = el
 }
 
-async function startEditTitle(item) {
-    editingId.value = item.id
-    editTitle.value = item.title
+async function startEdit(id, current) {
+    editingId.value = id
+    editTitle.value = current
     await nextTick()
     titleInput.value?.focus()
     titleInput.value?.select()
 }
 
+function startEditTitle(item) {
+    startEdit(item.id, item.title)
+}
+
+// Report heading: shown in the panel and used as the PDF title; empty = default
+const HEADING = 'heading'
+const headingLabel = computed(() => store.title || 'Report')
+
+function startEditHeading() {
+    startEdit(HEADING, store.title)
+}
+
 function saveTitle() {
     if (!editingId.value) return
     const title = editTitle.value.trim()
-    if (title) store.updateItem(editingId.value, { title })
+    if (editingId.value === HEADING) {
+        store.setTitle(title)
+    } else if (title) {
+        store.updateItem(editingId.value, { title })
+    }
     editingId.value = null
 }
 
@@ -76,7 +93,25 @@ async function handleExport() {
 <template>
     <div class="report-panel">
         <div class="report-panel-header">
-            <h3 class="report-panel-title">Report</h3>
+            <h3 class="report-panel-title">
+                <input
+                    v-if="editingId === HEADING"
+                    :ref="setTitleInput"
+                    v-model="editTitle"
+                    class="inline-edit-input"
+                    type="text"
+                    placeholder="Statistik …"
+                    @keydown.enter.prevent="saveTitle"
+                    @keydown.esc.stop="cancelEditTitle"
+                    @blur="saveTitle"
+                />
+                <span
+                    v-else
+                    class="inline-edit-text"
+                    title="Überschrift des Reports bearbeiten"
+                    @click="startEditHeading"
+                >{{ headingLabel }}</span>
+            </h3>
             <span class="report-panel-count">{{ store.count }} {{ store.count === 1 ? 'Ansicht' : 'Ansichten' }}</span>
         </div>
 
@@ -110,7 +145,7 @@ async function handleExport() {
                             v-if="editingId === item.id"
                             :ref="setTitleInput"
                             v-model="editTitle"
-                            class="report-item-title-input"
+                            class="inline-edit-input"
                             type="text"
                             @keydown.enter.prevent="saveTitle"
                             @keydown.esc.stop="cancelEditTitle"
@@ -118,7 +153,7 @@ async function handleExport() {
                         />
                         <template v-else>
                             <span
-                                class="report-item-title-text"
+                                class="inline-edit-text"
                                 title="Titel bearbeiten"
                                 @click="startEditTitle(item)"
                             >{{ item.title }}</span>
@@ -156,7 +191,7 @@ async function handleExport() {
         </div>
 
         <!-- Rendered off-screen only while exporting -->
-        <ReportDocument v-if="exporting" ref="documentRef" :items="store.items" />
+        <ReportDocument v-if="exporting" ref="documentRef" :items="store.items" :title="store.title" />
     </div>
 </template>
 
@@ -286,29 +321,38 @@ async function handleExport() {
     font-size: 0.8rem;
 }
 
-/* Click-to-edit title */
-.report-item-title-text {
+/* Click-to-edit text (report heading and view titles): the text itself is the
+   control; while editing it sits on a soft yellow highlight with a dark caret */
+.inline-edit-text {
     cursor: text;
-    border-bottom: 1px dashed transparent;
-    transition: border-color 0.15s;
+    border-radius: 4px;
+    padding: 0 0.2rem;
+    margin: 0 -0.2rem;
+    transition: background 0.15s;
 }
 
-.report-item-title-text:hover {
-    border-bottom-color: #94a3b8;
+.inline-edit-text:hover {
+    background: rgba(255, 234, 149, 0.45);
 }
 
-.report-item-title-input {
+.inline-edit-input {
     width: 100%;
     box-sizing: border-box;
     font: inherit;
-    font-weight: 600;
+    font-weight: inherit;
     color: var(--text-color);
-    background: transparent;
+    background: rgba(255, 234, 149, 0.55);
+    caret-color: #111827;
     border: none;
-    border-bottom: 1px solid var(--color-primary, #94a3b8);
-    border-radius: 0;
-    padding: 0;
+    border-radius: 4px;
+    padding: 0 0.2rem;
+    margin: 0 -0.2rem;
     outline: none;
+}
+
+.inline-edit-input::placeholder {
+    color: #9ca3af;
+    font-weight: 400;
 }
 
 .report-item-meta {

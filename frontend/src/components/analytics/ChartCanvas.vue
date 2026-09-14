@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref, watch, nextTick } from 'vue'
+import { computed, ref, watch, nextTick, inject } from 'vue'
 import {
     Chart as ChartJS,
     CategoryScale,
@@ -91,9 +91,12 @@ const {
     selectionHierarchy
 } = useAnalyticsState()
 
-// Export menu
+// Export menu; the last entry opens the report panel (Popover lives in App.vue)
+// and carries the number of views currently in the report.
+const openReport = inject('openReport', null)
 const exportMenu = ref()
-const exportMenuItems = ref([
+const exportButton = ref()
+const exportMenuItems = computed(() => [
     {
         label: 'Aktuelle Ansicht',
         icon: 'pi pi-filter',
@@ -111,6 +114,15 @@ const exportMenuItems = ref([
         label: 'PDF exportieren',
         icon: 'pi pi-file-pdf',
         command: () => handleExportPdf()
+    },
+    {
+        separator: true
+    },
+    {
+        label: 'Report',
+        icon: 'pi pi-file-edit',
+        badge: reportStore.count || null,
+        command: ({ originalEvent }) => openReport?.(originalEvent, exportButton.value)
     }
 ])
 
@@ -1287,6 +1299,7 @@ const tableData = computed(() => {
                 <span v-if="reportStore.count > 0" class="report-add-count">{{ reportStore.count }}</span>
             </button>
             <button
+                ref="exportButton"
                 class="export-btn"
                 @click="toggleExportMenu"
                 title="Daten exportieren"
@@ -1300,7 +1313,15 @@ const tableData = computed(() => {
                 :model="exportMenuItems"
                 :popup="true"
                 class="export-dropdown"
-            />
+            >
+                <template #item="{ item, props }">
+                    <a v-bind="props.action">
+                        <span v-bind="props.icon"></span>
+                        <span v-bind="props.label">{{ item.label }}</span>
+                        <span v-if="item.badge" class="report-add-count menu-report-count">{{ item.badge }}</span>
+                    </a>
+                </template>
+            </Menu>
         </div>
 
         <div ref="pdfExportArea" class="pdf-export-area">
@@ -1789,6 +1810,10 @@ const tableData = computed(() => {
 :deep(.export-dropdown) {
     min-width: 180px;
     margin-top: 0.5rem;
+}
+
+.menu-report-count {
+    margin-left: auto;
 }
 
 :deep(.export-dropdown .p-menuitem-link) {

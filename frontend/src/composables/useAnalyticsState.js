@@ -1,28 +1,22 @@
 import { ref, computed, watch } from 'vue'
 import { analytics, markers as markersApi, savedPeriods as savedPeriodsApi } from '../services/api'
-import { format, startOfYear, endOfYear } from 'date-fns'
+import { format, startOfYear, endOfYear, endOfDay } from 'date-fns'
 import { de } from 'date-fns/locale'
 
-const currentYear = new Date().getFullYear()
-const lastYear = currentYear - 1
+// Default: a single period from the start of the current year up to today
+function defaultPeriods() {
+    const today = new Date()
+    return [{
+        id: 1,
+        start: startOfYear(today),
+        end: endOfDay(today),
+        label: String(today.getFullYear()),
+        isComparison: false
+    }]
+}
 
 // Shared state (singleton pattern)
-const periods = ref([
-    {
-        id: 1,
-        start: startOfYear(new Date(currentYear, 0, 1)),
-        end: endOfYear(new Date(currentYear, 0, 1)),
-        label: String(currentYear),
-        isComparison: false
-    },
-    {
-        id: 2,
-        start: startOfYear(new Date(lastYear, 0, 1)),
-        end: endOfYear(new Date(lastYear, 0, 1)),
-        label: String(lastYear),
-        isComparison: true
-    }
-])
+const periods = ref(defaultPeriods())
 
 const selectedParams = ref({
     kontaktart: [],
@@ -76,7 +70,7 @@ let fetchGeneration = 0
 // calls useAnalyticsState(); register the watchers only once.
 let watchersInitialized = false
 
-let nextPeriodId = 3
+let nextPeriodId = 2
 
 export function useAnalyticsState() {
     // Computed: check if we're in comparison mode (multiple periods)
@@ -190,14 +184,17 @@ export function useAnalyticsState() {
             // Adding a value
             current.push(value)
 
-            // Track in ordered selections for subset drilling (include param_group and behavior)
-            orderedSelections.value.push({ section, value, group: effectiveGroup, behavior })
-
             // Track in hierarchy
-            // For subtract_only: always create new group (never join existing)
+            // For subtract_only: always create new group (never join existing).
+            // A section-wide level keyed by the section itself (created by "Alle")
+            // absorbs later single values of that section, so they stay parallel.
             const hierarchyEntry = behavior === 'subtract_only'
                 ? null  // Force new group
-                : selectionHierarchy.value.find(h => h.group === hierarchyGroup)
+                : (selectionHierarchy.value.find(h => h.group === hierarchyGroup)
+                    || selectionHierarchy.value.find(h => h.group === section && h.behavior !== 'subtract_only' && h.selections[section]))
+
+            // Track in ordered selections for subset drilling (include param_group and behavior)
+            orderedSelections.value.push({ section, value, group: hierarchyEntry ? hierarchyEntry.group : effectiveGroup, behavior })
 
             if (hierarchyEntry) {
                 // Group already in hierarchy - add to existing level (OR logic)
@@ -230,8 +227,12 @@ export function useAnalyticsState() {
                 orderedSelections.value.splice(orderedIndex, 1)
             }
 
-            // Remove from hierarchy (use hierarchyGroup which may be unique for subtract_only)
-            const hierarchyEntry = selectionHierarchy.value.find(h => h.group === hierarchyGroup)
+            // Remove from hierarchy (use hierarchyGroup which may be unique for subtract_only;
+            // fall back to whichever level actually holds the value, e.g. an "Alle" level)
+            let hierarchyEntry = selectionHierarchy.value.find(h => h.group === hierarchyGroup)
+            if (!hierarchyEntry?.selections[section]?.includes(value)) {
+                hierarchyEntry = selectionHierarchy.value.find(h => h.selections[section]?.includes(value))
+            }
             if (hierarchyEntry && hierarchyEntry.selections[section]) {
                 const valIndex = hierarchyEntry.selections[section].indexOf(value)
                 if (valIndex !== -1) {
@@ -243,7 +244,7 @@ export function useAnalyticsState() {
                 }
                 // Remove group from hierarchy if no selections left
                 if (Object.keys(hierarchyEntry.selections).length === 0) {
-                    selectionHierarchy.value = selectionHierarchy.value.filter(h => h.group !== hierarchyGroup)
+                    selectionHierarchy.value = selectionHierarchy.value.filter(h => h !== hierarchyEntry)
                 }
             }
         }
@@ -1277,13 +1278,7 @@ export function useAnalyticsState() {
                 applyMultiplePeriodConfigs(activeConfigs)
             } else {
                 // No active configs - reset to default
-                periods.value = [{
-                    id: 1,
-                    start: startOfYear(new Date(currentYear, 0, 1)),
-                    end: endOfYear(new Date(currentYear, 0, 1)),
-                    label: String(currentYear),
-                    isComparison: false
-                }]
+                periods.value = defaultPeriods()
                 nextPeriodId = 2
             }
         } catch (err) {

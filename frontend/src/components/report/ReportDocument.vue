@@ -6,7 +6,9 @@ import { de } from 'date-fns/locale'
 // Renders the report as A4 portrait pages (two views per page) off-screen.
 // ReportPanel captures these page elements with html2canvas to build the PDF.
 const props = defineProps({
-    items: { type: Array, required: true }
+    items: { type: Array, required: true },
+    // Custom heading; empty falls back to "Statistik <Jahr>"
+    title: { type: String, default: '' }
 })
 
 const VIEWS_PER_PAGE = 2
@@ -49,6 +51,7 @@ const dateSpan = computed(() => {
 })
 
 const reportTitle = computed(() => {
+    if (props.title.trim()) return props.title.trim()
     const { min, max } = dateSpan.value
     if (!max) return 'Statistik'
     const y1 = min ? min.getFullYear() : max.getFullYear()

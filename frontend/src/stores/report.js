@@ -5,6 +5,7 @@ import { cropImageDataUrl } from '../utils/canvasCrop'
 // Report: an ordered list of analytics view snapshots (image + legend + numbers),
 // kept in localStorage so it survives reloads. Display-only, nothing touches the API.
 const STORAGE_KEY = 'report_items'
+const TITLE_KEY = 'report_title'
 
 function load() {
     try {
@@ -18,6 +19,19 @@ function load() {
 
 export const useReportStore = defineStore('report', () => {
     const items = ref(load())
+
+    // Optional custom heading for the PDF (empty = automatic "Statistik <Jahr>")
+    const title = ref(localStorage.getItem(TITLE_KEY) || '')
+
+    function setTitle(value) {
+        title.value = (value || '').trim()
+        try {
+            if (title.value) localStorage.setItem(TITLE_KEY, title.value)
+            else localStorage.removeItem(TITLE_KEY)
+        } catch {
+            // storage unavailable: keep it for this session only
+        }
+    }
 
     const count = computed(() => items.value.length)
 
@@ -85,5 +99,5 @@ export const useReportStore = defineStore('report', () => {
     }
     cropLegacyPies()
 
-    return { items, count, addItem, updateItem, removeItem, setItems, clear, cropLegacyPies }
+    return { items, count, title, setTitle, addItem, updateItem, removeItem, setItems, clear, cropLegacyPies }
 })
