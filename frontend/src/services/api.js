@@ -114,7 +114,12 @@ export const colors = {
     uploadImage: (cardKey, file) => {
         const formData = new FormData()
         formData.append('image', file)
-        return api.post(`/colors/upload.php?card=${cardKey}`, formData)
+        // The instance defaults to application/json, which makes axios serialise
+        // FormData as JSON (the file is dropped and PHP sees no upload). Declare
+        // multipart explicitly; the browser adds the boundary.
+        return api.post(`/colors/upload.php?card=${cardKey}`, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+        })
     }
 }
 

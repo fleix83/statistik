@@ -64,6 +64,7 @@ const imageOpacityPercent = computed(() => Math.round(imageOpacity.value * 100))
 
 const imageFile = ref(null)   // Path of an uploaded image (relative to api/), null = default
 const uploading = ref(false)
+const uploadError = ref(null)
 const fileInputEl = ref(null)
 const imagePreviewSrc = computed(() =>
     imageFile.value ? apiFileUrl(imageFile.value) : (props.defaultImage || null)
@@ -175,12 +176,21 @@ async function onImageSelected(event) {
     event.target.value = ''
     if (!file) return
     uploading.value = true
+    uploadError.value = null
     try {
         const res = await colorsApi.uploadImage(props.cardKey, file)
         imageFile.value = res.data.path
+        // The default texture is meant for ~7% opacity and a card may have been set
+        // to 0%; an uploaded image would then be invisible. Show it fully so the
+        // upload is visible right away; the slider still lets the user tone it down.
+        if (imageOpacity.value <= 0.1) {
+            imageOpacity.value = 1
+            imageCustomized.value = true
+        }
         emitUpdate()
     } catch (error) {
         console.error('Failed to upload image:', error)
+        uploadError.value = error.response?.data?.error || 'Bild konnte nicht hochgeladen werden'
     } finally {
         uploading.value = false
     }
@@ -348,6 +358,7 @@ const modalStyle = computed(() => {
                             </button>
                         </div>
                     </div>
+                    <div v-if="uploadError" class="upload-error">{{ uploadError }}</div>
                 </div>
 
                 <div class="color-modal-footer">
@@ -515,6 +526,12 @@ const modalStyle = computed(() => {
     background: rgba(255, 255, 255, 0.75);
     border-radius: 3px;
     padding: 1px 2px;
+}
+
+.upload-error {
+    margin-top: 0.4rem;
+    font-size: 0.8rem;
+    color: #b91c1c;
 }
 
 .image-file-input {
