@@ -84,8 +84,13 @@ function formatCount(n) {
     return Number(n || 0).toLocaleString('de-CH')
 }
 
-// Legend tables as compact blocks placed above the chart:
-// one block per period side by side; a long single-period list splits in two.
+// A single-period pie reads better with the numbers beside the chart
+function sideBySide(item) {
+    return item.chartType === 'pie' && (item.tables || []).length <= 1
+}
+
+// Legend tables as compact blocks: one block per period side by side; a long
+// single-period list splits in two unless it sits beside the chart.
 function tableBlocks(item) {
     const tables = item.tables || []
     if (tables.length === 0) return []
@@ -93,7 +98,7 @@ function tableBlocks(item) {
         return tables.map(t => ({ periodLabel: t.periodLabel, rows: t.rows, total: t.total, showTotal: true }))
     }
     const t = tables[0]
-    if (t.rows.length <= 8) {
+    if (t.rows.length <= 8 || sideBySide(item)) {
         return [{ periodLabel: t.periodLabel, rows: t.rows, total: t.total, showTotal: true }]
     }
     const half = Math.ceil(t.rows.length / 2)
@@ -159,40 +164,42 @@ defineExpose({
                     class="report-view-info"
                 >{{ row }}</div>
 
-                <div class="report-tables">
-                    <div
-                        v-for="(block, bIndex) in tableBlocks(item)"
-                        :key="bIndex"
-                        class="report-table"
-                    >
-                        <div v-if="block.periodLabel" class="report-table-period">{{ block.periodLabel }}</div>
+                <div class="report-body" :class="{ 'side-by-side': sideBySide(item) }">
+                    <div class="report-tables">
                         <div
-                            v-for="(row, rIndex) in block.rows"
-                            :key="rIndex"
-                            class="report-row"
+                            v-for="(block, bIndex) in tableBlocks(item)"
+                            :key="bIndex"
+                            class="report-table"
                         >
-                            <span class="report-swatch" :style="{ backgroundColor: swatchColor(item, row.label) }"></span>
-                            <span class="report-row-label">{{ row.label }}</span>
-                            <span class="report-row-count">{{ formatCount(row.count) }}</span>
-                            <span class="report-row-percent">{{ row.percent }}%</span>
-                        </div>
-                        <div v-if="block.showTotal" class="report-row report-row-total">
-                            <span class="report-swatch report-swatch-empty"></span>
-                            <span class="report-row-label">Total</span>
-                            <span class="report-row-count">{{ formatCount(block.total) }}</span>
-                            <span class="report-row-percent">100%</span>
+                            <div v-if="block.periodLabel" class="report-table-period">{{ block.periodLabel }}</div>
+                            <div
+                                v-for="(row, rIndex) in block.rows"
+                                :key="rIndex"
+                                class="report-row"
+                            >
+                                <span class="report-swatch" :style="{ backgroundColor: swatchColor(item, row.label) }"></span>
+                                <span class="report-row-label">{{ row.label }}</span>
+                                <span class="report-row-count">{{ formatCount(row.count) }}</span>
+                                <span class="report-row-percent">{{ row.percent }}%</span>
+                            </div>
+                            <div v-if="block.showTotal" class="report-row report-row-total">
+                                <span class="report-swatch report-swatch-empty"></span>
+                                <span class="report-row-label">Total</span>
+                                <span class="report-row-count">{{ formatCount(block.total) }}</span>
+                                <span class="report-row-percent">100%</span>
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                <div class="report-chart">
-                    <div v-if="item.stackedBaseLabel" class="report-chart-heading">{{ item.stackedBaseLabel }}</div>
-                    <img
-                        :src="item.image.src"
-                        alt=""
-                        class="report-chart-image"
-                        :style="{ aspectRatio: `${item.image.width} / ${item.image.height}` }"
-                    />
+                    <div class="report-chart">
+                        <div v-if="item.stackedBaseLabel" class="report-chart-heading">{{ item.stackedBaseLabel }}</div>
+                        <img
+                            :src="item.image.src"
+                            alt=""
+                            class="report-chart-image"
+                            :style="{ aspectRatio: `${item.image.width} / ${item.image.height}` }"
+                        />
+                    </div>
                 </div>
             </section>
 
@@ -312,6 +319,34 @@ defineExpose({
     line-height: 1.5;
     color: #4b5563;
     font-variant-numeric: tabular-nums;
+}
+
+/* Tables and chart share the rest of the view: stacked by default,
+   side by side (numbers left, chart right) for a single-period pie */
+.report-body {
+    flex: 1 1 0;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.report-body.side-by-side {
+    flex-direction: row;
+    gap: 28px;
+    margin-top: 14px;
+}
+
+.report-body.side-by-side .report-tables {
+    flex: 0 0 auto;
+    margin: 0;
+}
+
+.report-body.side-by-side .report-chart {
+    flex: 1 1 0;
+    min-width: 0;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
 }
 
 /* Legend tables: compact cards directly above the chart */
