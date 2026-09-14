@@ -26,6 +26,35 @@ function periodSummary(item) {
     return (item.periods || []).map(p => p.label).join(' · ')
 }
 
+// Inline title editing: click the title, Enter/blur saves, Escape cancels.
+// The new title is written to the store, so the PDF (ReportDocument) picks it up.
+const editingId = ref(null)
+const editTitle = ref('')
+const titleInput = ref(null)
+
+function setTitleInput(el) {
+    titleInput.value = el
+}
+
+async function startEditTitle(item) {
+    editingId.value = item.id
+    editTitle.value = item.title
+    await nextTick()
+    titleInput.value?.focus()
+    titleInput.value?.select()
+}
+
+function saveTitle() {
+    if (!editingId.value) return
+    const title = editTitle.value.trim()
+    if (title) store.updateItem(editingId.value, { title })
+    editingId.value = null
+}
+
+function cancelEditTitle() {
+    editingId.value = null
+}
+
 async function handleExport() {
     if (store.count === 0 || exporting.value) return
     exporting.value = true
@@ -77,8 +106,24 @@ async function handleExport() {
                 <img :src="item.image.src" alt="" class="report-item-thumb" />
                 <div class="report-item-text">
                     <div class="report-item-title">
-                        {{ item.title }}
-                        <span v-if="item.subtitle" class="report-item-subtitle">{{ item.subtitle }}</span>
+                        <input
+                            v-if="editingId === item.id"
+                            :ref="setTitleInput"
+                            v-model="editTitle"
+                            class="report-item-title-input"
+                            type="text"
+                            @keydown.enter.prevent="saveTitle"
+                            @keydown.esc.stop="cancelEditTitle"
+                            @blur="saveTitle"
+                        />
+                        <template v-else>
+                            <span
+                                class="report-item-title-text"
+                                title="Titel bearbeiten"
+                                @click="startEditTitle(item)"
+                            >{{ item.title }}</span>
+                            <span v-if="item.subtitle" class="report-item-subtitle">{{ item.subtitle }}</span>
+                        </template>
                     </div>
                     <div class="report-item-meta">{{ periodSummary(item) }}</div>
                 </div>
@@ -235,9 +280,35 @@ async function handleExport() {
 }
 
 .report-item-subtitle {
+    margin-left: 0.3rem;
     font-weight: 400;
     color: var(--text-color-secondary);
     font-size: 0.8rem;
+}
+
+/* Click-to-edit title */
+.report-item-title-text {
+    cursor: text;
+    border-bottom: 1px dashed transparent;
+    transition: border-color 0.15s;
+}
+
+.report-item-title-text:hover {
+    border-bottom-color: #94a3b8;
+}
+
+.report-item-title-input {
+    width: 100%;
+    box-sizing: border-box;
+    font: inherit;
+    font-weight: 600;
+    color: var(--text-color);
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid var(--color-primary, #94a3b8);
+    border-radius: 0;
+    padding: 0;
+    outline: none;
 }
 
 .report-item-meta {

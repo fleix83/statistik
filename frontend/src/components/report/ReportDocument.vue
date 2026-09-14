@@ -66,10 +66,13 @@ const reportRange = computed(() => {
 
 // --- Per view helpers -----------------------------------------------------------
 
-function periodLine(item) {
-    return (item.periods || [])
-        .map(p => `${p.label} · ${p.dateRange} · ${formatCount(p.count)} Anfragen`)
-        .join('   |   ')
+// One line per period below the title; several periods are numbered
+function periodRows(item) {
+    const periods = item.periods || []
+    return periods.map((p, i) => {
+        const text = `${p.label} · ${p.dateRange} · ${formatCount(p.count)} Anfragen`
+        return periods.length > 1 ? `${i + 1}) ${text}` : text
+    })
 }
 
 function swatchColor(item, label) {
@@ -150,10 +153,11 @@ defineExpose({
                     <span>{{ item.title }}</span>
                     <span v-if="item.subtitle" class="report-view-subtitle">{{ item.subtitle }}</span>
                 </h2>
-                <div class="report-view-info">{{ periodLine(item) }}</div>
-                <div v-if="item.hierarchy?.length" class="report-view-filters">
-                    {{ item.hierarchy.join('  ›  ') }}
-                </div>
+                <div
+                    v-for="(row, pIndex) in periodRows(item)"
+                    :key="pIndex"
+                    class="report-view-info"
+                >{{ row }}</div>
 
                 <div class="report-tables">
                     <div
@@ -305,13 +309,9 @@ defineExpose({
 
 .report-view-info {
     font-size: 11px;
+    line-height: 1.5;
     color: #4b5563;
-}
-
-.report-view-filters {
-    font-size: 11px;
-    color: #6b7280;
-    margin-top: 2px;
+    font-variant-numeric: tabular-nums;
 }
 
 /* Legend tables: compact cards directly above the chart */

@@ -50,6 +50,14 @@ export const useReportStore = defineStore('report', () => {
         persist()
     }
 
+    // Merge changes into one item (e.g. a renamed title) and persist
+    function updateItem(id, patch) {
+        const item = items.value.find(i => i.id === id)
+        if (!item) return
+        Object.assign(item, patch)
+        persist()
+    }
+
     // Replace the whole list (used for drag-and-drop reordering)
     function setItems(list) {
         items.value = [...list]
@@ -77,5 +85,5 @@ export const useReportStore = defineStore('report', () => {
     }
     cropLegacyPies()
 
-    return { items, count, addItem, removeItem, setItems, clear, cropLegacyPies }
+    return { items, count, addItem, updateItem, removeItem, setItems, clear, cropLegacyPies }
 })

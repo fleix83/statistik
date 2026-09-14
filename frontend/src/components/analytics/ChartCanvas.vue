@@ -16,7 +16,7 @@ import {
 } from 'chart.js'
 import annotationPlugin from 'chartjs-plugin-annotation'
 import 'chartjs-adapter-date-fns'
-import { Bar, Line, Doughnut } from 'vue-chartjs'
+import { Bar, Line, Pie } from 'vue-chartjs'
 import Card from 'primevue/card'
 import SelectButton from 'primevue/selectbutton'
 import Menu from 'primevue/menu'
@@ -28,6 +28,7 @@ import { usePdfExport } from '../../composables/usePdfExport'
 import { useReportStore } from '../../stores/report'
 import html2canvas from 'html2canvas'
 import { cropCanvasToContent } from '../../utils/canvasCrop'
+import { piePercentLabels } from '../../utils/piePercentLabels'
 import { analytics } from '../../services/api'
 import { format, parseISO, isWithinInterval } from 'date-fns'
 import { de } from 'date-fns/locale'
@@ -917,7 +918,9 @@ const pieChartsData = computed(() => {
                 labels: items.map(d => d.label),
                 datasets: [{
                     data: items.map(d => d.count),
-                    backgroundColor: colors.value.slice(0, items.length)
+                    backgroundColor: colors.value.slice(0, items.length),
+                    borderColor: '#ffffff',
+                    borderWidth: 3
                 }]
             }
         }]
@@ -938,7 +941,9 @@ const pieChartsData = computed(() => {
                     labels: items.map(d => d.label),
                     datasets: [{
                         data: items.map(d => d.count),
-                        backgroundColor: colors.value.slice(0, items.length)
+                        backgroundColor: colors.value.slice(0, items.length),
+                        borderColor: '#ffffff',
+                        borderWidth: 3
                     }]
                 }
             }
@@ -956,6 +961,10 @@ const pieChartData = computed(() => {
 const pieChartOptions = computed(() => ({
     responsive: true,
     maintainAspectRatio: false,
+    // Room for the percentages drawn next to the slices (utils/piePercentLabels.js)
+    layout: {
+        padding: { top: 20, bottom: 20, left: 52, right: 52 }
+    },
     plugins: {
         legend: {
             display: false
@@ -1451,10 +1460,11 @@ const tableData = computed(() => {
                             >
                                 <h4 class="pie-chart-title">{{ pieChart.periodLabel }}</h4>
                                 <div class="pie-chart-wrapper">
-                                    <Doughnut
+                                    <Pie
                                         :key="'pie-' + chartKey + '-' + index"
                                         :data="pieChart.data"
                                         :options="pieChartOptions"
+                                        :plugins="[piePercentLabels]"
                                     />
                                 </div>
                             </div>
@@ -1856,6 +1866,11 @@ const tableData = computed(() => {
 
 .custom-legend.pie-legend {
     margin-left: 0;
+}
+
+.custom-legend.pie-legend .legend-color {
+    width: 14px;
+    border-radius: 50%;
 }
 
 .legend-item {
