@@ -284,7 +284,7 @@ button, input, select, textarea {
 }
 
 .app-header.navbar-editor {
-    background: #ffc8ba !important;
+    background: #ffecba !important;
 }
 
 .app-branding {

@@ -249,14 +249,14 @@ function onEditKeywords() {
     gap: 32px;
     border-radius: 7px;
     border: 1px solid #B7B7B7;
-    background: #FFF;
+    background: #fff;
     transition: all 0.2s;
     width: 100%;
     box-sizing: border-box;
 }
 
 .option-thema:hover {
-    background: #ff9d85;
+    background: #ffecba;
     border-color: #999;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
     cursor: move;

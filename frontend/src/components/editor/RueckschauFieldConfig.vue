@@ -249,7 +249,7 @@ function getSectionColor(section) {
 }
 
 .panel-configured {
-    border: 4px dashed #ff9d85;
+    border: 4px dashed #e8e8e8;
 }
 
 .panel-header {
@@ -293,14 +293,15 @@ function getSectionColor(section) {
     align-items: center;
     gap: 10px;
     padding: 8px 12px;
-    background: #f9f9f9;
+    background: #fff;
+    border: 1px solid #B7B7B7;
     border-radius: 8px;
     cursor: grab;
     transition: background 0.15s;
 }
 
 .configured-field:hover {
-    background: #ff9d85;
+    background: #ffecba;
 }
 
 .ghost-field {
@@ -434,7 +435,7 @@ function getSectionColor(section) {
     align-items: center;
     gap: 6px;
     padding: 6px 12px;
-    border: 1px solid #e5e5e5;
+    border: 1px solid #B7B7B7;
     background: #fff;
     border-radius: 6px;
     font-size: 16px;
@@ -444,7 +445,7 @@ function getSectionColor(section) {
 }
 
 .available-field:hover {
-    background: #ff9d85;
+    background: #ffecba;
     border-color: #ff9d85;
 }
 

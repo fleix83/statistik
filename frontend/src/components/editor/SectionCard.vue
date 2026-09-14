@@ -70,7 +70,7 @@ function onDragEnd() {
     background: #FFF;
     border-radius: 12px;
     padding: 24px 28px;
-    border: 4px dashed #ff9d85;
+    border: 4px dashed #e8e8e8;
 }
 
 .section-header {

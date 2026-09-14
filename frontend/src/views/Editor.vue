@@ -610,7 +610,7 @@ function confirmDeleteUser(user) {
     justify-content: space-between;
     align-items: center;
     padding: 2rem 40px 1.3rem;
-    background: linear-gradient(180deg, #ffc8ba, #F5F3EF);
+    background: linear-gradient(180deg, #ffecba, #F5F3EF);
     margin: -24px -40px 24px;
     max-width: none;
 }
@@ -653,7 +653,7 @@ function confirmDeleteUser(user) {
 
 .debug-info {
     padding: 10px;
-    background: #ffc8ba;
+    background: #ffecba;
     margin-bottom: 16px;
     border-radius: 4px;
     font-size: 12px;
@@ -746,7 +746,7 @@ function confirmDeleteUser(user) {
     background: white;
     border-radius: 12px;
     overflow: hidden;
-    border: 1px solid rgba(0, 0, 0, 0.06);
+    border: 4px dashed #e8e8e8;
 }
 
 .users-table-wrapper :deep(.p-datatable) {
