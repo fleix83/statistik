@@ -1,4 +1,4 @@
-import { defineStore } from 'pinia'
+import { defineStore, acceptHMRUpdate } from 'pinia'
 import { ref, computed } from 'vue'
 import { cropImageDataUrl } from '../utils/canvasCrop'
 
@@ -101,3 +101,10 @@ export const useReportStore = defineStore('report', () => {
 
     return { items, count, title, setTitle, addItem, updateItem, removeItem, setItems, clear, cropLegacyPies }
 })
+
+// Dev only: swap the store definition in place on hot reload. Without this an
+// already created store keeps its old state and actions after the file changes,
+// so newly added fields such as the report heading only appear after a reload.
+if (import.meta.hot) {
+    import.meta.hot.accept(acceptHMRUpdate(useReportStore, import.meta.hot))
+}
