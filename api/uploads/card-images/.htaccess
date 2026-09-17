@@ -1,0 +1,4 @@
+# Never execute scripts from the uploads directory
+<FilesMatch "\.(?i:php|phar|phtml)$">
+    Require all denied
+</FilesMatch>

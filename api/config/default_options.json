@@ -1,0 +1,56 @@
+{
+    "version": "1.0",
+    "description": "Default dropdown options for Helpdesk Statistik application",
+    "sections": {
+        "kontaktart": [
+            {"label": "Besuch", "sort_order": 0},
+            {"label": "Telefon", "sort_order": 1},
+            {"label": "Mail", "sort_order": 2},
+            {"label": "Passant/in", "sort_order": 3}
+        ],
+        "person": [
+            {"label": "Mann", "sort_order": 0},
+            {"label": "Frau", "sort_order": 1},
+            {"label": "unter 55", "sort_order": 2},
+            {"label": "über 55", "sort_order": 3},
+            {"label": "über 80", "sort_order": 4},
+            {"label": "selbst betroffen", "sort_order": 5},
+            {"label": "Angehörige Nachbarn und andere", "sort_order": 6},
+            {"label": "Institution", "sort_order": 7}
+        ],
+        "thema": [
+            {"label": "Bildung", "sort_order": 0, "keywords": ["Schule", "Ausbildung", "Studium", "Weiterbildung"]},
+            {"label": "Arbeit", "sort_order": 1, "keywords": ["Job", "Beruf", "Arbeitslosigkeit", "Bewerbung"]},
+            {"label": "Finanzen", "sort_order": 2, "keywords": ["Geld", "Schulden", "Budget", "Kredit"]},
+            {"label": "Gesundheit", "sort_order": 3, "keywords": ["Krankheit", "Arzt", "Versicherung", "Therapie"]},
+            {"label": "Familie Partnerschaft", "sort_order": 4, "keywords": ["Ehe", "Kinder", "Trennung", "Erziehung"]},
+            {"label": "Wohnen", "sort_order": 5, "keywords": ["Miete", "Wohnung", "Umzug", "Kündigung"]},
+            {"label": "Recht Fragen", "sort_order": 6, "keywords": ["Anwalt", "Vertrag", "Gericht", "Rechte"]},
+            {"label": "Existenzsicherung", "sort_order": 7, "keywords": ["Sozialhilfe", "Grundsicherung", "Unterstützung"]},
+            {"label": "Migration Integration", "sort_order": 8, "keywords": ["Aufenthalt", "Asyl", "Sprache", "Integration"]},
+            {"label": "Migrationshintergrund", "sort_order": 9, "keywords": []},
+            {"label": "WLAN", "sort_order": 10, "keywords": ["Internet", "Zugang"]},
+            {"label": "Diverses", "sort_order": 11, "keywords": ["Sonstiges", "Anderes"]}
+        ],
+        "zeitfenster": [
+            {"label": "11:30 - 12:00", "sort_order": 0},
+            {"label": "12:00 - 13:00", "sort_order": 1},
+            {"label": "13:00 - 14:00", "sort_order": 2},
+            {"label": "14:00 - 15:00", "sort_order": 3},
+            {"label": "15:00 - 15:30", "sort_order": 4}
+        ],
+        "dauer": [
+            {"label": "< 5 min", "sort_order": 0},
+            {"label": "5 - 15 min", "sort_order": 1},
+            {"label": "15 - 20 min", "sort_order": 2},
+            {"label": "> 20 min", "sort_order": 3}
+        ],
+        "referenz": [
+            {"label": "Flyer", "sort_order": 0},
+            {"label": "Internet", "sort_order": 1},
+            {"label": "Laufkundschaft", "sort_order": 2},
+            {"label": "Empfehlung", "sort_order": 3},
+            {"label": "kommt wieder", "sort_order": 4}
+        ]
+    }
+}

@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSV → DB Mapping Analysis</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #e4e4e7;
+            padding: 40px 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+        
+        .header h1 {
+            font-size: 36px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .header p {
+            color: #94a3b8;
+            font-size: 16px;
+        }
+        
+        .alert {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(220, 38, 38, 0.1) 100%);
+            border: 2px solid #ef4444;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 40px;
+        }
+        
+        .alert-title {
+            color: #fca5a5;
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .alert-content {
+            color: #e5e7eb;
+            line-height: 1.6;
+        }
+        
+        .alert-content strong {
+            color: #fca5a5;
+        }
+        
+        .mapping-grid {
+            display: grid;
+            gap: 30px;
+            margin-top: 40px;
+        }
+        
+        .category-card {
+            background: rgba(30, 41, 59, 0.6);
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            border-radius: 16px;
+            overflow: hidden;
+        }
+        
+        .category-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .category-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #f8fafc;
+        }
+        
+        .db-field {
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            padding: 6px 12px;
+            background: rgba(59, 130, 246, 0.2);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            border-radius: 6px;
+            color: #93c5fd;
+        }
+        
+        .category-content {
+            padding: 24px;
+        }
+        
+        .columns-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 12px;
+        }
+        
+        .column-item {
+            background: rgba(15, 23, 42, 0.5);
+            padding: 12px;
+            border-radius: 8px;
+            border-left: 3px solid #3b82f6;
+            font-size: 13px;
+        }
+        
+        .column-name {
+            color: #e2e8f0;
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+        
+        .column-type {
+            color: #64748b;
+            font-size: 11px;
+            font-family: monospace;
+        }
+        
+        .system-card {
+            background: rgba(16, 185, 129, 0.1);
+            border-color: rgba(16, 185, 129, 0.3);
+        }
+        
+        .system-card .category-header {
+            border-bottom-color: rgba(16, 185, 129, 0.2);
+        }
+        
+        .system-card .column-item {
+            border-left-color: #10b981;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-top: 40px;
+        }
+        
+        .stat-box {
+            background: rgba(30, 41, 59, 0.6);
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: #f59e0b;
+            margin-bottom: 8px;
+        }
+        
+        .stat-label {
+            color: #94a3b8;
+            font-size: 13px;
+        }
+        
+        .issue-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            background: rgba(239, 68, 68, 0.2);
+            border: 1px solid #ef4444;
+            border-radius: 20px;
+            font-size: 12px;
+            color: #fca5a5;
+            font-weight: 600;
+            margin-left: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>⚠️ CSV → Datenbank Mapping Analyse</h1>
+            <p>statistik_2025.csv → stats_entries Schema</p>
+        </div>
+        
+        <div class="alert">
+            <div class="alert-title">
+                🚨 Kritisches Problem: Schema-Mismatch
+            </div>
+            <div class="alert-content">
+                <p><strong>Die aktuelle Datenbankstruktur unterstützt NICHT die Daten aus der CSV-Datei!</strong></p>
+                <p style="margin-top: 12px;">
+                    <strong>Problem:</strong> Deine CSV erlaubt <strong>multiple Auswahl</strong> pro Kategorie (z.B. kann jemand gleichzeitig "Mann", "unter 55" UND "selbst betroffen" sein).<br>
+                    Die aktuelle <code>stats_entries</code> Struktur hat aber nur <strong>EINE Spalte</strong> pro Kategorie (<code>person_value</code>, <code>topic_value</code>, etc.).
+                </p>
+                <p style="margin-top: 12px;">
+                    <strong>Beispiel aus CSV Zeile 2:</strong><br>
+                    Person: <code>Mann=WAHR</code>, <code>Frau=WAHR</code>, <code>unter 55=WAHR</code>, <code>selbst betroffen=WAHR</code><br>
+                    → Das sind <strong>4 gleichzeitige Werte</strong>, aber die DB hat nur <strong>1 Spalte</strong> (<code>person_value</code>)
+                </p>
+            </div>
+        </div>
+
+        <div class="stats">
+            <div class="stat-box">
+                <div class="stat-value">2698</div>
+                <div class="stat-label">Datensätze in CSV</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-value">70+</div>
+                <div class="stat-label">CSV Spalten</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-value">4</div>
+                <div class="stat-label">DB Value-Spalten</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-value">❌</div>
+                <div class="stat-label">Direkte Kompatibilität</div>
+            </div>
+        </div>
+
+        <div class="mapping-grid">
+            <!-- System Columns -->
+            <div class="category-card system-card">
+                <div class="category-header">
+                    <span class="category-title">📋 System-Daten</span>
+                    <span class="db-field">id, user_id, created_at</span>
+                </div>
+                <div class="category-content">
+                    <div class="columns-list">
+                        <div class="column-item">
+                            <div class="column-name">ID</div>
+                            <div class="column-type">→ id (AUTO_INCREMENT)</div>
+                        </div>
+                        <div class="column-item">
+                            <div class="column-name">Erfassungsdatum</div>
+                            <div class="column-type">→ created_at (DATETIME)</div>
+                        </div>
+                        <div class="column-item">
+                            <div class="column-name">Bearbeitet von</div>
+                            <div class="column-type">→ user_id (FK zu users)</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Contact Method - Currently unmapped -->
+            <div class="category-card">
+                <div class="category-header">
+                    <span class="category-title">📞 Kontaktart</span>
+                    <span class="db-field">??? (NICHT GEMAPPT)</span>
+                </div>
+                <div class="category-content">
+                    <div class="columns-list">
+                        <div class="column-item">
+                            <div class="column-name">Besuch</div>
+                            <div class="column-type">BOOLEAN (multiple möglich)</div>
+                        </div>
+                        <div class="column-item">
+                            <div class="column-name">Telefon</div>
+                            <div class="column-type">BOOLEAN</div>
+                        </div>
+                        <div class="column-item">
+                            <div class="column-name">Mail</div>
+                            <div class="column-type">BOOLEAN</div>
+                        </div>
+                        <div class="column-item">
+                            <div class="column-name">Passant/in</div>
+                            <div class="column-type">BOOLEAN</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Person Category -->
+            <div class="category-card">
+                <div class="category-header">
+                    <span class="category-title">👤 Person</span>
+                    <span class="db-field">person_value</span>
+                    <span class="issue-badge">MULTIPLE VALUES!</span>
+                </div>
+                <div class="category-content">
+                    <div class="columns-list">
+                        <div class="column-item">
+                            <div class="column-name">Mann</div>
+                            <div class="column-type">BOOLEAN (kann mit anderen kombiniert werden)</div>
+                        </div>
+                        <div class="column-item">
+                            <div class="column-name">Frau</div>
+                            <div class="column-type">BOOLEAN</div>
+                        </div>
+                        <div class="column-item">
+                            <div class="column-name">unter 55</div>
+                            <div class="column-type">BOOLEAN</div>
+                        </div>
+                        <div class="column-item">
+                            <div class="column-name">über 55</div>
+                            <div class="column-type">BOOLEAN</div>
+                        </div>
+                        <div class="column-item">
+                            <div class="column-name">über 80</div>
+                            <div class="column-type">BOOLEAN</div>
+                        </div>
+                        <div class="column-item">
+                            <div class="column-name">selbst betroffen</div>
+                            <div class="column-type">BOOLEAN</div>
+                        </div>
+                        <div class="column-item">
+                            <div class="column-name">Angehörige Nachbarn und andere</div>
+                            <div class="column-type">BOOLEAN</div>
+                        </div>
+                        <div class="column-item">
+                            <div class="column-name">Institution</div>
+                            <div class="column-type">BOOLEAN</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Time of Day -->
+            <div class="category-card">
+                <div class="category-header">
+                    <span class="category-title">🕐 Tageszeit</span>
+                    <span class="db-field">??? (NICHT GEMAPPT)</span>
+                </div>
+                <div class="category-content">
+                    <div class="columns-list">
+                        <div class="column-item">
+                            <div class="column-name">Vormittag</div>
+                            <div class="column-type">BOOLEAN</div>
+                        </div>
+                        <div class="column-item">
+                            <div class="column-name">Nachmittag</div>
+                            <div class="column-type">BOOLEAN</div>
+                        </div>
+                        <div class="column-item">
+                            <div class="column-name">länger als 20 Minuten</div>
+                            <div class="column-type">BOOLEAN (Dauer, nicht Zeit)</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Topic/Theme -->
+            <div class="category-card">
+                <div class="category-header">
+                    <span class="category-title">📚 Thema</span>
+                    <span class="db-field">topic_value</span>
+                    <span class="issue-badge">MULTIPLE VALUES!</span>
+                </div>
+                <div class="category-content">
+                    <div class="columns-list">
+                        <div class="column-item">
+                            <div class="column-name">Bildung</div>
+                            <div class="column-type">BOOLEAN (kann mit anderen kombiniert werden)</div>
+                        </div>
+                        <div class="column-item">
+                            <div class="column-name">Arbeit</div>
+                            <div class="column-type">BOOLEAN</div>
+                        </div>
+                        <div class="column-item">
+                            <div class="column-name">Migrationshintergrund</div>
+                            <div class="column-type">BOOLEAN</div>
+                        </div>
+                        <div class="column-item">
+                            <div class="column-name">Finanzen</div>
+                            <div class="column-type">BOOLEAN</div>
+                        </div>
+                        <div class="column-item">
+                            <div class="column-name">Frauen Männer jung und alt</div>
+                            <div class="column-type">BOOLEAN</div>
+                        </div>
+                        <div class="column-item">
+                            <div class="column-name">Gesundheit</div>
+                            <div class="column-type">BOOLEAN</div>
+                        </div>
+                        <div class="column-item">
+                            <div class="column-name">Wohnen</div>
+                            <div class="column-type">BOOLEAN</div>
+                        </div>
+                        <div class="column-item">
+                            <div class="column-name">Austausch und Freizeit</div>
+                            <div class="column-type">BOOLEAN</div>
+                        </div>
+                        <div class="column-item">
+                            <div class="column-name">Migration und Integration</div>
+                            <div class="column-type">BOOLEAN</div>
+                        </div>
+                        <div class="column-item">
+                            <div class="column-name">Notlagen</div>
+                            <div class="column-type">BOOLEAN</div>
+                        </div>
+                        <div class="column-item">
+                            <div class="column-name">Allgemeine Hilfeleistungen</div>
+                            <div class="column-type">BOOLEAN</div>
+                        </div>
+                        <div class="column-item">
+                            <div class="column-name">Recht</div>
+                            <div class="column-type">BOOLEAN</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reference/Source -->
+            <div class="category-card">
+                <div class="category-header">
+                    <span class="category-title">🔗 Referenz</span>
+                    <span class="db-field">reference_value</span>
+                    <span class="issue-badge">MULTIPLE VALUES!</span>
+                </div>
+                <div class="category-content">
+                    <div class="columns-list">
+                        <div class="column-item">
+                            <div class="column-name">Flyer/Plakat/Presse</div>
+                            <div class="column-type">BOOLEAN</div>
+                        </div>
+                        <div class="column-item">
+                            <div class="column-name">Internet</div>
+                            <div class="column-type">BOOLEAN</div>
+                        </div>
+                        <div class="column-item">
+                            <div class="column-name">empfohlen Freunde Bekannte</div>
+                            <div class="column-type">BOOLEAN</div>
+                        </div>
+                        <div class="column-item">
+                            <div class="column-name">empfohlen Institution</div>
+                            <div class="column-type">BOOLEAN</div>
+                        </div>
+                        <div class="column-item">
+                            <div class="column-name">empfohlen Fachperson</div>
+                            <div class="column-type">BOOLEAN</div>
+                        </div>
+                        <div class="column-item">
+                            <div class="column-name">War schon mal hier</div>
+                            <div class="column-type">BOOLEAN</div>
+                        </div>
+                        <div class="column-item">
+                            <div class="column-name">Andere</div>
+                            <div class="column-type">BOOLEAN</div>
+                        </div>
+                        <div class="column-item">
+                            <div class="column-name">Andere Bem</div>
+                            <div class="column-type">TEXT (Freitext-Feld!)</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Time Slots -->
+            <div class="category-card">
+                <div class="category-header">
+                    <span class="category-title">⏰ Zeitfenster</span>
+                    <span class="db-field">time_value</span>
+                    <span class="issue-badge">DIFFERENT CONCEPT!</span>
+                </div>
+                <div class="category-content">
+                    <div class="columns-list">
+                        <div class="column-item">
+                            <div class="column-name">11:30 - 12:00</div>
+                            <div class="column-type">BOOLEAN</div>
+                        </div>
+                        <div class="column-item">
+                            <div class="column-name">12:00 - 13:00</div>
+                            <div class="column-type">BOOLEAN</div>
+                        </div>
+                        <div class="column-item">
+                            <div class="column-name">13:00 - 14:00</div>
+                            <div class="column-type">BOOLEAN</div>
+                        </div>
+                        <div class="column-item">
+                            <div class="column-name">14:00 - 15:00</div>
+                            <div class="column-type">BOOLEAN</div>
+                        </div>
+                        <div class="column-item">
+                            <div class="column-name">15:00 - 16:00</div>
+                            <div class="column-type">BOOLEAN</div>
+                        </div>
+                        <div class="column-item">
+                            <div class="column-name">16:00 - 17:00</div>
+                            <div class="column-type">BOOLEAN</div>
+                        </div>
+                        <div class="column-item">
+                            <div class="column-name">17:00 - 18:00</div>
+                            <div class="column-type">BOOLEAN</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
