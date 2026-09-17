@@ -302,12 +302,12 @@ function getOptionBehavior(opt) {
 }
 
 .chips-container :deep(.p-chip.chip-selected) {
-    background: #ef4444;
+    background: #837575;
     color: white;
     font-weight: 600;
 }
 
 .chips-container :deep(.p-chip.chip-selected:hover) {
-    background: #dc2626;
+    background: #6e6262;
 }
 </style>

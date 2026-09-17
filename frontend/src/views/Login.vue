@@ -120,7 +120,8 @@ async function login() {
     justify-content: center;
     padding: 1rem;
     padding-bottom: 15vh;
-    background: var(--surface-ground);
+    /* Same yellow fade under the navbar as on the entry screen */
+    background: linear-gradient(180deg, #ffecba, #fafafa 180px);
 }
 
 .login-title {

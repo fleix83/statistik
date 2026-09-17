@@ -12,7 +12,6 @@ const showCardBg = ref(true)
 provide('showBorders', showBorders)
 provide('showCardBg', showCardBg)
 
-const isDataEntryView = computed(() => route.path === '/')
 const isAnalyticsRoute = computed(() => route.path === '/analytics')
 const isEditorRoute = computed(() => route.path === '/editor')
 
@@ -123,10 +122,10 @@ function isActive(item) {
             <div class="app-header-clip">
                 <Menubar :model="menuItems" class="app-header" :class="{ 'navbar-blue': isAnalyticsRoute, 'navbar-editor': isEditorRoute }">
                     <template #start>
-                        <div class="app-branding">
+                        <router-link to="/" class="app-branding" title="Zur Erfassung">
                             <img src="@/assets/logo_wegweiser.svg" alt="Wegweiser" class="app-logo" />
                             <h1 class="app-branding-title">STATISTIK</h1>
-                        </div>
+                        </router-link>
                     </template>
                     <template #item="{ item }">
                         <router-link
@@ -141,14 +140,6 @@ function isActive(item) {
                     </template>
                     <template #end>
                         <div class="nav-end flex align-items-center gap-2">
-                            <div v-if="isDataEntryView" class="nav-toggles">
-                                <button class="nav-toggle-btn" @click="showBorders = !showBorders">
-                                    {{ showBorders ? 'Umrandung an' : 'Umrandung aus' }}
-                                </button>
-                                <button class="nav-toggle-btn" @click="showCardBg = !showCardBg">
-                                    {{ showCardBg ? 'Hintergrund an' : 'Hintergrund aus' }}
-                                </button>
-                            </div>
                             <Button
                                 v-if="authStore.isAuthenticated"
                                 icon="pi pi-sign-out"
@@ -160,9 +151,10 @@ function isActive(item) {
                             <router-link v-else to="/login">
                                 <Button
                                     icon="pi pi-sign-in"
-                                    label="Admin"
+                                    label="Anmelden"
                                     severity="secondary"
                                     text
+                                    class="nav-login-btn"
                                 />
                             </router-link>
                         </div>
@@ -270,6 +262,7 @@ button, input, select, textarea {
     background: #ffecba !important;
 }
 
+/* Logo + title link back to the entry screen */
 .app-branding {
     display: flex;
     flex-direction: column;
@@ -277,6 +270,8 @@ button, input, select, textarea {
     margin-left: -80px;
     margin-right: 3rem;
     padding: 20px;
+    text-decoration: none;
+    color: inherit;
 }
 
 .app-logo {
@@ -352,29 +347,17 @@ button, input, select, textarea {
     gap: 0.5rem;
 }
 
-.nav-toggles {
-    display: flex;
-    gap: 0.4rem;
-    margin-right: 0.5rem;
-}
-
-.nav-toggle-btn {
-    padding: 0.4rem 0.75rem;
-    border-radius: 12px;
-    border: 1px solid #ccc;
-    background: rgba(255, 255, 255, 0.6);
-    font-size: 0.8rem;
-    cursor: pointer;
-    color: #555;
-    transition: all 0.15s;
-}
-
-.nav-toggle-btn:hover {
-    background: rgba(255, 255, 255, 0.9);
-}
-
 /* Navbar auth buttons icon spacing */
 .nav-end .p-button .pi {
     margin-right: 5px;
+}
+
+/* Login: the theme's hover shade as resting background, a touch darker on hover */
+.nav-end .nav-login-btn.p-button {
+    background: var(--p-button-text-secondary-hover-background, rgba(0, 0, 0, 0.06));
+}
+
+.nav-end .nav-login-btn.p-button:hover {
+    background: var(--p-button-text-secondary-active-background, rgba(0, 0, 0, 0.1));
 }
 </style>

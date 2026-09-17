@@ -1508,15 +1508,16 @@ function handleClickOutside(event) {
     margin: 0.25rem 0;
 }
 
-/* Subgroup spacing - larger gaps between Kontaktart, Person, Dauer */
+/* Subgroup spacing between Kontaktart, Person, Dauer: 1rem above each
+   separator, only the small margin below it */
 .checkbox-row.subgroup-first {
     margin-top: 0.75rem;
-    padding-top: 1.0rem;
+    padding-top: 0;
 }
 
 .checkbox-row.subgroup-last {
     border-bottom: none;
-    padding-bottom: 2.0rem;
+    padding-bottom: 1rem;
 }
 
 /* Chip/Swatch Styles */
