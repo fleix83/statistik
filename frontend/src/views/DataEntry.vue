@@ -679,11 +679,15 @@ function hasMoreKeywords(label) {
     return getKeywordsForThema(label).length > 3
 }
 
-// Clicking a Thema row selects the topic. The checkbox and its label already
-// toggle natively, so clicks on them are left alone to avoid a double toggle.
-function onThemaRowClick(label, event) {
+// The whole chip is clickable. The checkbox and its label already toggle
+// natively, so clicks on them are left alone to avoid a double toggle.
+function onChipClick(section, value, event) {
     if (event.target.closest('.p-checkbox') || event.target.tagName === 'LABEL') return
-    toggleCheckbox('thema', label)
+    toggleCheckbox(section, value)
+}
+
+function onThemaRowClick(label, event) {
+    onChipClick('thema', label, event)
 }
 
 // Only the +/- zone at the row's right edge opens or closes the keywords
@@ -835,6 +839,7 @@ function handleClickOutside(event) {
                                     :key="opt"
                                     class="checkbox-item"
                                     :class="{ 'is-checked': formData.kontaktart.includes(opt) }"
+                                    @click="onChipClick('kontaktart', opt, $event)"
                                 >
                                     <Checkbox
                                         :inputId="'kontakt-' + opt"
@@ -852,6 +857,7 @@ function handleClickOutside(event) {
                                     <div
                                         class="checkbox-item"
                                         :class="{ 'is-checked': formData.person.includes(opt) }"
+                                        @click="onChipClick('person', opt, $event)"
                                     >
                                         <Checkbox
                                             :inputId="'person-' + opt"
@@ -866,6 +872,7 @@ function handleClickOutside(event) {
                                 <div
                                     class="checkbox-item"
                                     :class="{ 'is-checked': formData.thema.includes('Migrationshintergrund') }"
+                                    @click="onChipClick('thema', 'Migrationshintergrund', $event)"
                                 >
                                     <Checkbox
                                         inputId="migration"
@@ -884,6 +891,7 @@ function handleClickOutside(event) {
                                     :key="opt"
                                     class="checkbox-item"
                                     :class="{ 'is-checked': formData.dauer.includes(opt) }"
+                                    @click="onChipClick('dauer', opt, $event)"
                                 >
                                     <Checkbox
                                         :inputId="'dauer-' + opt"
@@ -958,6 +966,7 @@ function handleClickOutside(event) {
                                 :key="opt"
                                 class="checkbox-item zeitfenster-item"
                                 :class="{ 'is-checked': formData.zeitfenster.includes(opt) }"
+                                @click="onChipClick('zeitfenster', opt, $event)"
                             >
                                 <Checkbox
                                     :inputId="'zeit-' + opt"
@@ -983,6 +992,7 @@ function handleClickOutside(event) {
                                 :key="opt"
                                 class="checkbox-item referenz-item"
                                 :class="{ 'is-checked': formData.referenz.includes(opt) }"
+                                @click="onChipClick('referenz', opt, $event)"
                             >
                                 <Checkbox
                                     :inputId="'ref-' + opt"
