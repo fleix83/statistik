@@ -1331,9 +1331,28 @@ function handleClickOutside(event) {
     padding: 0;
 }
 
+/* After "Neuer Eintrag": yellow, breathing calmly until a user is picked */
 .user-select.highlight-placeholder :deep(.p-select-label) {
     background: var(--color-primary);
     border-radius: 30px;
+    animation: pulse-user-calm 2.4s ease-in-out infinite;
+}
+
+@keyframes pulse-user-calm {
+    0%, 100% {
+        background-color: var(--color-primary);
+        box-shadow: 0 0 0 0 rgba(255, 234, 149, 0.6);
+    }
+    50% {
+        background-color: #fff6cc;
+        box-shadow: 0 0 0 6px rgba(255, 234, 149, 0);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .user-select.highlight-placeholder :deep(.p-select-label) {
+        animation: none;
+    }
 }
 
 .user-select.has-selection :deep(.p-select-label) {
