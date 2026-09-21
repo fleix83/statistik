@@ -16,6 +16,9 @@ import CardColorModal from '../components/CardColorModal.vue'
 const authStore = useAuthStore()
 const isAdmin = computed(() => authStore.isAdmin)
 
+// Decorative arrow (public/arrow.svg) from the Zeitfenster column to the save button
+const arrowUrl = import.meta.env.BASE_URL + 'arrow.svg'
+
 const toast = useToast()
 
 // Form state
@@ -676,14 +679,16 @@ function hasMoreKeywords(label) {
     return getKeywordsForThema(label).length > 3
 }
 
-function toggleExpandedKeywords(label, event) {
-    // Don't toggle expand when clicking the checkbox or its label
+// Clicking a Thema row selects the topic. The checkbox and its label already
+// toggle natively, so clicks on them are left alone to avoid a double toggle.
+function onThemaRowClick(label, event) {
     if (event.target.closest('.p-checkbox') || event.target.tagName === 'LABEL') return
-    if (expandedThema.value === label) {
-        expandedThema.value = null
-    } else {
-        expandedThema.value = label
-    }
+    toggleCheckbox('thema', label)
+}
+
+// Only the +/- zone at the row's right edge opens or closes the keywords
+function toggleExpandedKeywords(label) {
+    expandedThema.value = expandedThema.value === label ? null : label
 }
 
 function handleClickOutside(event) {
@@ -906,7 +911,7 @@ function handleClickOutside(event) {
                                     <div
                                         class="checkbox-item thema-chip"
                                         :class="{ 'is-checked': formData.thema.includes(opt), 'is-expanded': expandedThema === opt }"
-                                        @click="toggleExpandedKeywords(opt, $event)"
+                                        @click="onThemaRowClick(opt, $event)"
                                     >
                                         <Checkbox
                                             :inputId="'thema-' + opt"
@@ -925,11 +930,16 @@ function handleClickOutside(event) {
                                                     class="keyword-tag"
                                                 >{{ kw }}</span>
                                             </div>
-                                            <i
-                                                v-if="getKeywordsForThema(opt).length > 0 && expandedThema !== opt"
-                                                class="pi pi-plus keywords-indicator"
-                                            ></i>
                                         </div>
+                                        <button
+                                            v-if="getKeywordsForThema(opt).length > 0"
+                                            type="button"
+                                            class="expand-zone"
+                                            :title="expandedThema === opt ? 'Stichworte ausblenden' : 'Stichworte anzeigen'"
+                                            @click.stop="toggleExpandedKeywords(opt)"
+                                        >
+                                            <i class="pi expand-icon" :class="expandedThema === opt ? 'pi-minus' : 'pi-plus'"></i>
+                                        </button>
                                     </div>
                                 </div>
                             </template>
@@ -958,6 +968,7 @@ function handleClickOutside(event) {
                             </div>
                         </div>
                     </div>
+                    <img :src="arrowUrl" alt="" aria-hidden="true" class="save-arrow" />
                 </div>
 
                 <!-- Referenz -->
@@ -1328,7 +1339,8 @@ function handleClickOutside(event) {
     gap: 1.5rem;
 }
 
-.grid-kontakt { flex: 0 1 400px; min-width: 0; margin-top: 20px; }
+/* Column widths: Kontakt gets the room Thema and Referenz give up, so its chips need fewer rows */
+.grid-kontakt { flex: 0 1 445px; min-width: 0; margin-top: 20px; }
 
 .top-bar-right {
     margin-left: auto;
@@ -1350,9 +1362,28 @@ function handleClickOutside(event) {
     gap: 0.4rem;
     align-items: center;
 }
-.grid-thema { flex: 0 1 500px; min-width: 0; margin-top: 20px; }
-.grid-zeitfenster { flex: 0 0 220px; margin-top: 20px; }
-.grid-referenz { flex: 0 1 400px; min-width: 0; margin-top: 20px; }
+.grid-thema { flex: 0 1 450px; min-width: 0; margin-top: 20px; }
+.grid-zeitfenster { flex: 0 0 220px; margin-top: 20px; position: relative; align-self: stretch; }
+
+/* Arrow in the empty space under Zeitfenster, its head level with the save
+   button's centre (button 67px + 20px margin -> centre 53px above the column
+   bottom; the head sits ~16px above the arrow's bottom edge) */
+.save-arrow {
+    position: absolute;
+    right: 8px;
+    bottom: 37px;
+    width: 140px;
+    height: auto;
+    pointer-events: none;
+    user-select: none;
+    transform: rotate(355deg);
+}
+
+@media (max-width: 1200px) {
+    .save-arrow { display: none; }
+    .grid-zeitfenster { align-self: auto; }
+}
+.grid-referenz { flex: 0 1 350px; min-width: 0; margin-top: 20px; }
 
 .cards-column {
     display: flex;
@@ -1694,7 +1725,7 @@ function handleClickOutside(event) {
     flex-direction: row;
     align-items: flex-start;
     gap: 0.5rem;
-    padding: 0.7rem 12.8px 0.75rem;
+    padding: 0.7rem 56px 0.75rem 12.8px;  /* right: room for the expand zone */
     transition: all 0.15s ease;
     width: 100%;
     overflow: hidden;
@@ -1702,7 +1733,7 @@ function handleClickOutside(event) {
 
 .thema-chip.is-expanded {
     background: transparent;
-    padding: 25px 20px;
+    padding: 25px 56px 25px 20px;
     overflow: visible;
 }
 
@@ -1746,14 +1777,6 @@ function handleClickOutside(event) {
     flex-shrink: 0;
 }
 
-.keywords-indicator {
-    font-size: 0.9rem;
-    color: var(--text-color-secondary);
-    flex-shrink: 0;
-    margin: 0 10px;
-    padding-left: 0.5rem;
-}
-
 .keywords-inline {
     display: flex;
     flex-wrap: wrap;
@@ -1782,33 +1805,36 @@ function handleClickOutside(event) {
     border-radius: 3px;
 }
 
-/* Expand zone for keywords */
+/* Expand zone: the only control that opens the keywords. A generous strip
+   along the row's right edge; on an expanded row it stays in the top corner */
 .expand-zone {
     position: absolute;
     top: 0;
     right: 0;
+    bottom: 0;
+    width: 56px;
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 30px;
-    height: 30px;
+    border: none;
+    background: transparent;
     cursor: pointer;
-    border-radius: 0 6px 0 0;
+    border-radius: 0 6px 6px 0;
     transition: background 0.15s ease;
 }
 
 .expand-zone:hover {
-    background: rgba(0, 0, 0, 0.05);
+    background: rgba(0, 0, 0, 0.06);
+}
+
+.thema-chip.is-expanded .expand-zone {
+    bottom: auto;
+    height: 56px;
 }
 
 .expand-icon {
     font-size: 1rem;
-    color: var(--color-thema-checkbox);
-    transition: transform 0.2s ease;
-}
-
-.expand-icon.expanded {
-    transform: rotate(180deg);
+    color: var(--text-color-secondary);
 }
 
 /* Zeitfenster vertical layout */
